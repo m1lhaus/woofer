@@ -8,8 +8,7 @@ __version__ = "$Id$"
 
 import sys
 
-from PySide.QtGui import *
-from PySide.QtCore import *
+from PySide.QtGui import QApplication
 
 import MainApp
 
