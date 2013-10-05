@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\uic\MainForm.ui'
+# Form implementation generated from reading ui file '.\uic\mainform.ui'
 #
-# Created: Sun Sep 15 18:05:40 2013
+# Created: Fri Oct 04 19:52:58 2013
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -22,14 +22,14 @@ class Ui_MainWindow(object):
         self.splitter.setOrientation(QtCore.Qt.Horizontal)
         self.splitter.setHandleWidth(1)
         self.splitter.setObjectName("splitter")
-        self.widget = QtGui.QWidget(self.splitter)
-        self.widget.setObjectName("widget")
-        self.verticalLayout_2 = QtGui.QVBoxLayout(self.widget)
+        self.layoutWidget = QtGui.QWidget(self.splitter)
+        self.layoutWidget.setObjectName("layoutWidget")
+        self.verticalLayout_2 = QtGui.QVBoxLayout(self.layoutWidget)
         self.verticalLayout_2.setSpacing(1)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.treeWidget = QtGui.QTreeWidget(self.widget)
-        self.treeWidget.setMaximumSize(QtCore.QSize(16777215, 100))
+        self.treeWidget = QtGui.QTreeWidget(self.layoutWidget)
+        self.treeWidget.setMaximumSize(QtCore.QSize(16777215, 110))
         self.treeWidget.setAutoExpandDelay(-1)
         self.treeWidget.setAnimated(True)
         self.treeWidget.setHeaderHidden(False)
@@ -51,7 +51,7 @@ class Ui_MainWindow(object):
         icon3.addPixmap(QtGui.QPixmap(":/new/icons/icons/radio.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         item_0.setIcon(0, icon3)
         self.verticalLayout_2.addWidget(self.treeWidget)
-        self.treeView = QtGui.QTreeView(self.widget)
+        self.treeView = QtGui.QTreeView(self.layoutWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -59,13 +59,13 @@ class Ui_MainWindow(object):
         self.treeView.setSizePolicy(sizePolicy)
         self.treeView.setObjectName("treeView")
         self.verticalLayout_2.addWidget(self.treeView)
-        self.widget1 = QtGui.QWidget(self.splitter)
-        self.widget1.setObjectName("widget1")
-        self.verticalLayout_3 = QtGui.QVBoxLayout(self.widget1)
+        self.layoutWidget1 = QtGui.QWidget(self.splitter)
+        self.layoutWidget1.setObjectName("layoutWidget1")
+        self.verticalLayout_3 = QtGui.QVBoxLayout(self.layoutWidget1)
         self.verticalLayout_3.setSpacing(1)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.tableWidget = QtGui.QTableWidget(self.widget1)
+        self.tableWidget = QtGui.QTableWidget(self.layoutWidget1)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -91,7 +91,7 @@ class Ui_MainWindow(object):
         self.tableWidget.verticalHeader().setVisible(True)
         self.tableWidget.verticalHeader().setDefaultSectionSize(19)
         self.verticalLayout_3.addWidget(self.tableWidget)
-        self.frame = QtGui.QFrame(self.widget1)
+        self.frame = QtGui.QFrame(self.layoutWidget1)
         self.frame.setMinimumSize(QtCore.QSize(0, 0))
         self.frame.setFrameShape(QtGui.QFrame.StyledPanel)
         self.frame.setFrameShadow(QtGui.QFrame.Plain)
