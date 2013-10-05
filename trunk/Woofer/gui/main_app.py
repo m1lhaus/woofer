@@ -8,7 +8,8 @@ __version__ = "$Id$"
 
 from PySide.QtGui import *
 from PySide.QtCore import *
-from forms.MainForm import Ui_MainWindow
+
+from forms.mainform import Ui_MainWindow
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
