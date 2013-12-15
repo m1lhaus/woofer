@@ -36,16 +36,16 @@ class MediaPlayer(QObject):
         super(MediaPlayer, self).__init__(parent)
 
         self.instance = vlc.Instance()
-        """:type: vlc.Instance"""
+        """@type: vlc.Instance"""
 
         logger.debug("Created instance of VLC player")
 
         self.media_player = self.instance.media_player_new()
-        """:type: vlc.MediaPlayer"""
+        """@type: vlc.MediaPlayer"""
         self.media_list_player = self.instance.media_list_player_new()
-        """:type: vlc.MediaListPlayer"""
+        """@type: vlc.MediaListPlayer"""
         self.media_list = self.instance.media_list_new()
-        """:type: vlc.MediaList"""
+        """@type: vlc.MediaList"""
 
         # connect player and media list with media_list_player
         self.media_list_player.set_media_player(self.media_player)

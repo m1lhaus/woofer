@@ -4,7 +4,7 @@
 Main application debug launcher.
 """
 
-__version__ = "$Id: launcher.py 6 2013-10-05 15:51:01Z m1lhaus $"
+__version__ = "$Id$"
 
 import logging
 import components.log
