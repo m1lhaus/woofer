@@ -7,9 +7,12 @@ Media player test unit
 __version__ = "$Id$"
 
 import os
+import time
 
 from unittest import TestCase
 from components import media
+
+WAIT_TIME = 1   # in sec
 
 
 class TestMediaPlayer(TestCase):
@@ -31,12 +34,12 @@ class TestMediaPlayer(TestCase):
                           os.path.join(tests_data_folder, ""),
                           "")
 
-    def test_setMrl(self):
+    def test_setSource(self):
         """
         Tries to set valid source path to file and tests if given path was set as mrl
         """
         for source in self.source_set:
-            self.mp.setMrl(source)
+            self.mp.setSource(source)
 
             # mrl is in unusual string format, it's difficult to parse back original string
             # to compare mrls, convert source new path to mrl format as well
@@ -46,36 +49,36 @@ class TestMediaPlayer(TestCase):
 
             try:
                 self.assertEquals(new_mrl, ret_mrl)                 # mrl comparison
-                self.assertEqual(self.mp.media_list.count(), 1)     # is media list was emptied
+                self.assertEqual(self.mp._media_list.count(), 1)     # is media list was emptied
                 self.assertEqual(self.mp.source_list[0], source)
             finally:
                 new_media.release()     # release manually created media class
 
-    def test_setMrl_error(self):
+    def test_setSource_error(self):
         """
         Tries to set invalid source path to file and tests if method raises exception
         """
         for source in self.invalid_source_set:
-            self.assertRaises(ValueError, self.mp.setMrl, source)
+            self.assertRaises(ValueError, self.mp.setSource, source)
 
-    def test_addMrl(self):
+    def test_addSource(self):
         """
         Tests addMrl() to valid input
         """
         # add one string source
         source = self.source_set[0]
-        list_count = self.mp.media_list.count()
-        self.mp.addMrl(source)
-        new_list_count = self.mp.media_list.count()
+        list_count = self.mp._media_list.count()
+        self.mp.addSource(source)
+        new_list_count = self.mp._media_list.count()
 
         self.assertEqual(list_count + 1, new_list_count)
         self.assertIn(source, self.mp.source_list)
         self.assertEqual(new_list_count, len(self.mp.source_list))
 
         # add list of strings
-        list_count = self.mp.media_list.count()
-        self.mp.addMrl(self.source_set)
-        new_list_count = self.mp.media_list.count()
+        list_count = self.mp._media_list.count()
+        self.mp.addSource(self.source_set)
+        new_list_count = self.mp._media_list.count()
 
         self.assertEqual(list_count + len(self.source_set), new_list_count)
         for source in self.source_set:
@@ -83,23 +86,57 @@ class TestMediaPlayer(TestCase):
         self.assertEqual(new_list_count, len(self.mp.source_list))
 
         # add empty list
-        list_count = self.mp.media_list.count()
-        self.mp.addMrl([])
-        new_list_count = self.mp.media_list.count()
+        list_count = self.mp._media_list.count()
+        self.mp.addSource([])
+        new_list_count = self.mp._media_list.count()
 
         self.assertEqual(list_count, new_list_count)
         self.assertEqual(new_list_count, len(self.mp.source_list))
 
-    def test_addMrl_error(self):
+    def test_addSource_error(self):
         """
         Tests addMrl() method to invalid input
         """
-        self.assertRaises(ValueError, self.mp.addMrl, 0)
-        self.assertRaises(ValueError, self.mp.addMrl, 1)
-        self.assertRaises(ValueError, self.mp.addMrl, -1)
-        self.assertRaises(ValueError, self.mp.addMrl, True)
-        self.assertRaises(ValueError, self.mp.addMrl, "")
-        self.assertRaises(ValueError, self.mp.addMrl, [""])
-        self.assertRaises(ValueError, self.mp.addMrl, ("",))
-        self.assertRaises(ValueError, self.mp.addMrl, ("aaaa",))
+        self.assertRaises(ValueError, self.mp.addSource, 0)
+        self.assertRaises(ValueError, self.mp.addSource, 1)
+        self.assertRaises(ValueError, self.mp.addSource, -1)
+        self.assertRaises(ValueError, self.mp.addSource, True)
+        self.assertRaises(ValueError, self.mp.addSource, "")
+        self.assertRaises(ValueError, self.mp.addSource, [""])
+        self.assertRaises(ValueError, self.mp.addSource, ("",))
+        self.assertRaises(ValueError, self.mp.addSource, ("aaaa",))
+
+    def test_clearList(self):
+        """
+        Fills media_list and then test clearList() method
+        """
+        for source in self.source_set:
+            self.mp.addSource(source)
+
+        if self.mp.listCount() != 0:
+            self.mp.clearList()
+        else:
+            self.fail()
+
+        self.assertEqual(self.mp.listCount(), 0)
+
+    def test_playPauseStop(self):
+        """
+        Sets media, and tries to play, pause and stop
+        """
+        self.mp.setSource(self.source_set[1])
+
+        self.mp.play()
+        time.sleep(WAIT_TIME)
+        self.assertTrue(self.mp.is_playing)
+
+        self.mp.pause()
+        time.sleep(WAIT_TIME)
+        self.assertTrue(self.mp.is_paused)
+
+        self.mp.stop()
+        time.sleep(WAIT_TIME)
+        self.assertTrue(self.mp.is_stopped)
+
+
 
