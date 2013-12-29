@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Main application launcher .
+Main application launcher.
 """
 
 __version__ = "$Id$"
