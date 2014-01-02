@@ -199,22 +199,18 @@ class MediaPlayer(QObject):
     def play(self):
         """
         Plays the media in media_list. Emits error signal when something went wrong.
+        Method returns False if there is no media or unable to play the source.
+        @rtype : bool
         """
         logger.debug("Play method called")
-
-        if self._media_list_player.play() == -1:
-            logger.warning("Error. Unable to play the media")
-            self.error.emit("Error. Unable to play the media")
-            return
+        return self._media_list_player.play() == -1
 
     def pause(self):
         """
         Toggle pause (no effect if there is no media)
         """
         logger.debug("Pause method called")
-
         self._media_list_player.pause()
-        self.tick_timer.stop()
 
     def stop(self):
         """
@@ -224,39 +220,40 @@ class MediaPlayer(QObject):
 
     def next(self):
         """
-        Switches to next media in media_list if any
+        Switches to next media in media_list if any.
+        Method returns False if there is no media to switch.
+        @rtype : bool
         """
-        if self._media_list_player.next() == -1:
-            logger.debug("There is no next item to switch in media_list")
-            print "no next"
+        logger.debug("Next media method called")
+        return self._media_list_player.next() == -1
 
     def prev(self):
         """
-        Switches to next media in media_list if any
+        Switches to next media in media_list if any.
+        Method returns False if there is no media to switch.
+        @rtype : bool
         """
-        if self._media_list_player.previous() == -1:
-            logger.debug("There is no previous item to switch in media_list")
-            print "no prev"
+        logger.debug("Previous media method called")
+        return self._media_list_player.previous() == -1
 
     def setVolume(self, value):
         """
-        Set current software audio volume.
+        Sets given volume value to player.
+        Method returns False if unable to set the volume value.
         @param value: the volume in percents (0 = mute, 100 = 0dB).
         @type value: int
+        @rtype: bool
         @raise ValueError: if value not in range [0, 100]
         """
         if 0 <= value <= 100:
-            if self._media_player.audio_set_volume(int(value)) == -1:
-                logger.error("Error. Unable to set new volume value: %s", value)
-            else:
-                logger.debug("Volume set to '%s'", value)
-
+            logger.debug("Setting volume to value %s", value)
+            return self._media_player.audio_set_volume(int(value)) == -1
         else:
             raise ValueError("Volume must be in range <0, 100>")
 
     def volume(self):
         """
-        Get current software audio volume.
+        Get current software audio volume in range [0, 100].
         @return: the software volume in percents (0 = mute, 100 = nominal / 0dB).
         @rtype: int
         """
@@ -266,88 +263,95 @@ class MediaPlayer(QObject):
         """
         Set the movie time (in ms). This has no effect if no media is being played.
         Not all formats and protocols support this. Rather use setPosition() method!
+        Method returns False if media is not seekable.
         @param new_time: the movie time (in ms).
         @type new_time: int
+        @rtype: bool
         @raise ValueError: if value not in range [0, totalTime]
         """
         if not self._media_player.is_seekable():
             logger.error("Media is not seekable")
-            return
+            return False
 
         total_time = self.totalTime()
         if 0 <= new_time <= total_time:
             self._media_player.set_time(int(new_time))
             logger.debug("Media play set to new time: %s ms", new_time)
-
         else:
             raise ValueError("New time must be in range [0, %d]" % total_time)
+
+        return True
 
     def setPosition(self, new_pos):
         """
         Set movie position as percentage between 0.0 and 1.0. This has no effect if playback is not enabled.
         This might not work depending on the underlying input format and protocol.
+        Method returns False if media is not seekable.
         @param new_pos: the position
         @type new_pos: int
+        @rtype: bool
         @raise ValueError: if value not in range [0, 1.0]
         """
         if not self._media_player.is_seekable():
             logger.error("Media is not seekable")
-            return
+            return False
 
         if 0 <= new_pos <= 1.0:
             self._media_player.set_position(new_pos)
             logger.debug("Media play set to new position: %s", new_pos)
-
         else:
             raise ValueError("New position must be in range [0, 1.0]")
+
+        return True
 
     def currentTime(self):
         """
         Get the current time (in ms).
-        @return: the media time (in ms), or -1 if there is no media.
-        @rtype : int
+        Method returns None if no media set.
+        @rtype : int or None
         """
         time = self._media_player.get_time()
 
         if time == -1:
             logger.warning("There is no media set to get current time")
+            time = None
 
         return time
 
     def totalTime(self):
         """
         Get the current media length (in ms).
-        @return: the media length (in ms), or -1 if there is no media.
-        @rtype : int
+        Method returns None if no media set.
+        @rtype : int or None
         """
         length = self._media_player.get_length()
 
         if length == -1:
             logger.warning("There is no media set to get its length")
+            length = None
 
         return length
 
     def remainingTime(self):
         """
         Get the current media remaining time (in ms)
-        @return: the media remaining time (in ms), or -1 if there is no media.
-        @rtype : int
+        Method returns None if no media set.
+        @rtype : int or None
         """
         current_time = self.currentTime()
         total_time = self.totalTime()
 
         if current_time == -1 or total_time == -1:
             logger.warning("There is no media set to get remaining time")
-            return -1
-
+            remaining_time = None
         else:
-            return total_time - current_time
+            remaining_time = total_time - current_time
 
-    def timer_tick(self):
-        self.tick.emit(self.currentTime())
+        return remaining_time
 
     def playerStateChanged(self, event):
         """
+        Called when media_player state has changed.
         @type event: vlc.Event
         """
 
@@ -364,6 +368,7 @@ class MediaPlayer(QObject):
             self.is_playing = False
             self.is_paused = True
             self.is_stopped = False
+            self.tick_timer.stop()
         elif event.type == vlc.EventType.MediaPlayerStopped:
             logger.debug("Media player is stopped")
             self.is_playing = False
@@ -378,6 +383,13 @@ class MediaPlayer(QObject):
             logger.debug("Media end reached")
         elif event.type == vlc.EventType.MediaPlayerEncounteredError:
             logger.debug("Media encountered error")
+        elif event.type == vlc.EventType.MediaPlayerTimeChanged:
+            # logger.debug("Media Player Time Changed encountered error")
+            print event.u.new_time
+
+    @Slot()
+    def timer_tick(self):
+        self.tick.emit(self.currentTime())
 
 
 class RadioPlayer(QObject):
