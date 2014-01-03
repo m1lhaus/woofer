@@ -22,6 +22,8 @@ if __name__ == "__main__":
     logger.debug("Initializing application launcher in debug mode")
 
     app = QApplication(sys.argv)
+    app.setApplicationName("Woofer")
+
     main = MainApp()
     main.show()
     app.exec_()

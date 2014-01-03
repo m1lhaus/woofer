@@ -15,16 +15,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <property name="leftMargin">
-     <number>1</number>
-    </property>
-    <property name="topMargin">
-     <number>1</number>
-    </property>
-    <property name="rightMargin">
-     <number>1</number>
-    </property>
-    <property name="bottomMargin">
+    <property name="margin">
      <number>1</number>
     </property>
     <item row="0" column="0">
@@ -41,7 +32,7 @@
          <number>1</number>
         </property>
         <item>
-         <widget class="QTreeWidget" name="treeWidget">
+         <widget class="QTreeWidget" name="sourceBrowser">
           <property name="maximumSize">
            <size>
             <width>16777215</width>
@@ -101,7 +92,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QTreeView" name="treeView">
+         <widget class="QTreeView" name="fileBrowser">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -118,7 +109,7 @@
          <number>1</number>
         </property>
         <item>
-         <widget class="QTableWidget" name="tableWidget">
+         <widget class="QTableWidget" name="playlist">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -197,30 +188,12 @@
            <enum>QFrame::Plain</enum>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
+           <property name="margin">
             <number>0</number>
            </property>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout">
-             <property name="leftMargin">
-              <number>9</number>
-             </property>
-             <property name="topMargin">
-              <number>9</number>
-             </property>
-             <property name="rightMargin">
-              <number>9</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>9</number>
              </property>
              <item>
