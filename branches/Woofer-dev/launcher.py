@@ -16,7 +16,7 @@ import sys
 
 from PySide.QtGui import QApplication
 
-from dialogs.main_app import MainApp
+from dialogs.main_dialog import MainApp
 
 if __name__ == "__main__":
     logger.debug("Initializing application launcher")

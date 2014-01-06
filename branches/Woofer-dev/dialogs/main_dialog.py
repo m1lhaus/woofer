@@ -15,7 +15,8 @@ import json
 from PySide.QtGui import *
 from PySide.QtCore import *
 
-from forms.mainform import Ui_MainWindow
+from forms.main_form import Ui_MainWindow
+from dialogs.library_dialog import LibraryDialog
 from tools.misc import enumm, enum
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
     """
 
     errorEncountered = Signal(int, unicode)
+
+    myComputerPathIndex = None
 
     def __init__(self):
         super(MainApp, self).__init__()
@@ -56,6 +59,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def setupSignals(self):
         self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
+        self.folderCombo.currentIndexChanged.connect(self.changeFileBrowserRoot)
+        self.libraryBtn.clicked.connect(self.openLibraryDialog)
+
         self.errorEncountered.connect(self.displayError)
 
     def setupFileBrowser(self):
@@ -94,8 +100,13 @@ class MainApp(QMainWindow, Ui_MainWindow):
         except Exception:
             logger.exception("Unable to load mediaFolders from medialib file.")
 
+        # init fileSystem model
+        self.fileBrowserModel = QFileSystemModel(self)
+        self.fileBrowserModel.setRootPath(QDir.rootPath())
+        self.fileBrowserModel.setResolveSymlinks(True)
+
         # add folder from medialib to folderCombobox
-        self.folderCombo.addItem('/computer')
+        self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))
         if mediaFolders:
             for folder in mediaFolders:
                 folder = os.path.normpath(folder)
@@ -103,11 +114,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     self.folderCombo.addItem(folder)
                 else:
                     logger.debug("Path '%s' from medialib doesn't exist.", folder)
-
-        # init fileSystem model
-        self.fileBrowserModel = QFileSystemModel(self)
-        self.fileBrowserModel.setRootPath(QDir.rootPath())
-        self.fileBrowserModel.setResolveSymlinks(True)
 
     def loadSettings(self):
         pass
@@ -140,6 +146,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 self.sourceItemsBrowser.setColumnHidden(i, True)
             self.browser_type = Sources.FILES
 
+            # remember my_computer root index
+            if self.myComputerPathIndex is None:
+                self.myComputerPathIndex = self.sourceItemsBrowser.rootIndex()
+
         elif source_id == Sources.PLAYLISTS:
             # TODO implement
             self.browser_type = Sources.PLAYLISTS
@@ -148,10 +158,37 @@ class MainApp(QMainWindow, Ui_MainWindow):
             # TODO implement
             self.browser_type = Sources.RADIO
 
+    @Slot(int)
+    def changeFileBrowserRoot(self, index):
+        """
+        When new folder from folderCombo is selected, update folder browser (sourceItemsBrowser)
+        @type index: int
+        """
+        newMediaFolder = self.folderCombo.currentText()
+
+        if newMediaFolder == self.fileBrowserModel.myComputer(Qt.DisplayRole):
+            if self.myComputerPathIndex is not None:
+                self.sourceItemsBrowser.setRootIndex(self.myComputerPathIndex)
+        else:
+            folderIndex = self.fileBrowserModel.index(newMediaFolder)
+            if folderIndex.row() != -1 and folderIndex.column() != -1:
+                self.sourceItemsBrowser.setRootIndex(folderIndex)
+            else:
+                logger.error("Media path from folderCombo could not be found in fileSystemModel!")
+                # TODO emit error
+
+    @Slot()
+    def openLibraryDialog(self):
+        libraryDialog = LibraryDialog(self.mediaLibFile, self)
+        libraryDialog.exec_()
+
+
     @Slot(int, unicode)
     def displayError(self, er_type, text):
         pass
         # TODO implement
+
+
 
 
 
