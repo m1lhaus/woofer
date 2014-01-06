@@ -15,6 +15,16 @@ import pywintypes
 FILE_SYM = 0
 FOLDER_SYM = 1
 
+# import win32com.shell.shell as shell
+# winsym_path = os.path.join(self.root_path, "tools", 'winsym.pyc')
+# winsym_result = os.path.join(self.root_path, "tools", 'winsym.txt')
+# type = '1'    # folder
+# source_folder = r"D:\MP3"
+# target_folder = os.path.join(self.medialib_path, 'MP3')
+# params = ' '.join([winsym_path, type, source_folder, target_folder, winsym_result])
+#
+# shell.ShellExecuteEx(lpVerb='runas', lpFile=sys.executable, lpParameters=params)
+
 if __name__ == "__main__":
     file_path = sys.argv[0]
     type = sys.argv[1]
