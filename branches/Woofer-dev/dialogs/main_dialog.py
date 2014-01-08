@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
 
 Sources = enumm(FILES=0, PLAYLISTS=1, RADIO=2)
-Errors = enum('WARNING', 'SERIOUS', 'CRITICAL')
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
@@ -42,7 +41,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.root_path = os.path.dirname(sys.argv[0])
         self.setupUi(self)
         self.setupSignals()
-        self.setupFileBrowser()
+
+        self.setupMediaLibrary()
+        self.setupFileBrowser(init=True)
         # self.setupPlaylistBrowser()
         # self.setupRadioBrowser()
 
@@ -64,9 +65,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         self.errorEncountered.connect(self.displayError)
 
-    def setupFileBrowser(self):
+    def setupMediaLibrary(self):
         """
-        Initializes file browser model
+        Creates data folder and media library file is doesn't exist
         """
         # init data folder
         dataFolder = os.path.join(self.root_path, 'data')
@@ -75,45 +76,68 @@ class MainApp(QMainWindow, Ui_MainWindow):
         except OSError, exception:
             if exception.errno != errno.EEXIST:
                 logger.exception("Unable to create media library folder on path: %s", dataFolder)
-                # TODO emit error
+                # TODO display error
                 raise
         else:
             logger.debug("Media library folder created")
 
         # init media library file
         self.mediaLibFile = os.path.join(dataFolder, 'medialib.json')
-        mediaFolders = None
+
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
-                logger.debug("Media file opened.")
-                mediaFolders = json.load(mediaFile)
+                pass
         except IOError, exception:
-            if exception.errno != errno.ENOENT:
+            # create file if doesn't exist
+            if exception.errno == errno.ENOENT:
+                try:
+                    with open(self.mediaLibFile, 'w') as f:
+                        f.write('[]')
+                    logger.debug("Media file has been created and initialized.")
+                except IOError:
+                    logger.exception("Error when creating new media library file.")
+                    # TODO display error
+                    raise
+            else:
                 logger.exception("Error when reading medialib file.")
-                # TODO emit error
+                # TODO display error
                 raise
 
-            # create file
-            with open(self.mediaLibFile, 'w') as f:
-                logger.debug("Media file created")
-                f.write('[]')
+    def setupFileBrowser(self, rcode=None, init=False):
+        """
+        Initializes file browser model
+        @param rcode: return code from library dialog [ignore]
+        @param init: if true, fileSystemModel is initialized
+        """
+        mediaFolders = []
+        try:
+            logger.debug("Opening media folder and reading data.")
+            with open(self.mediaLibFile, 'r') as mediaFile:
+                mediaFolders = json.load(mediaFile)
+        except IOError:
+            logger.exception("Error when reading medialib file.")
+            # TODO display error
+            raise
         except Exception:
             logger.exception("Unable to load mediaFolders from medialib file.")
+            # TODO display error
+            raise
 
-        # init fileSystem model
-        self.fileBrowserModel = QFileSystemModel(self)
-        self.fileBrowserModel.setRootPath(QDir.rootPath())
-        self.fileBrowserModel.setResolveSymlinks(True)
+        if init:
+            # init fileSystem model
+            self.fileBrowserModel = QFileSystemModel(self)
+            self.fileBrowserModel.setRootPath(QDir.rootPath())
+            self.fileBrowserModel.setResolveSymlinks(True)
 
         # add folder from medialib to folderCombobox
+        self.folderCombo.clear()
         self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))
-        if mediaFolders:
-            for folder in mediaFolders:
-                folder = os.path.normpath(folder)
-                if os.path.isdir(folder):
-                    self.folderCombo.addItem(folder)
-                else:
-                    logger.debug("Path '%s' from medialib doesn't exist.", folder)
+        for folder in mediaFolders:
+            folder = os.path.normpath(folder)
+            if os.path.isdir(folder):
+                self.folderCombo.addItem(folder)
+            else:
+                logger.warning("Path '%s' from medialib doesn't exist.", folder)
 
     def loadSettings(self):
         pass
@@ -164,6 +188,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
         When new folder from folderCombo is selected, update folder browser (sourceItemsBrowser)
         @type index: int
         """
+        # combo box is empty (reset)
+        if index == -1:
+            return
+
         newMediaFolder = self.folderCombo.currentText()
 
         if newMediaFolder == self.fileBrowserModel.myComputer(Qt.DisplayRole):
@@ -180,6 +208,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
     @Slot()
     def openLibraryDialog(self):
         libraryDialog = LibraryDialog(self.mediaLibFile, self)
+        libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
 
 
