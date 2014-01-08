@@ -14,3 +14,5 @@ def enum(*sequential, **named):
 
 def enumm(**enums):
     return type('Enum', (), enums)
+
+Errors = enum('WARNING', 'SERIOUS', 'CRITICAL')
