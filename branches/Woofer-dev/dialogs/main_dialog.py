@@ -47,6 +47,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
         # self.setupPlaylistBrowser()
         # self.setupRadioBrowser()
 
+        logger.warning("Něco warn")
+        logger.error("Něco chyba")
+
         # display file browser as default
         self.changeSource(Sources.FILES)
 
@@ -85,7 +88,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.mediaLibFile = os.path.join(dataFolder, 'medialib.json')
 
         try:
-            with open(self.mediaLibFile, 'r') as mediaFile:
+            with open(self.mediaLibFile, 'r') as f:
                 pass
         except IOError, exception:
             # create file if doesn't exist
