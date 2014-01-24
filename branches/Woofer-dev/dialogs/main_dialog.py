@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
 
 Sources = enumm(FILES=0, PLAYLISTS=1, RADIO=2)
+FileExtensions = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
@@ -47,9 +48,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         # self.setupPlaylistBrowser()
         # self.setupRadioBrowser()
 
-        logger.warning("Něco warn")
-        logger.error("Něco chyba")
-
         # display file browser as default
         self.changeSource(Sources.FILES)
 
@@ -59,12 +57,15 @@ class MainApp(QMainWindow, Ui_MainWindow):
         super(MainApp, self).setupUi(parent)
 
         self.sourceBrowser.expandAll()
-        self.sourceBrowser.setColumnHidden(1, True)
+        self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value
+
+        self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
 
     def setupSignals(self):
         self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
         self.folderCombo.currentIndexChanged.connect(self.changeFileBrowserRoot)
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
+        self.sourceItemsBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
 
         self.errorEncountered.connect(self.displayError)
 
@@ -112,7 +113,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         @param rcode: return code from library dialog [ignore]
         @param init: if true, fileSystemModel is initialized
         """
-        mediaFolders = []
         try:
             logger.debug("Opening media folder and reading data.")
             with open(self.mediaLibFile, 'r') as mediaFile:
@@ -131,6 +131,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.fileBrowserModel = QFileSystemModel(self)
             self.fileBrowserModel.setRootPath(QDir.rootPath())
             self.fileBrowserModel.setResolveSymlinks(True)
+            self.fileBrowserModel.setNameFilterDisables(False)
+            self.fileBrowserModel.setNameFilters(FileExtensions)
 
         # add folder from medialib to folderCombobox
         self.folderCombo.clear()
@@ -151,6 +153,27 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def setupRadioBrowser(self):
         pass
 
+    @Slot(QPointF)
+    def sourceItemsBrowserContextMenu(self, pos):
+        pass
+        # menu = QMenu(self.sourceItemsBrowser)
+        # playNow = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", menu)
+        # addToPlayList = QAction(QIcon(":/new/icons/icons/play-next.png"), "Add to playlist", menu)
+        # separator = QAction(menu)
+        # separator.setSeparator(True)
+        # removeFromDisk = QAction(QIcon(":/new/icons/icons/delete.png"), "Remove from disk", menu)
+        #
+        #
+        # if self.sourceType == Sources.FILES:
+        #     logger.debug("Opening file browser context menu.")
+        #     menu.addActions([playNow, addToPlayList, separator, removeFromDisk])
+        # if self.sourceType == Sources.PLAYLISTS:
+        #     logger.debug("Opening playlist browser context menu.")
+        # if self.sourceType == Sources.RADIO:
+        #     logger.debug("Opening radio browser context menu.")
+        #
+        # menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
+
     @Slot()
     def changeSource(self, source_id=None):
         """
@@ -159,6 +182,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         @param source_id: enum Source
         @type source_id: int
         """
+        logger.debug("Change source called.")
+
         if source_id is None:
             table_item = self.sourceBrowser.currentItem()
             try:
@@ -167,23 +192,28 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 return
 
         if source_id == Sources.FILES:
+            self.sourceType = Sources.FILES
             self.sourceItemsBrowser.setModel(self.fileBrowserModel)
-            # self.sourceItemsBrowser.setRootIndex(self.fileBrowserModel.index(self.mediaLibPath))
+
+            # hide unwanted columns
             for i in range(1, self.fileBrowserModel.columnCount()):
                 self.sourceItemsBrowser.setColumnHidden(i, True)
-            self.browser_type = Sources.FILES
 
-            # remember my_computer root index
+            # remember my_computer root index for the first time
             if self.myComputerPathIndex is None:
                 self.myComputerPathIndex = self.sourceItemsBrowser.rootIndex()
 
+            logger.debug("File source has been selected.")
+
         elif source_id == Sources.PLAYLISTS:
             # TODO implement
-            self.browser_type = Sources.PLAYLISTS
+            self.sourceType = Sources.PLAYLISTS
+            logger.debug("Playlist source has been selected.")
 
         elif source_id == Sources.RADIO:
             # TODO implement
-            self.browser_type = Sources.RADIO
+            self.sourceType = Sources.RADIO
+            logger.debug("Radio source has been selected.")
 
     @Slot(int)
     def changeFileBrowserRoot(self, index):
@@ -191,7 +221,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         When new folder from folderCombo is selected, update folder browser (sourceItemsBrowser)
         @type index: int
         """
-        # combo box is empty (reset)
+        # combobox is empty (on reset)
         if index == -1:
             return
 
@@ -213,7 +243,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         libraryDialog = LibraryDialog(self.mediaLibFile, self)
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
-
 
     @Slot(int, unicode)
     def displayError(self, er_type, text):
