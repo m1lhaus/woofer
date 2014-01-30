@@ -39,27 +39,25 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super(MainApp, self).__init__()
-        self.root_path = os.path.dirname(sys.argv[0])
+        self.appRootPath = os.path.dirname(sys.argv[0])
+        self.appDataPath = os.path.join(self.appRootPath, 'data')
+        self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
         self.setupUi(self)
         self.setupSignals()
 
-        self.setupMediaLibrary()
-        self.setupFileBrowser(init=True)
+        self.checkPaths()
+        self.setupFileBrowser(initModel=True)
         # self.setupPlaylistBrowser()
         # self.setupRadioBrowser()
 
-        # display file browser as default
-        self.changeSource(Sources.FILES)
-
+        self.changeSource(Sources.FILES)        # display file browser as default
         logger.debug("Main application dialog initialized")
 
     def setupUi(self, parent):
         super(MainApp, self).setupUi(parent)
-
         self.sourceBrowser.expandAll()
-        self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value
-
-        self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
+        # self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
 
     def setupSignals(self):
         self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
@@ -69,30 +67,27 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         self.errorEncountered.connect(self.displayError)
 
-    def setupMediaLibrary(self):
+    def checkPaths(self):
         """
-        Creates data folder and media library file is doesn't exist
+        Creates data folder and media library file if doesn't exist!
         """
-        # init data folder
-        dataFolder = os.path.join(self.root_path, 'data')
+        # check data folder
         try:
-            os.makedirs(dataFolder)
+            os.makedirs(self.appDataPath)
         except OSError, exception:
             if exception.errno != errno.EEXIST:
-                logger.exception("Unable to create media library folder on path: %s", dataFolder)
+                logger.exception("Unable to create media library folder on path: %s", self.appDataPath)
                 # TODO display error
                 raise
         else:
-            logger.debug("Media library folder created")
+            logger.debug("Data folder didn't exist and has been created.")
 
-        # init media library file
-        self.mediaLibFile = os.path.join(dataFolder, 'medialib.json')
-
+        # check medialib file
         try:
             with open(self.mediaLibFile, 'r') as f:
                 pass
         except IOError, exception:
-            # create file if doesn't exist
+            #  file doesn't exist => create and init file
             if exception.errno == errno.ENOENT:
                 try:
                     with open(self.mediaLibFile, 'w') as f:
@@ -107,14 +102,15 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 # TODO display error
                 raise
 
-    def setupFileBrowser(self, rcode=None, init=False):
+    @Slot(int)
+    def setupFileBrowser(self, rcode=None, initModel=False):
         """
-        Initializes file browser model
-        @param rcode: return code from library dialog [ignore]
-        @param init: if true, fileSystemModel is initialized
+        Re-initialize file model for file browser treeView and setup mediaLib folder combobox .
+        @param rcode: return code from library dialog (ignore it)
+        @param initModel: if true, fileSystemModel is re-initialized
         """
+        logger.debug("Opening media folder and reading data.")
         try:
-            logger.debug("Opening media folder and reading data.")
             with open(self.mediaLibFile, 'r') as mediaFile:
                 mediaFolders = json.load(mediaFile)
         except IOError:
@@ -126,19 +122,20 @@ class MainApp(QMainWindow, Ui_MainWindow):
             # TODO display error
             raise
 
-        if init:
+        if initModel:
             # init fileSystem model
             self.fileBrowserModel = QFileSystemModel(self)
             self.fileBrowserModel.setRootPath(QDir.rootPath())
             self.fileBrowserModel.setResolveSymlinks(True)
+            # display only supported files (media files) and hide rest
             self.fileBrowserModel.setNameFilterDisables(False)
             self.fileBrowserModel.setNameFilters(FileExtensions)
 
-        # add folder from medialib to folderCombobox
         self.folderCombo.clear()
-        self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))
+        self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))      # get default name
+        # add only valid folders from medialib to folderCombobox
         for folder in mediaFolders:
-            folder = os.path.normpath(folder)
+            folder = os.path.normpath(folder)       # normalize => remove redundant slashes, etc.
             if os.path.isdir(folder):
                 self.folderCombo.addItem(folder)
             else:
@@ -184,10 +181,11 @@ class MainApp(QMainWindow, Ui_MainWindow):
         """
         logger.debug("Change source called.")
 
+        # get only valid source id from sourceBrowser
         if source_id is None:
             table_item = self.sourceBrowser.currentItem()
             try:
-                source_id = int(table_item.text(1))
+                source_id = int(table_item.text(1))         # parent item has no id
             except ValueError:
                 return
 
@@ -206,14 +204,14 @@ class MainApp(QMainWindow, Ui_MainWindow):
             logger.debug("File source has been selected.")
 
         elif source_id == Sources.PLAYLISTS:
-            # TODO implement
             self.sourceType = Sources.PLAYLISTS
             logger.debug("Playlist source has been selected.")
+            # TODO implement playlists
 
         elif source_id == Sources.RADIO:
-            # TODO implement
             self.sourceType = Sources.RADIO
             logger.debug("Radio source has been selected.")
+            # TODO implement radios
 
     @Slot(int)
     def changeFileBrowserRoot(self, index):
@@ -221,7 +219,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         When new folder from folderCombo is selected, update folder browser (sourceItemsBrowser)
         @type index: int
         """
-        # combobox is empty (on reset)
+        # ignore on reset
         if index == -1:
             return
 
@@ -230,16 +228,23 @@ class MainApp(QMainWindow, Ui_MainWindow):
         if newMediaFolder == self.fileBrowserModel.myComputer(Qt.DisplayRole):
             if self.myComputerPathIndex is not None:
                 self.sourceItemsBrowser.setRootIndex(self.myComputerPathIndex)
+                self.fileBrowserModel.setRootPath(QDir.rootPath())
         else:
             folderIndex = self.fileBrowserModel.index(newMediaFolder)
+            # if valid, set given folders as root
             if folderIndex.row() != -1 and folderIndex.column() != -1:
                 self.sourceItemsBrowser.setRootIndex(folderIndex)
+                self.fileBrowserModel.setRootPath(newMediaFolder)
             else:
                 logger.error("Media path from folderCombo could not be found in fileSystemModel!")
                 # TODO emit error
 
     @Slot()
     def openLibraryDialog(self):
+        """
+        When library button is clicked, open library editor dialog.
+        When dialog is closed, refresh media folders combobox.
+        """
         libraryDialog = LibraryDialog(self.mediaLibFile, self)
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
