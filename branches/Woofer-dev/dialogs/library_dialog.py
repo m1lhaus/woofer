@@ -23,12 +23,15 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
     @param mediaLibFile: path to media library file
     @param parent: parent dialog
     """
+
     def __init__(self, mediaLibFile, parent=None):
         super(LibraryDialog, self).__init__(parent)
         self.mediaLibFile = mediaLibFile
         self.mediaFolders = []
+        self.anyChanges = False
         self.setupUi(self)
         self.setupSignals()
+        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
 
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
@@ -42,8 +45,14 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
 
         # fill QListWidget with folders
         for folder in self.mediaFolders:
-            folder = os.path.normpath(folder)
-            self.folderList.addItem(folder)
+            folder = os.path.normpath(folder)       # trim all redundant slashes, etc.
+            folder_item = QListWidgetItem(folder)
+
+            if not os.path.isdir(folder):
+                folder_item.setForeground(QBrush(Qt.red))
+                folder_item.setToolTip("Folder does not exist!")
+
+            self.folderList.addItem(folder_item)
 
     def setupSignals(self):
         self.addBtn.clicked.connect(self.addFolder)
@@ -52,30 +61,34 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
     @Slot()
     def addFolder(self):
         """
-        When add button clicked, file dialog is opened and new directory is added
+        When 'Add' button clicked, system folder dialog is opened and new directory is added
         """
         logger.debug("Opening system file dialog.")
         homeFolder = QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
         newFolder = QFileDialog.getExistingDirectory(self, dir=homeFolder)
 
-        if not newFolder:
-            return
-
-        logger.debug("Selected directory: %s", newFolder)
-        newFolder = os.path.normpath(newFolder)
-        self.mediaFolders.append(newFolder)
-        self.folderList.addItem(newFolder)
+        if newFolder:
+            logger.debug("Selected directory: %s", newFolder)
+            newFolder = os.path.normpath(newFolder)
+            self.mediaFolders.append(newFolder)
+            self.folderList.addItem(newFolder)
+            self.anyChanges = True
 
     @Slot()
     def removeFolder(self):
         """
-        When remove button is clicked, record from folderList and media library is removed.
+        When 'Remove' button is clicked, folder record from folderList and media library is removed.
         """
         index = self.folderList.currentRow()
+        # remove folder_item from listWidget and from list
         self.folderList.takeItem(index)
         del self.mediaFolders[index]
+        self.anyChanges = True
 
     def accept(self):
+        """
+        When 'Save' button is clicked, changes are saved to medialib file.
+        """
         try:
             with open(self.mediaLibFile, 'w') as mediaFile:
                 json.dump(self.mediaFolders, mediaFile)
