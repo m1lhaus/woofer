@@ -4,7 +4,7 @@
 Main application debug launcher.
 """
 
-__version__ = "$Id: launcher.py 6 2013-10-05 15:51:01Z m1lhaus $"
+__version__ = "$Id$"
 
 import logging
 import components.log
@@ -16,12 +16,14 @@ import sys
 
 from PySide.QtGui import QApplication
 
-from dialogs.main_app import MainApp
+from dialogs.main_dialog import MainApp
 
 if __name__ == "__main__":
     logger.debug("Initializing application launcher in debug mode")
 
     app = QApplication(sys.argv)
+    app.setApplicationName("Woofer")
+
     main = MainApp()
     main.show()
     app.exec_()

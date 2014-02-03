@@ -13,19 +13,20 @@
   <property name="windowTitle">
    <string>Woofer</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../icons.qrc">
+    <normaloff>:/new/icons/icons/app_icon.png</normaloff>:/new/icons/icons/app_icon.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <property name="leftMargin">
-     <number>1</number>
+    <property name="horizontalSpacing">
+     <number>0</number>
     </property>
-    <property name="topMargin">
-     <number>1</number>
+    <property name="verticalSpacing">
+     <number>6</number>
     </property>
-    <property name="rightMargin">
-     <number>1</number>
-    </property>
-    <property name="bottomMargin">
-     <number>1</number>
+    <property name="margin">
+     <number>0</number>
     </property>
     <item row="0" column="0">
      <widget class="QSplitter" name="splitter">
@@ -36,12 +37,12 @@
        <number>1</number>
       </property>
       <widget class="QWidget" name="layoutWidget">
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="mainLeftVLayout">
         <property name="spacing">
-         <number>1</number>
+         <number>0</number>
         </property>
         <item>
-         <widget class="QTreeWidget" name="treeWidget">
+         <widget class="QTreeWidget" name="sourceBrowser">
           <property name="maximumSize">
            <size>
             <width>16777215</width>
@@ -62,6 +63,11 @@
             <string>Playback source</string>
            </property>
           </column>
+          <column>
+           <property name="text">
+            <string>ID</string>
+           </property>
+          </column>
           <item>
            <property name="text">
             <string>Music</string>
@@ -69,6 +75,9 @@
            <property name="icon">
             <iconset resource="../icons.qrc">
              <normaloff>:/new/icons/icons/music-cd.png</normaloff>:/new/icons/icons/music-cd.png</iconset>
+           </property>
+           <property name="text">
+            <string/>
            </property>
            <item>
             <property name="text">
@@ -78,6 +87,9 @@
              <iconset resource="../icons.qrc">
               <normaloff>:/new/icons/icons/folder.png</normaloff>:/new/icons/icons/folder.png</iconset>
             </property>
+            <property name="text">
+             <string>0</string>
+            </property>
            </item>
            <item>
             <property name="text">
@@ -86,6 +98,9 @@
             <property name="icon">
              <iconset resource="../icons.qrc">
               <normaloff>:/new/icons/icons/playlist.png</normaloff>:/new/icons/icons/playlist.png</iconset>
+            </property>
+            <property name="text">
+             <string>1</string>
             </property>
            </item>
           </item>
@@ -97,11 +112,64 @@
             <iconset resource="../icons.qrc">
              <normaloff>:/new/icons/icons/radio.png</normaloff>:/new/icons/icons/radio.png</iconset>
            </property>
+           <property name="text">
+            <string>2</string>
+           </property>
           </item>
          </widget>
         </item>
         <item>
-         <widget class="QTreeView" name="treeView">
+         <layout class="QHBoxLayout" name="filterHLayout">
+          <property name="spacing">
+           <number>1</number>
+          </property>
+          <property name="leftMargin">
+           <number>3</number>
+          </property>
+          <property name="topMargin">
+           <number>1</number>
+          </property>
+          <property name="rightMargin">
+           <number>1</number>
+          </property>
+          <property name="bottomMargin">
+           <number>1</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="folderLbl">
+            <property name="text">
+             <string>Folder:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="folderCombo">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="libraryBtn">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../icons.qrc">
+              <normaloff>:/new/icons/icons/settings.png</normaloff>:/new/icons/icons/settings.png</iconset>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTreeView" name="sourceItemsBrowser">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -113,12 +181,12 @@
        </layout>
       </widget>
       <widget class="QWidget" name="layoutWidget">
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout" name="mainRightVLayout">
         <property name="spacing">
          <number>1</number>
         </property>
         <item>
-         <widget class="QTableWidget" name="tableWidget">
+         <widget class="QTableWidget" name="playlist">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -183,7 +251,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QFrame" name="frame">
+         <widget class="QFrame" name="controlsFrame">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -197,30 +265,12 @@
            <enum>QFrame::Plain</enum>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
+           <property name="margin">
             <number>0</number>
            </property>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout">
-             <property name="leftMargin">
-              <number>9</number>
-             </property>
-             <property name="topMargin">
-              <number>9</number>
-             </property>
-             <property name="rightMargin">
-              <number>9</number>
-             </property>
-             <property name="bottomMargin">
+            <layout class="QHBoxLayout" name="controlsHLayout">
+             <property name="margin">
               <number>9</number>
              </property>
              <item>
