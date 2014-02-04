@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
 
 Sources = enumm(FILES=0, PLAYLISTS=1, RADIO=2)
+Message = enum('INFO', 'WARNING', 'ERROR', 'CRITICAL')
 FileExtensions = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
 
 
@@ -33,7 +34,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
     - connects signals from dialogs widgets
     """
 
-    errorEncountered = Signal(int, unicode)
+    errorEncountered = Signal(int, unicode, unicode)
 
     myComputerPathIndex = None
 
@@ -76,8 +77,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
             os.makedirs(self.appDataPath)
         except OSError, exception:
             if exception.errno != errno.EEXIST:
-                logger.exception("Unable to create media library folder on path: %s", self.appDataPath)
-                # TODO display error
+                logger.exception("Unable to create data folder on path: %s", self.appDataPath)
+                self.errorEncountered.emit(Message.CRITICAL, "Unable to create data folder.",
+                                                             "Error number: %s\n"
+                                                             "%s" % (exception.errno, exception.strerror))
                 raise
         else:
             logger.debug("Data folder didn't exist and has been created.")
@@ -92,14 +95,20 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 try:
                     with open(self.mediaLibFile, 'w') as f:
                         f.write('[]')
-                    logger.debug("Media file has been created and initialized.")
                 except IOError:
                     logger.exception("Error when creating new media library file.")
-                    # TODO display error
+                    self.errorEncountered.emit(Message.CRITICAL,
+                                               "Unable to create medialib file and write default data.",
+                                               "Error number: %s\n"
+                                               "%s" % (exception.errno, exception.strerror))
                     raise
+                else:
+                    logger.debug("Media file has been created and initialized.")
             else:
                 logger.exception("Error when reading medialib file.")
-                # TODO display error
+                self.errorEncountered.emit(Message.CRITICAL, "Unable to open and read medialib file.",
+                                                             "Error number: %s\n"
+                                                             "%s" % (exception.errno, exception.strerror))
                 raise
 
     @Slot(int)
@@ -250,9 +259,27 @@ class MainApp(QMainWindow, Ui_MainWindow):
         libraryDialog.exec_()
 
     @Slot(int, unicode)
-    def displayError(self, er_type, text):
-        pass
-        # TODO implement
+    def displayError(self, er_type, text, details):
+        """
+        Called to display information and errors.
+        @param er_type: error type (Message enum)
+        @param text: main text
+        @param details: description
+        """
+        if er_type == Message.INFO:
+            pass
+        elif er_type == Message.WARNING:
+            pass
+        elif er_type == Message.ERROR:
+            pass
+        elif er_type == Message.CRITICAL:
+            msgBox = QMessageBox(self)
+            msgBox.setIcon(QMessageBox.Critical)
+            msgBox.setWindowTitle("Critical error")
+            msgBox.setText(text)
+            msgBox.setInformativeText(details)
+            msgBox.exec_()
+
 
 
 
