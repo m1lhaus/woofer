@@ -3,6 +3,7 @@
 """
 Main application GUI module
 """
+import time
 
 __version__ = "$Id$"
 
@@ -25,6 +26,8 @@ logger.debug('Import ' + __name__)
 Sources = enumm(FILES=0, PLAYLISTS=1, RADIO=2)
 Message = enum('WARNING', 'ERROR', 'CRITICAL')
 FileExtensions = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
+FileExtensions_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
+
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
@@ -61,7 +64,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.sourceBrowser.expandAll()
         self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
         self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
-        # self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
 
     def setupSignals(self):
         self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
@@ -170,24 +173,69 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     @Slot(QPointF)
     def sourceItemsBrowserContextMenu(self, pos):
-        pass
-        # menu = QMenu(self.sourceItemsBrowser)
-        # playNow = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", menu)
-        # addToPlayList = QAction(QIcon(":/new/icons/icons/play-next.png"), "Add to playlist", menu)
-        # separator = QAction(menu)
-        # separator.setSeparator(True)
-        # removeFromDisk = QAction(QIcon(":/new/icons/icons/delete.png"), "Remove from disk", menu)
-        #
-        #
-        # if self.sourceType == Sources.FILES:
-        #     logger.debug("Opening file browser context menu.")
-        #     menu.addActions([playNow, addToPlayList, separator, removeFromDisk])
-        # if self.sourceType == Sources.PLAYLISTS:
-        #     logger.debug("Opening playlist browser context menu.")
-        # if self.sourceType == Sources.RADIO:
-        #     logger.debug("Opening radio browser context menu.")
-        #
-        # menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
+        logger.debug("SourceItemBrowser context menu called.")
+
+        menu = QMenu(self.sourceItemsBrowser)
+        playNow = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", menu)
+        addToPlayList = QAction(QIcon(":/new/icons/icons/play-next.png"), "Add to playlist", menu)
+        playAll = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play all", menu)
+        removeFromDisk = QAction(QIcon(":/new/icons/icons/delete.png"), "Remove from disk", menu)
+        separator = QAction(menu)
+        separator.setSeparator(True)
+
+        # --- FILE BROWSER MODE ---
+        if self.sourceType == Sources.FILES:
+            fileInfo = self.fileBrowserModel.fileInfo(self.sourceItemsBrowser.indexAt(pos))
+            """ @type: QFileInfo """
+            isFile = fileInfo.isFile()
+            isDir = fileInfo.isDir()
+
+            if isFile:
+                actions = [playNow, addToPlayList, separator, removeFromDisk]
+            elif isDir:
+                actions = [playAll, addToPlayList, separator, removeFromDisk]
+                if fileInfo.isRoot():
+                    removeFromDisk.setEnabled(False)        # disable root removing (i.e. C:\)
+            else:
+                return
+
+            menu.addActions(actions)
+            choice = menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
+
+            if choice is playNow:
+                sources = fileInfo.absoluteFilePath()
+                append = False
+
+            elif choice is playAll:
+                # TODO consider multithread implementation !!!
+                sources = []
+                append = False
+                dirIter = QDirIterator(fileInfo.absoluteFilePath(), QDirIterator.Subdirectories | QDirIterator.FollowSymlinks)
+                while dirIter.hasNext():
+                    path = dirIter.next()
+                    if path.endswith(FileExtensions_):
+                        sources.append(path)
+
+            elif choice is addToPlayList:
+                append = True
+                if isFile:
+                    sources = fileInfo.absoluteFilePath()
+                else:
+                    # TODO implement
+                    return
+            elif choice is removeFromDisk:
+                # TODO implement
+                return
+            else:
+                return
+
+            self.addToPlaylist(sources, append=append)
+        # ------------------------
+
+        if self.sourceType == Sources.PLAYLISTS:
+            logger.debug("Opening playlist browser context menu.")
+        if self.sourceType == Sources.RADIO:
+            logger.debug("Opening radio browser context menu.")
 
     @Slot()
     def changeSource(self, source_id=None):
@@ -267,6 +315,16 @@ class MainApp(QMainWindow, Ui_MainWindow):
         libraryDialog = LibraryDialog(self.mediaLibFile, self)
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
+
+    def addToPlaylist(self, source, append):
+        """
+        Sets and adds media files to playlist.
+        @param source: list of paths
+        @type source: list of str or str
+        @param append: append or reset
+        @param append: bool
+        """
+        print "Number of items: ", len(source)
 
     @Slot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u""):
