@@ -154,6 +154,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="libraryBtn">
+            <property name="toolTip">
+             <string>Edit media library</string>
+            </property>
             <property name="text">
              <string/>
             </property>

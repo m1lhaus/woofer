@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uic\mainform.ui'
 #
-# Created: Mon Jan 06 23:10:21 2014
+# Created: Wed Feb 12 14:37:33 2014
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -271,6 +271,7 @@ class Ui_MainWindow(object):
         self.sourceBrowser.topLevelItem(1).setText(1, QtGui.QApplication.translate("MainWindow", "2", None, QtGui.QApplication.UnicodeUTF8))
         self.sourceBrowser.setSortingEnabled(__sortingEnabled)
         self.folderLbl.setText(QtGui.QApplication.translate("MainWindow", "Folder:", None, QtGui.QApplication.UnicodeUTF8))
+        self.libraryBtn.setToolTip(QtGui.QApplication.translate("MainWindow", "Edit media library", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Title", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Favorite", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Duration", None, QtGui.QApplication.UnicodeUTF8))

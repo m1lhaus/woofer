@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
 
 Sources = enumm(FILES=0, PLAYLISTS=1, RADIO=2)
-Message = enum('INFO', 'WARNING', 'ERROR', 'CRITICAL')
+Message = enum('WARNING', 'ERROR', 'CRITICAL')
 FileExtensions = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
 
 
@@ -43,6 +43,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.appRootPath = os.path.dirname(sys.argv[0])
         self.appDataPath = os.path.join(self.appRootPath, 'data')
         self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
+        self.stBarMsgIcon = QLabel(self)
+        self.stBarMsgText = QLabel(self)
         self.setupUi(self)
         self.setupSignals()
 
@@ -58,6 +60,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         super(MainApp, self).setupUi(parent)
         self.sourceBrowser.expandAll()
         self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
+        self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
         # self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
 
     def setupSignals(self):
@@ -66,7 +69,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
         self.sourceItemsBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
 
-        self.errorEncountered.connect(self.displayError)
+        self.errorEncountered.connect(self.displayErrorMsg)
 
     def checkPaths(self):
         """
@@ -122,13 +125,16 @@ class MainApp(QMainWindow, Ui_MainWindow):
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
                 mediaFolders = json.load(mediaFile)
-        except IOError:
+        except IOError, exception:
             logger.exception("Error when reading medialib file.")
-            # TODO display error
+            self.errorEncountered.emit(Message.CRITICAL, "Unable to open and read medialib file.",
+                                                         "Error number: %s\n"
+                                                         "%s" % (exception.errno, exception.strerror))
             raise
-        except Exception:
-            logger.exception("Unable to load mediaFolders from medialib file.")
-            # TODO display error
+        except ValueError, exception:
+            logger.exception("Unable to load and parse data from JSON file.")
+            self.errorEncountered.emit(Message.CRITICAL, "Unable to load and parse data from medialib file.",
+                                                         "Description: %s" % exception.message)
             raise
 
         if initModel:
@@ -148,15 +154,18 @@ class MainApp(QMainWindow, Ui_MainWindow):
             if os.path.isdir(folder):
                 self.folderCombo.addItem(folder)
             else:
-                logger.warning("Path '%s' from medialib doesn't exist.", folder)
+                self.errorEncountered.emit(Message.WARNING, "Some folders in media library do not exist.", "")
 
     def loadSettings(self):
+        # TODO implement QSettings
         pass
 
     def setupPlaylistBrowser(self):
+        # TODO future: implement
         pass
 
     def setupRadioBrowser(self):
+        # TODO future: implement
         pass
 
     @Slot(QPointF)
@@ -215,12 +224,12 @@ class MainApp(QMainWindow, Ui_MainWindow):
         elif source_id == Sources.PLAYLISTS:
             self.sourceType = Sources.PLAYLISTS
             logger.debug("Playlist source has been selected.")
-            # TODO implement playlists
+            # TODO future: implement playlists
 
         elif source_id == Sources.RADIO:
             self.sourceType = Sources.RADIO
             logger.debug("Radio source has been selected.")
-            # TODO implement radios
+            # TODO future: implement radios
 
     @Slot(int)
     def changeFileBrowserRoot(self, index):
@@ -228,25 +237,26 @@ class MainApp(QMainWindow, Ui_MainWindow):
         When new folder from folderCombo is selected, update folder browser (sourceItemsBrowser)
         @type index: int
         """
-        # ignore on reset
         if index == -1:
-            return
+            return          # ignore on reset
 
         newMediaFolder = self.folderCombo.currentText()
 
         if newMediaFolder == self.fileBrowserModel.myComputer(Qt.DisplayRole):
+            # display MyComputer folder (root on Linux)
             if self.myComputerPathIndex is not None:
                 self.sourceItemsBrowser.setRootIndex(self.myComputerPathIndex)
                 self.fileBrowserModel.setRootPath(QDir.rootPath())
         else:
+            # if valid, display given folder as root
             folderIndex = self.fileBrowserModel.index(newMediaFolder)
-            # if valid, set given folders as root
             if folderIndex.row() != -1 and folderIndex.column() != -1:
                 self.sourceItemsBrowser.setRootIndex(folderIndex)
                 self.fileBrowserModel.setRootPath(newMediaFolder)
             else:
                 logger.error("Media path from folderCombo could not be found in fileSystemModel!")
-                # TODO emit error
+                self.errorEncountered.emit(Message.ERROR, "Media folder '%s' could not be found!" % newMediaFolder, "")
+                self.folderCombo.removeItem(self.folderCombo.currentIndex())
 
     @Slot()
     def openLibraryDialog(self):
@@ -258,20 +268,29 @@ class MainApp(QMainWindow, Ui_MainWindow):
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
 
-    @Slot(int, unicode)
-    def displayError(self, er_type, text, details):
+    @Slot(int, unicode, unicode)
+    def displayErrorMsg(self, er_type, text, details=u""):
         """
-        Called to display information and errors.
+        Called to display warnings and errors.
         @param er_type: error type (Message enum)
         @param text: main text
         @param details: description
         """
-        if er_type == Message.INFO:
-            pass
-        elif er_type == Message.WARNING:
-            pass
+        if er_type == Message.WARNING:
+            icon = QPixmap(":/new/icons/icons/warning.png").scaled(14, 14, mode=Qt.SmoothTransformation)
+            self.stBarMsgIcon.setPixmap(icon)
+            self.stBarMsgText.setText(text)
+            self.statusbar.addWidget(self.stBarMsgIcon)
+            self.statusbar.addWidget(self.stBarMsgText)
+            QTimer.singleShot(5000, self.clearErrorMsg)
         elif er_type == Message.ERROR:
-            pass
+            icon = QPixmap(":/new/icons/icons/error.png").scaled(14, 14, mode=Qt.SmoothTransformation)
+            self.stBarMsgIcon.setPixmap(icon)
+            self.stBarMsgText.setText(text)
+            self.statusbar.addWidget(self.stBarMsgIcon )
+            self.statusbar.addWidget(self.stBarMsgText)
+            QTimer.singleShot(10000, self.clearErrorMsg)
+            QApplication.beep()
         elif er_type == Message.CRITICAL:
             msgBox = QMessageBox(self)
             msgBox.setIcon(QMessageBox.Critical)
@@ -279,6 +298,14 @@ class MainApp(QMainWindow, Ui_MainWindow):
             msgBox.setText(text)
             msgBox.setInformativeText(details)
             msgBox.exec_()
+
+    @Slot()
+    def clearErrorMsg(self):
+        """
+        Called to clear statusbar after displaying error message (widgets).
+        """
+        self.statusbar.removeWidget(self.stBarMsgIcon)
+        self.statusbar.removeWidget(self.stBarMsgText)
 
 
 
