@@ -3,7 +3,6 @@
 """
 Main application GUI module
 """
-import time
 
 __version__ = "$Id$"
 
@@ -12,12 +11,14 @@ import sys
 import os
 import errno
 import json
+import time
 
 from PySide.QtGui import *
 from PySide.QtCore import *
 
 from forms.main_form import Ui_MainWindow
 from dialogs.library_dialog import LibraryDialog
+from components.diskbrowser import RecursiveBrowser
 from tools.misc import enumm, enum
 
 logger = logging.getLogger(__name__)
@@ -25,9 +26,8 @@ logger.debug('Import ' + __name__)
 
 Sources = enumm(FILES=0, PLAYLISTS=1, RADIO=2)
 Message = enum('WARNING', 'ERROR', 'CRITICAL')
-FileExtensions = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
-FileExtensions_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
-
+FileExt = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
+FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
@@ -48,6 +48,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
         self.stBarMsgIcon = QLabel(self)
         self.stBarMsgText = QLabel(self)
+        self.progressBar = QProgressBar(self)
+        self.progressLabel = QLabel(self)
         self.setupUi(self)
         self.setupSignals()
 
@@ -147,7 +149,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.fileBrowserModel.setResolveSymlinks(True)
             # display only supported files (media files) and hide rest
             self.fileBrowserModel.setNameFilterDisables(False)
-            self.fileBrowserModel.setNameFilters(FileExtensions)
+            self.fileBrowserModel.setNameFilters(FileExt)
 
         self.folderCombo.clear()
         self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))      # get default name
@@ -183,6 +185,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         separator = QAction(menu)
         separator.setSeparator(True)
 
+        # TODO refactor to own method
         # --- FILE BROWSER MODE ---
         if self.sourceType == Sources.FILES:
             fileInfo = self.fileBrowserModel.fileInfo(self.sourceItemsBrowser.indexAt(pos))
@@ -204,32 +207,49 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
             if choice is playNow:
                 sources = fileInfo.absoluteFilePath()
-                append = False
+                self.addToPlaylist(sources, append=False)
 
             elif choice is playAll:
-                # TODO consider multithread implementation !!!
-                sources = []
-                append = False
-                dirIter = QDirIterator(fileInfo.absoluteFilePath(), QDirIterator.Subdirectories | QDirIterator.FollowSymlinks)
-                while dirIter.hasNext():
-                    path = dirIter.next()
-                    if path.endswith(FileExtensions_):
-                        sources.append(path)
+                # recursively search for media files - multithread implementation
+                targetPath = fileInfo.absoluteFilePath()
+                self.scannerThread = QThread(self)
+                self.diskScanner = RecursiveBrowser(targetPath, appendToPlaylist=False,
+                                                    nameFilter=FileExt_, followSym=False)
+                # when finished, result is send to addToPlaylist() method
+                self.diskScanner.moveToThread(self.scannerThread)
+                self.diskScanner.scanFinished.connect(self.addToPlaylist)
+                self.diskScanner.scanFinished.connect(self.clearProgress)
+                self.diskScanner.scanFinished.connect(self.scannerThread.quit)
+                self.scannerThread.started.connect(self.diskScanner.scanFiles)
+
+                self.displayProgress(u"Searching...")
+                self.scannerThread.start()
 
             elif choice is addToPlayList:
-                append = True
                 if isFile:
                     sources = fileInfo.absoluteFilePath()
+                    self.addToPlaylist(sources, append=True)
                 else:
-                    # TODO implement
-                    return
+                    # recursively search for media files - multithread implementation
+                    targetPath = fileInfo.absoluteFilePath()
+                    self.scannerThread = QThread(self)
+                    self.diskScanner = RecursiveBrowser(targetPath, appendToPlaylist=True,
+                                                        nameFilter=FileExt_, followSym=False)
+                    # when finished, result is send to addToPlaylist() method
+                    self.diskScanner.moveToThread(self.scannerThread)
+                    self.diskScanner.scanFinished.connect(self.addToPlaylist)
+                    self.diskScanner.scanFinished.connect(self.clearProgress)
+                    self.diskScanner.scanFinished.connect(self.scannerThread.quit)
+                    self.scannerThread.started.connect(self.diskScanner.scanFiles)
+
+                    self.displayProgress(u"Searching...")
+                    self.scannerThread.start()
             elif choice is removeFromDisk:
                 # TODO implement
                 return
             else:
                 return
 
-            self.addToPlaylist(sources, append=append)
         # ------------------------
 
         if self.sourceType == Sources.PLAYLISTS:
@@ -316,6 +336,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
 
+    @Slot(list, bool)
     def addToPlaylist(self, source, append):
         """
         Sets and adds media files to playlist.
@@ -340,6 +361,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.stBarMsgText.setText(text)
             self.statusbar.addWidget(self.stBarMsgIcon)
             self.statusbar.addWidget(self.stBarMsgText)
+            self.stBarMsgIcon.show()
+            self.stBarMsgText.show()
             QTimer.singleShot(5000, self.clearErrorMsg)
         elif er_type == Message.ERROR:
             icon = QPixmap(":/new/icons/icons/error.png").scaled(14, 14, mode=Qt.SmoothTransformation)
@@ -347,6 +370,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.stBarMsgText.setText(text)
             self.statusbar.addWidget(self.stBarMsgIcon )
             self.statusbar.addWidget(self.stBarMsgText)
+            self.stBarMsgIcon.show()
+            self.stBarMsgText.show()
             QTimer.singleShot(10000, self.clearErrorMsg)
             QApplication.beep()
         elif er_type == Message.CRITICAL:
@@ -364,6 +389,51 @@ class MainApp(QMainWindow, Ui_MainWindow):
         """
         self.statusbar.removeWidget(self.stBarMsgIcon)
         self.statusbar.removeWidget(self.stBarMsgText)
+
+    def displayProgress(self, description, minimum=0, maximum=0):
+        """
+        Called to show progress bar and label in statusbar to inform user when some action on background is running.
+        When minimum and maximum attributes are not set (zero), busy progress bar is shown.
+        @type description: unicode
+        @type minimum: int
+        @type maximum: int
+        """
+        self.progressBar.setMaximumSize(200, self.progressBar.minimumSizeHint().height())
+        self.progressBar.setMinimum(minimum)
+        self.progressBar.setMaximum(maximum)
+        self.progressLabel.setText(description)
+
+        self.statusbar.addPermanentWidget(self.progressLabel)
+        self.statusbar.addPermanentWidget(self.progressBar)
+        # show widgets if not visible <= removeWidget() hides widgets
+        self.progressBar.show()
+        self.progressLabel.show()
+
+    def updateProgress(self, value, description=None, minimum=None, maximum=None):
+        """
+        Called to update value on progressBar or label when showing progress
+        @type value: int
+        @type description: unicode
+        @type minimum: int
+        @type maximum: int
+        """
+        self.progressBar.setValue(value)
+
+        if minimum is not None:
+            self.progressBar.setMinimum(minimum)
+        if maximum is not None:
+            self.progressBar.setMaximum(maximum)
+        if description is not None:
+            self.progressLabel.setText(description)
+
+    def clearProgress(self):
+        """
+        Hides progress bar and label from statusbar when showing progress
+        """
+        self.statusbar.removeWidget(self.progressLabel)
+        self.statusbar.removeWidget(self.progressBar)
+
+
 
 
 
