@@ -19,7 +19,7 @@ class RecursiveBrowser(QObject):
 
     scanFinished = Signal(list, bool)
 
-    def __init__(self, targetDir, appendToPlaylist, nameFilter=None, followSym=False):
+    def __init__(self, targetDir, append, nameFilter=None, followSym=False):
         """
         @type targetDir: unicode
         @type nameFilter: tuple of str
@@ -27,7 +27,7 @@ class RecursiveBrowser(QObject):
         """
         super(RecursiveBrowser, self).__init__()
         self.targetDir = targetDir
-        self.appendToPlayList = appendToPlaylist
+        self.appendToPlayList = append
         self.followSym = followSym
         self.result = []
         self.nameFilter = nameFilter

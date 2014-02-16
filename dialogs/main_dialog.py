@@ -19,13 +19,13 @@ from PySide.QtCore import *
 from forms.main_form import Ui_MainWindow
 from dialogs.library_dialog import LibraryDialog
 from components.diskbrowser import RecursiveBrowser
-from tools.misc import enumm, enum
+from tools import misc
 
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
 
-Sources = enumm(FILES=0, PLAYLISTS=1, RADIO=2)
-Message = enum('WARNING', 'ERROR', 'CRITICAL')
+Sources = misc.enum(FILES=0, PLAYLISTS=1, RADIO=2)
+Message = misc.enum('WARNING', 'ERROR', 'CRITICAL')
 FileExt = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
 FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
 
@@ -175,8 +175,32 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     @Slot(QPointF)
     def sourceItemsBrowserContextMenu(self, pos):
-        logger.debug("SourceItemBrowser context menu called.")
+        """
+        SourceItemsBrowser treeView context menu method.
+        Method creates context menu depending on source type (files, playlist, radios).
+        @type pos: QPointF
+        """
+        logger.debug("SourceItemBrowser context menu called. Choosing appropriate context menu...")
 
+        if self.sourceType == Sources.FILES:
+            self.fileBrowserContextMenu(pos)
+
+        if self.sourceType == Sources.PLAYLISTS:
+            logger.debug("Opening playlist browser context menu.")
+
+        if self.sourceType == Sources.RADIO:
+            logger.debug("Opening radio browser context menu.")
+
+    def fileBrowserContextMenu(self, pos):
+        """
+        Context menu for file browser treeView.
+        @type pos: QPointF
+        """
+        fileInfo = self.fileBrowserModel.fileInfo(self.sourceItemsBrowser.indexAt(pos))
+        isFile = fileInfo.isFile()
+        isDir = fileInfo.isDir()
+
+        # menu setup
         menu = QMenu(self.sourceItemsBrowser)
         playNow = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", menu)
         addToPlayList = QAction(QIcon(":/new/icons/icons/play-next.png"), "Add to playlist", menu)
@@ -185,36 +209,49 @@ class MainApp(QMainWindow, Ui_MainWindow):
         separator = QAction(menu)
         separator.setSeparator(True)
 
-        # TODO refactor to own method
-        # --- FILE BROWSER MODE ---
-        if self.sourceType == Sources.FILES:
-            fileInfo = self.fileBrowserModel.fileInfo(self.sourceItemsBrowser.indexAt(pos))
-            """ @type: QFileInfo """
-            isFile = fileInfo.isFile()
-            isDir = fileInfo.isDir()
+        if isFile:
+            menu.addActions([playNow, addToPlayList, separator, removeFromDisk])
+        elif isDir:
+            menu.addActions([playAll, addToPlayList, separator, removeFromDisk])
+            if fileInfo.isRoot():
+                removeFromDisk.setEnabled(False)        # disable root removing (i.e. C:\)
+        else:
+            logger.error("Unknown media type on '%s'", fileInfo.absoluteFilePath())
+            return
 
-            if isFile:
-                actions = [playNow, addToPlayList, separator, removeFromDisk]
-            elif isDir:
-                actions = [playAll, addToPlayList, separator, removeFromDisk]
-                if fileInfo.isRoot():
-                    removeFromDisk.setEnabled(False)        # disable root removing (i.e. C:\)
-            else:
-                return
+        logger.debug("Opening file browser context menu.")
+        choice = menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
 
-            menu.addActions(actions)
-            choice = menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
-
-            if choice is playNow:
+        # one file
+        if choice is playNow:
                 sources = fileInfo.absoluteFilePath()
                 self.addToPlaylist(sources, append=False)
 
-            elif choice is playAll:
-                # recursively search for media files - multithread implementation
+        # multiple files
+        elif choice is playAll:
+            # recursively search for media files (multithreaded)
+            targetPath = fileInfo.absoluteFilePath()
+            self.scannerThread = QThread(self)
+            self.diskScanner = RecursiveBrowser(targetPath, append=False, nameFilter=FileExt_, followSym=False)
+            # when finished, result is send to addToPlaylist() method
+            self.diskScanner.moveToThread(self.scannerThread)
+            self.diskScanner.scanFinished.connect(self.addToPlaylist)
+            self.diskScanner.scanFinished.connect(self.clearProgress)
+            self.diskScanner.scanFinished.connect(self.scannerThread.quit)
+            self.scannerThread.started.connect(self.diskScanner.scanFiles)
+
+            self.displayProgress(u"Searching...")
+            self.scannerThread.start()
+
+        elif choice is addToPlayList:
+            if isFile:
+                sources = fileInfo.absoluteFilePath()
+                self.addToPlaylist(sources, append=True)
+            else:
+                # recursively search for media files (multithreaded)
                 targetPath = fileInfo.absoluteFilePath()
                 self.scannerThread = QThread(self)
-                self.diskScanner = RecursiveBrowser(targetPath, appendToPlaylist=False,
-                                                    nameFilter=FileExt_, followSym=False)
+                self.diskScanner = RecursiveBrowser(targetPath, append=True, nameFilter=FileExt_, followSym=False)
                 # when finished, result is send to addToPlaylist() method
                 self.diskScanner.moveToThread(self.scannerThread)
                 self.diskScanner.scanFinished.connect(self.addToPlaylist)
@@ -225,37 +262,14 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 self.displayProgress(u"Searching...")
                 self.scannerThread.start()
 
-            elif choice is addToPlayList:
-                if isFile:
-                    sources = fileInfo.absoluteFilePath()
-                    self.addToPlaylist(sources, append=True)
-                else:
-                    # recursively search for media files - multithread implementation
-                    targetPath = fileInfo.absoluteFilePath()
-                    self.scannerThread = QThread(self)
-                    self.diskScanner = RecursiveBrowser(targetPath, appendToPlaylist=True,
-                                                        nameFilter=FileExt_, followSym=False)
-                    # when finished, result is send to addToPlaylist() method
-                    self.diskScanner.moveToThread(self.scannerThread)
-                    self.diskScanner.scanFinished.connect(self.addToPlaylist)
-                    self.diskScanner.scanFinished.connect(self.clearProgress)
-                    self.diskScanner.scanFinished.connect(self.scannerThread.quit)
-                    self.scannerThread.started.connect(self.diskScanner.scanFiles)
-
-                    self.displayProgress(u"Searching...")
-                    self.scannerThread.start()
-            elif choice is removeFromDisk:
-                # TODO implement
-                return
-            else:
-                return
-
-        # ------------------------
-
-        if self.sourceType == Sources.PLAYLISTS:
-            logger.debug("Opening playlist browser context menu.")
-        if self.sourceType == Sources.RADIO:
-            logger.debug("Opening radio browser context menu.")
+        elif choice is removeFromDisk:
+            path = fileInfo.absoluteFilePath()
+            logger.debug("Moving path '%s' to Trash", path)
+            try:
+                misc.moveToTrash(path)
+            except OSError, exception:
+                self.errorEncountered.emit(Message.ERROR, "Unable to move path to Trash path '%s'!" % path,
+                                                          "Details: %s" % exception.message)
 
     @Slot()
     def changeSource(self, source_id=None):
@@ -358,7 +372,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         if er_type == Message.WARNING:
             icon = QPixmap(":/new/icons/icons/warning.png").scaled(14, 14, mode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
-            self.stBarMsgText.setText(text)
+            self.stBarMsgText.setText(text + ' ' + details)
             self.statusbar.addWidget(self.stBarMsgIcon)
             self.statusbar.addWidget(self.stBarMsgText)
             self.stBarMsgIcon.show()
@@ -367,8 +381,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         elif er_type == Message.ERROR:
             icon = QPixmap(":/new/icons/icons/error.png").scaled(14, 14, mode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
-            self.stBarMsgText.setText(text)
-            self.statusbar.addWidget(self.stBarMsgIcon )
+            self.stBarMsgText.setText(text + ' ' + details)
+            self.statusbar.addWidget(self.stBarMsgIcon)
             self.statusbar.addWidget(self.stBarMsgText)
             self.stBarMsgIcon.show()
             self.stBarMsgText.show()
