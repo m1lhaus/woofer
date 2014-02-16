@@ -12,6 +12,7 @@ import os
 import errno
 import json
 import time
+import datetime
 
 from PySide.QtGui import *
 from PySide.QtCore import *
@@ -20,6 +21,7 @@ from forms.main_form import Ui_MainWindow
 from dialogs.library_dialog import LibraryDialog
 from components.diskbrowser import RecursiveBrowser
 from tools import misc
+from components import vlc
 
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
@@ -65,6 +67,12 @@ class MainApp(QMainWindow, Ui_MainWindow):
         super(MainApp, self).setupUi(parent)
         self.sourceBrowser.expandAll()
         self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
+        self.playlist.setColumnHidden(self.playlist.columnCount() - 1, True)
+        header = self.playlist.horizontalHeader()
+        header.setResizeMode(0, QHeaderView.Stretch)
+        header.setResizeMode(1, QHeaderView.Fixed)
+        header.setResizeMode(2, QHeaderView.ResizeToContents)
+        self.playlist.setColumnWidth(1, 100)
         self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
         self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
 
@@ -359,7 +367,64 @@ class MainApp(QMainWindow, Ui_MainWindow):
         @param append: append or reset
         @param append: bool
         """
-        print "Number of items: ", len(source)
+
+        vlcInstance = vlc.Instance()
+        colCount = self.playlist.columnCount()
+        pathCol = colCount - 1
+
+        # for single file only
+        if isinstance(source, str) or isinstance(source, unicode):
+
+            titleItem = QTableWidgetItem(os.path.basename(source))
+            # durationItem = QTableWidgetItem(QTime().addMSecs(duration).toString("hh:mm:ss"))
+            pathItem = QTableWidgetItem(source)
+
+            if append:
+                index = self.playlist.rowCount()
+                self.playlist.insertRow(index)
+            else:
+                index = 0
+                self.playlist.setRowCount(1)
+
+            self.playlist.setItem(index, 0, titleItem)
+            self.playlist.setItem(index, pathCol, pathItem)
+            # self.playlist.setItem(index, 2, durationItem)
+
+        # for multiple files
+        elif isinstance(source, list) or isinstance(source, tuple):
+            # t0 = time.time()
+
+            n = len(source)
+            if append:
+                last = self.playlist.rowCount()
+                self.playlist.setRowCount(last + n)
+                for i in range(n):
+                    path = source[i]
+                    # byte_path = path.encode("utf8")
+                    # mMedia = vlcInstance.media_new(byte_path)
+                    # mMedia.parse()
+                    # print mMedia.get_duration(), path
+                    # mMedia.release()
+
+                    titleItem = QTableWidgetItem(os.path.basename(path))
+                    # durationItem = QTableWidgetItem(QTime().addMSecs(duration).toString("hh:mm:ss"))
+                    pathItem = QTableWidgetItem(path)
+                    self.playlist.setItem(last + i, 0, titleItem)
+                    self.playlist.setItem(last + i, pathCol, pathItem)
+                    # self.playlist.setItem(last + i, 2, durationItem)
+
+            else:
+                self.playlist.setRowCount(n)
+                for i in range(n):
+                    path = source[i]
+                    pathItem = QTableWidgetItem(path)
+                    titleItem = QTableWidgetItem(os.path.basename(path))
+                    self.playlist.setItem(i, 0, titleItem)
+                    self.playlist.setItem(i, pathCol, pathItem)
+
+            # t1 = time.time()
+            # print (t1-t0) * 1000
+            vlcInstance.release()
 
     @Slot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u""):
