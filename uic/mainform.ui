@@ -214,9 +214,6 @@
           <property name="gridStyle">
            <enum>Qt::DotLine</enum>
           </property>
-          <property name="rowCount">
-           <number>10</number>
-          </property>
           <attribute name="horizontalHeaderDefaultSectionSize">
            <number>200</number>
           </attribute>
@@ -226,16 +223,6 @@
           <attribute name="verticalHeaderDefaultSectionSize">
            <number>19</number>
           </attribute>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
           <column>
            <property name="text">
             <string>Title</string>
@@ -249,6 +236,11 @@
           <column>
            <property name="text">
             <string>Duration</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Path</string>
            </property>
           </column>
          </widget>

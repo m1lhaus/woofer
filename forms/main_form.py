@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uic\mainform.ui'
 #
-# Created: Wed Feb 12 14:37:33 2014
+# Created: Sun Feb 16 16:09:39 2014
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -106,16 +106,17 @@ class Ui_MainWindow(object):
         self.playlist.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         self.playlist.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.playlist.setGridStyle(QtCore.Qt.DotLine)
-        self.playlist.setRowCount(10)
         self.playlist.setObjectName("playlist")
-        self.playlist.setColumnCount(3)
-        self.playlist.setRowCount(10)
+        self.playlist.setColumnCount(4)
+        self.playlist.setRowCount(0)
         item = QtGui.QTableWidgetItem()
         self.playlist.setHorizontalHeaderItem(0, item)
         item = QtGui.QTableWidgetItem()
         self.playlist.setHorizontalHeaderItem(1, item)
         item = QtGui.QTableWidgetItem()
         self.playlist.setHorizontalHeaderItem(2, item)
+        item = QtGui.QTableWidgetItem()
+        self.playlist.setHorizontalHeaderItem(3, item)
         self.playlist.horizontalHeader().setDefaultSectionSize(200)
         self.playlist.verticalHeader().setVisible(True)
         self.playlist.verticalHeader().setDefaultSectionSize(19)
@@ -275,6 +276,7 @@ class Ui_MainWindow(object):
         self.playlist.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Title", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Favorite", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Duration", None, QtGui.QApplication.UnicodeUTF8))
+        self.playlist.horizontalHeaderItem(3).setText(QtGui.QApplication.translate("MainWindow", "Path", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("MainWindow", "00:00", None, QtGui.QApplication.UnicodeUTF8))
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "Media", None, QtGui.QApplication.UnicodeUTF8))
         self.menuPlayback.setTitle(QtGui.QApplication.translate("MainWindow", "Playback", None, QtGui.QApplication.UnicodeUTF8))
