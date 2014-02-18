@@ -368,9 +368,12 @@ class MainApp(QMainWindow, Ui_MainWindow):
         @param append: bool
         """
 
-        vlcInstance = vlc.Instance()
+        # vlcInstance = vlc.Instance()
         colCount = self.playlist.columnCount()
         pathCol = colCount - 1
+
+        # errRedirector = misc.RedirectDescriptor()
+        # errRedirector.redirect_C_stderr_null()
 
         # for single file only
         if isinstance(source, str) or isinstance(source, unicode):
@@ -403,7 +406,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     # byte_path = path.encode("utf8")
                     # mMedia = vlcInstance.media_new(byte_path)
                     # mMedia.parse()
-                    # print mMedia.get_duration(), path
+                    # duration = mMedia.get_duration()
                     # mMedia.release()
 
                     titleItem = QTableWidgetItem(os.path.basename(path))
@@ -424,7 +427,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
             # t1 = time.time()
             # print (t1-t0) * 1000
-            vlcInstance.release()
+
+
+            # errRedirector.redirect_C_stderr_back()
+            # vlcInstance.release()
 
     @Slot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u""):
