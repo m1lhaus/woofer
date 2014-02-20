@@ -15,6 +15,7 @@ from PySide.QtGui import *
 from PySide.QtCore import *
 
 from components import vlc
+from tools.misc import unicode2bytes
 
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
@@ -75,86 +76,84 @@ class MediaPlayer(QObject):
 
     def setSource(self, source_path):
         """
-        Set the media source that will be used by the media_player.
-        @param source_path: path to media file (unicode not supported)
-        @type source_path: str
-        @raise ValueError: If given source path not exist
+        Sets the media source that will be played by the media_player.
+        @param source_path: path to media file
+        @type source_path: str or unicode
         """
-        # because vlc works with bytes address (string -> bytes), source must be in str (ascii)
-        # but os.path can't handle nonAscii characters => converts to unicode
-        unicode_source_path = unicode(source_path, "utf-8")
-        if not os.path.isfile(unicode_source_path):
-            logger.error("Given source path is invalid: %s", source_path)
-            raise ValueError("Given source path '%s' is invalid" % source_path)
+        unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
 
-        self.stop()
+        # if path exists
+        if not os.path.isfile(unicode_path):
+            self.error.emit("Given media file '%s' does not exist!" % source_path)
+            return
 
         # empty the media list
         logger.debug("Deleting items from media list")
+        self.stop()
         self.source_list = []
         self.clearList()
 
         # put the media to media list
         self._media_list.lock()
-        self._media_list.add_media(self.instance.media_new(source_path))
+        self._media_list.add_media(self.instance.media_new(byte_path))
         self._media_list.unlock()
 
         self._media_player.set_media(self._media_list.item_at_index(0))
-        self.source_list.append(source_path)
+        self.source_list.append(unicode_path)
 
         logger.debug("New media source set to: %s", source_path)
 
-    def addSource(self, item):
+    def addSource(self, source_path):
         """
-        Adds one or more new MRLs to media list (queue).
+        Adds one new media path to media list (queue).
         If player has no media set, method automatically sets added media as current.
-        @param item: one or more source path in ascii str
-        @type item: str or tuple of str or list of str
-        @raise ValueError: if given param is unsupported or mrl path is invalid
+        @type source_path: str or unicode
         """
-        has_media = bool(self.getMedia())
+        unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
 
-        # for MULTIPLE items
-        if isinstance(item, list) or isinstance(item, tuple):
-            for single_item in item:
-                # because vlc works with bytes address (string -> bytes), source must be in str (ascii)
-                # but os.path can't handle nonAscii characters => converts to unicode
-                unicode_source_path = unicode(single_item, "utf-8")
-                if not os.path.isfile(unicode_source_path):
-                    logger.error("Given mrl path is invalid: %s", unicode_source_path)
-                    raise ValueError("Given mrl path is invalid. Could not locate the file on disk!")
+        # if path exists
+        if not os.path.isfile(unicode_path):
+            self.error.emit("Given media file '%s' does not exist!" % source_path)
+            return
 
-                logger.debug("Adding new mrl: %s", single_item)
-                media = self.instance.media_new(single_item)
+        logger.debug("Adding new media source: %s", source_path)
+        media = self.instance.media_new(byte_path)
+        self._media_list.lock()
+        self._media_list.add_media(media)
+        self._media_list.unlock()
+        self.source_list.append(unicode_path)
+
+        if not bool(self.getMedia()):
+            logger.debug("Player has no media set, setting current media %s", source_path)
+            self._media_player.set_media(media)
+
+    def addSources(self, sources):
+        """
+        Appends list of new media paths to media list (queue).
+        If player has no media set, method automatically sets first media path from list as current.
+        @type sources: list of str or list of unicode
+        """
+        logger.debug("Adding new media sources.")
+
+        try:
+            self._media_list.lock()
+            for single_path in sources:
+                unicode_path, byte_path = unicode2bytes(single_path)            # vlc needs byte array (ascii str)
+
+                # if path exists
+                if not os.path.isfile(unicode_path):
+                    self.error.emit("Given media file '%s' does not exist!" % single_path)
+                    return
+
+                media = self.instance.media_new(byte_path)
                 self._media_list.add_media(media)
-                self.source_list.append(single_item)
+                self.source_list.append(unicode_path)
+        finally:
+            self._media_list.unlock()
 
-                if not has_media:
-                    logger.debug("Player has no media set, setting current media %s", item)
-                    self._media_player.set_media(media)
-                    has_media = True
-
-        # for SINGLE item
-        elif isinstance(item, str):
-            unicode_source_path = unicode(item, "utf-8")
-            if not os.path.isfile(unicode_source_path):
-                logger.error("Given mrl path is invalid: %s", unicode_source_path)
-                raise ValueError("Given mrl path is invalid. Could not locate the file on disk!")
-
-            logger.debug("Adding new mrl: %s", item)
-            media = self.instance.media_new(item)
-            self._media_list.add_media(media)
-            self.source_list.append(item)
-
-            if not has_media:
-                logger.debug("Player has no media set, setting current media %s", item)
-                self._media_player.set_media(media)
-                has_media = True
-
-        else:
-            logger.error("Unsupported mrl parameter type, type: %s", type(item))
-            raise ValueError("Unsupported parameter type. Only list and tuple are supported for multiple items "
-                             "or str for single item. Given type: %s" % type(item))
+        if not bool(self.getMedia()):
+            logger.debug("Player has no media set, setting first media from list %s", sources[0])
+            self._media_player.set_media(self._media_list.item_at_index(0))
 
     def clearList(self):
         """

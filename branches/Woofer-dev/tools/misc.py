@@ -7,7 +7,7 @@ __version__ = "$Id$"
 
 import os
 import sys
-
+from contextlib import contextmanager
 
 def enum(*sequential, **named):
     """
@@ -28,6 +28,24 @@ def moveToTrash(file_path):
     """
     from send2trash import send2trash
     send2trash(file_path)
+
+
+def unicode2bytes(string):
+    """
+    Converts string (basestring) to unicode and byte string (ascii str).
+    @type string: str or unicode
+    @rtype: (unicode, str)
+    """
+    assert isinstance(string, basestring)
+
+    if isinstance(string, unicode):
+        byte_str = string.encode("utf8")
+        unicode_str = string
+    else:
+        byte_str = string
+        unicode_str = unicode(string, "utf-8")
+
+    return unicode_str, byte_str
 
 
 class RedirectDescriptor(object):
@@ -55,4 +73,47 @@ class RedirectDescriptor(object):
         sys.stderr.flush()
         os.dup2(self.desc_backup, 2)
         sys.stderr = os.fdopen(2, 'w')                      # backuped descriptor is closed automatically
+
+
+@contextmanager
+def stderr_redirected(to=os.devnull):
+    """
+    Redirects stderr to new device (nulldev is default).
+    """
+
+    fd = sys.stderr.fileno()
+
+    def _redirect_stderr(to, py_to=None):
+        print "fd", fd
+        # sys.stderr.close()                          # + implicit flush()
+        os.dup2(to.fileno(), fd)             # fd writes to 'to' file
+        sys.stderr = os.fdopen(py_to.fileno(), 'w')         # Python writes to fd
+        print "fd", fd
+        # sys.stderr = os.fdopen(fd, 'w')         # Python writes to fd
+        print sys.stderr.fileno()
+
+    def get_back(old_stderr):
+        print sys.stderr.fileno()
+        os.dup2(3, fd)             # fd writes to 'to' file
+        # sys.stderr.close()
+        sys.stderr = os.fdopen(fd, 'w')         # Python writes to fd
+        print sys.stderr.writable()
+        print sys.stderr.fileno()
+
+    with os.fdopen(os.dup(fd), 'w') as old_stderr:      # zavře 3
+        with open(to, 'w') as f:                        # zavře 4ku
+            _redirect_stderr(to=f, py_to=old_stderr)
+        try:
+            yield                                   # allow code to be run with the redirected stdout
+        finally:
+            pass
+            # _redirect_stderr(to=old_stderr)         # restore stdout.
+            get_back(old_stderr)                                        # buffering and flags such as
+                                                    # CLOEXEC may be different
+
+
+    # os.close(3)
+
+
+
 
