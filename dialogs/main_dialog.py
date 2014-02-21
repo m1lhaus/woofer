@@ -19,7 +19,7 @@ from PySide.QtCore import *
 
 from forms.main_form import Ui_MainWindow
 from dialogs.library_dialog import LibraryDialog
-from components.diskbrowser import RecursiveBrowser
+from components.disk_browser import RecursiveBrowser
 from tools import misc
 from components import vlc
 

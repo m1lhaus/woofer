@@ -41,15 +41,13 @@ class MediaPlayer(QObject):
 
         self.instance = vlc.Instance()
         """@type: vlc.Instance"""
-
-        logger.debug("Created instance of VLC player")
-
         self._media_player = self.instance.media_player_new()
         """@type: vlc.MediaPlayer"""
         self._media_list_player = self.instance.media_list_player_new()
         """@type: vlc.MediaListPlayer"""
         self._media_list = self.instance.media_list_new()
         """@type: vlc.MediaList"""
+        logger.debug("Core instances of VLC player created")
 
         # connect player and media list with media_list_player
         self._media_list_player.set_media_player(self._media_player)
@@ -80,6 +78,8 @@ class MediaPlayer(QObject):
         @param source_path: path to media file
         @type source_path: str or unicode
         """
+        assert source_path
+
         unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
 
         # if path exists
@@ -109,6 +109,8 @@ class MediaPlayer(QObject):
         If player has no media set, method automatically sets added media as current.
         @type source_path: str or unicode
         """
+        assert source_path
+
         unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
 
         # if path exists
@@ -133,8 +135,9 @@ class MediaPlayer(QObject):
         If player has no media set, method automatically sets first media path from list as current.
         @type sources: list of str or list of unicode
         """
-        logger.debug("Adding new media sources.")
+        assert sources
 
+        logger.debug("Adding new media sources.")
         try:
             self._media_list.lock()
             for single_path in sources:
@@ -155,6 +158,13 @@ class MediaPlayer(QObject):
             logger.debug("Player has no media set, setting first media from list %s", sources[0])
             self._media_player.set_media(self._media_list.item_at_index(0))
 
+    def addMedia(self, media):
+        assert isinstance(media, vlc.Media)
+
+        self._media_list.lock()
+        self._media_list.add_media(media)
+        self._media_list.unlock()
+
     def clearList(self):
         """
         Clears all existing items in media_list
@@ -174,11 +184,7 @@ class MediaPlayer(QObject):
         @rtype: str or None
         """
         media = self.getMedia()
-
-        if media:
-            return media.get_mrl()
-        else:
-            return None
+        return media.get_mrl() if media else None
 
     def getMedia(self):
         """
@@ -389,9 +395,3 @@ class MediaPlayer(QObject):
     @Slot()
     def timer_tick(self):
         self.tick.emit(self.currentTime())
-
-
-class RadioPlayer(QObject):
-    """
-    Internet radio streaming class
-    """
