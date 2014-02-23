@@ -19,7 +19,8 @@ from PySide.QtCore import *
 
 from forms.main_form import Ui_MainWindow
 from dialogs.library_dialog import LibraryDialog
-from components.disk_browser import RecursiveBrowser
+from components import disk
+from components import media
 from tools import misc
 from components import vlc
 
@@ -40,6 +41,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
     """
 
     errorEncountered = Signal(int, unicode, unicode)
+    scanFiles = Signal(unicode)
 
     myComputerPathIndex = None
 
@@ -52,13 +54,13 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.stBarMsgText = QLabel(self)
         self.progressBar = QProgressBar(self)
         self.progressLabel = QLabel(self)
+        self.appendToPlaylist = False
         self.setupUi(self)
-        self.setupSignals()
-
         self.checkPaths()
         self.setupFileBrowser(initModel=True)
-        # self.setupPlaylistBrowser()
-        # self.setupRadioBrowser()
+        self.setupPlayer()
+        self.setupScanner()
+        self.setupGUISignals()
 
         self.changeSource(Sources.FILES)        # display file browser as default
         logger.debug("Main application dialog initialized")
@@ -76,13 +78,47 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
         self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
 
-    def setupSignals(self):
+    def setupGUISignals(self):
         self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
         self.folderCombo.currentIndexChanged.connect(self.changeFileBrowserRoot)
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
         self.sourceItemsBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
 
         self.errorEncountered.connect(self.displayErrorMsg)
+
+        self.playPauseBtn.clicked.connect(self.mediaPlayer.playPause)
+        self.stopBtn.clicked.connect(self.mediaPlayer.stop)
+        self.nextBtn.clicked.connect(self.mediaPlayer.next)
+        self.previousBtn.clicked.connect(self.mediaPlayer.prev)
+
+    def setupPlayer(self):
+        self.mediaPlayer = media.MediaPlayer()
+        self.mediaPlayerThread = QThread(self)
+        self.mediaPlayer.moveToThread(self.mediaPlayerThread)
+
+        self.mediaPlayer.mediaAdded.connect(self.addToPlaylist)
+
+        self.mediaPlayerThread.start()
+
+    def setupScanner(self):
+        # asynchronous scanner
+        self.scanner = disk.RecursiveBrowser(nameFilter=FileExt_, followSym=False)
+        self.scannerThread = QThread(self)
+        self.scanner.moveToThread(self.scannerThread)
+        # asynchronous parser
+        self.parser = media.MediaParser()
+        self.parserThread = QThread(self)
+        self.parser.moveToThread(self.parserThread)
+
+        self.scanFiles.connect(self.scanner.scanFiles)
+        self.parser.finished.connect(self.printTime)    # FIXME debug only
+        self.parser.finished.connect(self.clearProgress)
+        self.parser.finished.connect(self.scanner.finish)
+        self.parser.parsed.connect(self.mediaPlayer.addMediaList)
+        self.scanner.parseData.connect(self.parser.parseMedia)
+
+        self.scannerThread.start()
+        self.parserThread.start()
 
     def checkPaths(self):
         """
@@ -188,6 +224,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         Method creates context menu depending on source type (files, playlist, radios).
         @type pos: QPointF
         """
+
         logger.debug("SourceItemBrowser context menu called. Choosing appropriate context menu...")
 
         if self.sourceType == Sources.FILES:
@@ -199,7 +236,13 @@ class MainApp(QMainWindow, Ui_MainWindow):
         if self.sourceType == Sources.RADIO:
             logger.debug("Opening radio browser context menu.")
 
+    def printTime(self):
+        print (time.time() - self.t0) * 1000
+
     def fileBrowserContextMenu(self, pos):
+
+        self.t0 = time.time()
+
         """
         Context menu for file browser treeView.
         @type pos: QPointF
@@ -230,46 +273,31 @@ class MainApp(QMainWindow, Ui_MainWindow):
         logger.debug("Opening file browser context menu.")
         choice = menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
 
-        # one file
+        # PLAY NOW
         if choice is playNow:
-                sources = fileInfo.absoluteFilePath()
-                self.addToPlaylist(sources, append=False)
-
-        # multiple files
-        elif choice is playAll:
-            # recursively search for media files (multithreaded)
+            self.appendToPlaylist = False
             targetPath = fileInfo.absoluteFilePath()
-            self.scannerThread = QThread(self)
-            self.diskScanner = RecursiveBrowser(targetPath, append=False, nameFilter=FileExt_, followSym=False)
-            # when finished, result is send to addToPlaylist() method
-            self.diskScanner.moveToThread(self.scannerThread)
-            self.diskScanner.scanFinished.connect(self.addToPlaylist)
-            self.diskScanner.scanFinished.connect(self.clearProgress)
-            self.diskScanner.scanFinished.connect(self.scannerThread.quit)
-            self.scannerThread.started.connect(self.diskScanner.scanFiles)
-
+            # asynchronously recursively search for media files
+            self.scanFiles.emit(targetPath)
             self.displayProgress(u"Searching...")
-            self.scannerThread.start()
 
+        # PLAY ALL
+        elif choice is playAll:
+            self.appendToPlaylist = False
+            targetPath = fileInfo.absoluteFilePath()
+            # asynchronously recursively search for media files
+            self.scanFiles.emit(targetPath)
+            self.displayProgress(u"Searching...")
+
+        # ADD TO PLAYLIST
         elif choice is addToPlayList:
-            if isFile:
-                sources = fileInfo.absoluteFilePath()
-                self.addToPlaylist(sources, append=True)
-            else:
-                # recursively search for media files (multithreaded)
-                targetPath = fileInfo.absoluteFilePath()
-                self.scannerThread = QThread(self)
-                self.diskScanner = RecursiveBrowser(targetPath, append=True, nameFilter=FileExt_, followSym=False)
-                # when finished, result is send to addToPlaylist() method
-                self.diskScanner.moveToThread(self.scannerThread)
-                self.diskScanner.scanFinished.connect(self.addToPlaylist)
-                self.diskScanner.scanFinished.connect(self.clearProgress)
-                self.diskScanner.scanFinished.connect(self.scannerThread.quit)
-                self.scannerThread.started.connect(self.diskScanner.scanFiles)
+            self.appendToPlaylist = True
+            targetPath = fileInfo.absoluteFilePath()
+            # asynchronously recursively search for media files
+            self.scanFiles.emit(targetPath)
+            self.displayProgress(u"Searching...")
 
-                self.displayProgress(u"Searching...")
-                self.scannerThread.start()
-
+        # REMOVE FROM DISK
         elif choice is removeFromDisk:
             path = fileInfo.absoluteFilePath()
             logger.debug("Moving path '%s' to Trash", path)
@@ -358,79 +386,39 @@ class MainApp(QMainWindow, Ui_MainWindow):
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
 
-    @Slot(list, bool)
-    def addToPlaylist(self, source, append):
+    @Slot(list)
+    def addToPlaylist(self, sources):
         """
         Sets and adds media files to playlist.
-        @param source: list of paths
-        @type source: list of str or str
-        @param append: append or reset
-        @param append: bool
+        @param sources: list of (path, duration)
+        @type sources: list of (unicode, int)
         """
+        n = len(sources)
+        logger.debug("Adding '%s' sources to current playlist.", n)
 
-        # vlcInstance = vlc.Instance()
-        colCount = self.playlist.columnCount()
-        pathCol = colCount - 1
+        if self.appendToPlaylist:
+            last = self.playlist.rowCount()
+        else:
+            self.appendToPlaylist = True        # next data needs to be appended to current
+            last = 0
 
-        # errRedirector = misc.RedirectDescriptor()
-        # errRedirector.redirect_C_stderr_null()
+        self.playlist.setRowCount(last + n)
+        i = 0
+        for path, duration in sources:
+            titleItem = QTableWidgetItem(os.path.basename(path))
+            durationItem = QTableWidgetItem(QTime().addMSecs(duration).toString("hh:mm:ss"))
+            pathItem = QTableWidgetItem(path)
+            self.playlist.setItem(i + last, 0, titleItem)
+            self.playlist.setItem(i + last, 2, durationItem)
+            self.playlist.setItem(i + last, 3, pathItem)
+            i += 1
 
-        # for single file only
-        if isinstance(source, str) or isinstance(source, unicode):
+    def closeEvent(self, event):
+        self.mediaPlayerThread.quit()
+        self.scannerThread.quit()
+        self.parserThread.quit()
 
-            titleItem = QTableWidgetItem(os.path.basename(source))
-            # durationItem = QTableWidgetItem(QTime().addMSecs(duration).toString("hh:mm:ss"))
-            pathItem = QTableWidgetItem(source)
-
-            if append:
-                index = self.playlist.rowCount()
-                self.playlist.insertRow(index)
-            else:
-                index = 0
-                self.playlist.setRowCount(1)
-
-            self.playlist.setItem(index, 0, titleItem)
-            self.playlist.setItem(index, pathCol, pathItem)
-            # self.playlist.setItem(index, 2, durationItem)
-
-        # for multiple files
-        elif isinstance(source, list) or isinstance(source, tuple):
-            # t0 = time.time()
-
-            n = len(source)
-            if append:
-                last = self.playlist.rowCount()
-                self.playlist.setRowCount(last + n)
-                for i in range(n):
-                    path = source[i]
-                    # byte_path = path.encode("utf8")
-                    # mMedia = vlcInstance.media_new(byte_path)
-                    # mMedia.parse()
-                    # duration = mMedia.get_duration()
-                    # mMedia.release()
-
-                    titleItem = QTableWidgetItem(os.path.basename(path))
-                    # durationItem = QTableWidgetItem(QTime().addMSecs(duration).toString("hh:mm:ss"))
-                    pathItem = QTableWidgetItem(path)
-                    self.playlist.setItem(last + i, 0, titleItem)
-                    self.playlist.setItem(last + i, pathCol, pathItem)
-                    # self.playlist.setItem(last + i, 2, durationItem)
-
-            else:
-                self.playlist.setRowCount(n)
-                for i in range(n):
-                    path = source[i]
-                    pathItem = QTableWidgetItem(path)
-                    titleItem = QTableWidgetItem(os.path.basename(path))
-                    self.playlist.setItem(i, 0, titleItem)
-                    self.playlist.setItem(i, pathCol, pathItem)
-
-            # t1 = time.time()
-            # print (t1-t0) * 1000
-
-
-            # errRedirector.redirect_C_stderr_back()
-            # vlcInstance.release()
+        event.accept()
 
     @Slot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u""):
@@ -511,6 +499,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         if description is not None:
             self.progressLabel.setText(description)
 
+    @Slot()
     def clearProgress(self):
         """
         Hides progress bar and label from statusbar when showing progress
