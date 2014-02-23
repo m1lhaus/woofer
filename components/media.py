@@ -31,6 +31,8 @@ class MediaPlayer(QObject):
     error = Signal(str)
     tick = Signal(int)
 
+    mediaAdded = Signal(list)
+
     source_list = []
     is_playing = False
     is_paused = False
@@ -158,12 +160,34 @@ class MediaPlayer(QObject):
             logger.debug("Player has no media set, setting first media from list %s", sources[0])
             self._media_player.set_media(self._media_list.item_at_index(0))
 
-    def addMedia(self, media):
-        assert isinstance(media, vlc.Media)
+    def addMedia(self, path, media):
+        self.addMediaList([(path, media)])
 
+    @Slot()
+    def addMediaList(self, mList):
+        """
+        Adds list of media objects to player media_list.
+        Usually called as slot from parser thread.
+        @param mList: list of (unicode_path, media_object)
+        @type mList: list of (unicode, vlc.Media)
+        """
+        export = []
+
+        # FIXME add release()
         self._media_list.lock()
-        self._media_list.add_media(media)
+        for path, media in mList:
+            self._media_list.add_media(media)
+            self.source_list.append(path)
+            export.append((path, media.get_duration()))
         self._media_list.unlock()
+
+        # set media if none
+        if not self.getMedia():
+            path, media = mList[0]
+            logger.debug("Player has no media set, setting current media %s", path)
+            self._media_player.set_media(media)
+
+        self.mediaAdded.emit(export)
 
     def clearList(self):
         """
@@ -200,6 +224,12 @@ class MediaPlayer(QObject):
         @rtype : int
         """
         return self._media_list.count()
+
+    def playPause(self):
+        if self.is_playing:
+            self._media_list_player.pause()
+        else:
+            self._media_list_player.play()
 
     def play(self):
         """
@@ -395,3 +425,41 @@ class MediaPlayer(QObject):
     @Slot()
     def timer_tick(self):
         self.tick.emit(self.currentTime())
+
+
+class MediaParser(QObject):
+    """
+    Class for parsing media object.
+    Runs in separated thread.
+    Data are transfered via Signal/Slot mechanism.
+    """
+
+    finished = Signal()
+    parsed = Signal(list)
+
+    def __init__(self):
+        super(MediaParser, self).__init__()
+        self.vlcInstance = vlc.Instance()
+        """@type: vlc.Instance"""
+        logger.debug("Media parser initialized.")
+
+    @Slot(list)
+    def parseMedia(self, sources):
+        """
+        Thread worker!. Parses media files. Result is send to media player in separated thread.
+        @type sources: list of unicode
+        """
+        # if end flag has been sent
+        if not sources:
+            logger.debug("Finishing parsing.")
+            self.finished.emit()
+            return
+
+        mediaList = []
+        for unicode_path in sources:
+            byte_path = unicode_path.encode("utf8")
+            mMedia = self.vlcInstance.media_new(byte_path)
+            mMedia.parse()
+            mediaList.append((unicode_path, mMedia))
+
+        self.parsed.emit(mediaList)
