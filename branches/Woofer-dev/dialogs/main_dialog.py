@@ -12,7 +12,6 @@ import os
 import errno
 import json
 import time
-import datetime
 
 from PySide.QtGui import *
 from PySide.QtCore import *
@@ -22,7 +21,6 @@ from dialogs.library_dialog import LibraryDialog
 from components import disk
 from components import media
 from tools import misc
-from components import vlc
 
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
@@ -31,6 +29,9 @@ Sources = misc.enum(FILES=0, PLAYLISTS=1, RADIO=2)
 Message = misc.enum('WARNING', 'ERROR', 'CRITICAL')
 FileExt = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
 FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
+
+StdErrRedirector = misc.RedirectDescriptor()
+StdErrRedirector.redirect_C_stderr_null()
 
 
 class MainApp(QMainWindow, Ui_MainWindow):
@@ -93,12 +94,16 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def setupPlayer(self):
         self.mediaPlayer = media.MediaPlayer()
-        self.mediaPlayerThread = QThread(self)
-        self.mediaPlayer.moveToThread(self.mediaPlayerThread)
+        # self.mediaPlayerThread = QThread(self)
+        # self.mediaPlayer.moveToThread(self.mediaPlayerThread)
 
         self.mediaPlayer.mediaAdded.connect(self.addToPlaylist)
+        self.mediaPlayer.playing.connect(self.playing)
+        self.mediaPlayer.paused.connect(self.paused)
+        self.mediaPlayer.stopped.connect(self.stopped)
+        self.mediaPlayer.timeChanged.connect(self.displayTime)
 
-        self.mediaPlayerThread.start()
+        # self.mediaPlayerThread.start()
 
     def setupScanner(self):
         # asynchronous scanner
@@ -414,10 +419,11 @@ class MainApp(QMainWindow, Ui_MainWindow):
             i += 1
 
     def closeEvent(self, event):
-        self.mediaPlayerThread.quit()
+        # self.mediaPlayerThread.quit()
         self.scannerThread.quit()
         self.parserThread.quit()
 
+        StdErrRedirector.redirect_C_stderr_back()
         event.accept()
 
     @Slot(int, unicode, unicode)
@@ -506,6 +512,27 @@ class MainApp(QMainWindow, Ui_MainWindow):
         """
         self.statusbar.removeWidget(self.progressLabel)
         self.statusbar.removeWidget(self.progressBar)
+
+    @Slot()
+    def playing(self):
+        icon = QIcon()
+        icon.addPixmap(QPixmap(":/new/icons/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
+        self.playPauseBtn.setIcon(icon)
+
+    @Slot()
+    def paused(self):
+        icon = QIcon()
+        icon.addPixmap(QPixmap(":/new/icons/icons/media-play.png"), QIcon.Normal, QIcon.Off)
+        self.playPauseBtn.setIcon(icon)
+
+    @Slot()
+    def stopped(self):
+        self.paused()
+        self.timeLbl.setText("00:00:00")
+
+    @Slot(int)
+    def displayTime(self, value):
+        self.timeLbl.setText(QTime().addMSecs(value).toString("hh:mm:ss"))
 
 
 

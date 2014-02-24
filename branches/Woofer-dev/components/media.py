@@ -8,6 +8,7 @@ Media components
 
 __version__ = "$Id$"
 
+import time
 import logging
 import os
 
@@ -32,11 +33,10 @@ class MediaPlayer(QObject):
     tick = Signal(int)
 
     mediaAdded = Signal(list)
-
-    source_list = []
-    is_playing = False
-    is_paused = False
-    is_stopped = True
+    playing = Signal()
+    stopped = Signal()
+    paused = Signal()
+    timeChanged = Signal(int)
 
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
@@ -55,24 +55,27 @@ class MediaPlayer(QObject):
         self._media_list_player.set_media_player(self._media_player)
         self._media_list_player.set_media_list(self._media_list)
 
+        # self.source_list = []
+        self.is_playing = False
+        self.is_paused = False
+        self.is_stopped = True
+
         self.__setupEvents()
 
-        self.tick_timer = QTimer()
-        self.tick_timer.timeout.connect(self.timer_tick)
         logger.debug("Created woofer player instance")
 
     def __setupEvents(self):
         self.media_player_event_manager = self._media_player.event_manager()
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerOpening, self.playerStateChanged)
+        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerOpening, self.playerStateChanged)
         # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPlaying, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPaused, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerStopped, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerForward, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBackward, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEncounteredError, self.playerStateChanged)
-        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.playerStateChanged)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPlaying, self.__playingCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPaused, self.__pausedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerForward, self.__forwardCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBackward, self.__backwardCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
 
     def setSource(self, source_path):
         """
@@ -80,8 +83,6 @@ class MediaPlayer(QObject):
         @param source_path: path to media file
         @type source_path: str or unicode
         """
-        assert source_path
-
         unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
 
         # if path exists
@@ -101,7 +102,7 @@ class MediaPlayer(QObject):
         self._media_list.unlock()
 
         self._media_player.set_media(self._media_list.item_at_index(0))
-        self.source_list.append(unicode_path)
+        # self.source_list.append(unicode_path)
 
         logger.debug("New media source set to: %s", source_path)
 
@@ -111,8 +112,6 @@ class MediaPlayer(QObject):
         If player has no media set, method automatically sets added media as current.
         @type source_path: str or unicode
         """
-        assert source_path
-
         unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
 
         # if path exists
@@ -125,7 +124,7 @@ class MediaPlayer(QObject):
         self._media_list.lock()
         self._media_list.add_media(media)
         self._media_list.unlock()
-        self.source_list.append(unicode_path)
+        # self.source_list.append(unicode_path)
 
         if not bool(self.getMedia()):
             logger.debug("Player has no media set, setting current media %s", source_path)
@@ -137,8 +136,6 @@ class MediaPlayer(QObject):
         If player has no media set, method automatically sets first media path from list as current.
         @type sources: list of str or list of unicode
         """
-        assert sources
-
         logger.debug("Adding new media sources.")
         try:
             self._media_list.lock()
@@ -152,7 +149,7 @@ class MediaPlayer(QObject):
 
                 media = self.instance.media_new(byte_path)
                 self._media_list.add_media(media)
-                self.source_list.append(unicode_path)
+                # self.source_list.append(unicode_path)
         finally:
             self._media_list.unlock()
 
@@ -173,11 +170,11 @@ class MediaPlayer(QObject):
         """
         export = []
 
-        # FIXME add release()
         self._media_list.lock()
         for path, media in mList:
             self._media_list.add_media(media)
-            self.source_list.append(path)
+            # self.source_list.append(path)
+            media.release()
             export.append((path, media.get_duration()))
         self._media_list.unlock()
 
@@ -360,12 +357,7 @@ class MediaPlayer(QObject):
         @rtype : int or None
         """
         length = self._media_player.get_length()
-
-        if length == -1:
-            logger.warning("There is no media set to get its length")
-            length = None
-
-        return length
+        return length if length != -1 else None
 
     def remainingTime(self):
         """
@@ -384,47 +376,41 @@ class MediaPlayer(QObject):
 
         return remaining_time
 
-    def playerStateChanged(self, event):
-        """
-        Called when media_player state has changed.
-        @type event: vlc.Event
-        """
+    def __timeChangedCallback(self, event):
+        self.timeChanged.emit(event.u.new_time)
 
-        if event.type == vlc.EventType.MediaPlayerOpening:
-            logger.debug("Opening the media")
-        elif event.type == vlc.EventType.MediaPlayerPlaying:
-            logger.debug("Media player is playing")
-            self.is_playing = True
-            self.is_paused = False
-            self.is_stopped = False
-            self.tick_timer.start(self.TICK_INTERVAL)
-        elif event.type == vlc.EventType.MediaPlayerPaused:
-            logger.debug("Media player paused")
-            self.is_playing = False
-            self.is_paused = True
-            self.is_stopped = False
-            self.tick_timer.stop()
-        elif event.type == vlc.EventType.MediaPlayerStopped:
-            logger.debug("Media player is stopped")
-            self.is_playing = False
-            self.is_paused = False
-            self.is_stopped = True
-            self.tick_timer.stop()
-        elif event.type == vlc.EventType.MediaPlayerForward:
-            logger.debug("Media player skipped forward")
-        elif event.type == vlc.EventType.MediaPlayerBackward:
-            logger.debug("Media player skipped backward")
-        elif event.type == vlc.EventType.MediaPlayerEndReached:
-            logger.debug("Media end reached")
-        elif event.type == vlc.EventType.MediaPlayerEncounteredError:
-            logger.debug("Media encountered error")
-        elif event.type == vlc.EventType.MediaPlayerTimeChanged:
-            # logger.debug("Media Player Time Changed encountered error")
-            print event.u.new_time
+    def __playingCallback(self, event):
+        logger.debug("Media player is playing")
+        self.is_playing = True
+        self.is_paused = False
+        self.is_stopped = False
+        self.playing.emit()
 
-    @Slot()
-    def timer_tick(self):
-        self.tick.emit(self.currentTime())
+    def __pausedCallback(self, event):
+        logger.debug("Media player paused")
+        self.is_playing = False
+        self.is_paused = True
+        self.is_stopped = False
+        self.paused.emit()
+
+    def __stoppedCallback(self, event):
+        logger.debug("Media player is stopped")
+        self.is_playing = False
+        self.is_paused = False
+        self.is_stopped = True
+        self.stopped.emit()
+
+    def __forwardCallback(self, event):
+        logger.debug("Media player skipped forward")
+
+    def __backwardCallback(self, event):
+        logger.debug("Media player skipped backward")
+
+    def __endReachedCallback(self, event):
+        logger.debug("Media encountered error")
+
+    def __errorCallback(self, event):
+        logger.debug("Media end reached")
 
 
 class MediaParser(QObject):

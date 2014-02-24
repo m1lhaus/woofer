@@ -2,6 +2,7 @@
 
 """
 """
+from threading import current_thread
 
 __version__ = "$Id$"
 
@@ -15,7 +16,7 @@ from tools.misc import RedirectDescriptor
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
 
-StdErrRedirector = RedirectDescriptor()
+# StdErrRedirector = RedirectDescriptor()
 
 
 class RecursiveBrowser(QObject):
@@ -48,7 +49,7 @@ class RecursiveBrowser(QObject):
         The final data are sent to media parser in another thread.
         @type targetDir: unicode
         """
-        StdErrRedirector.redirect_C_stderr_null()       # temporary disable Ctypes stderr warnings
+        # StdErrRedirector.redirect_C_stderr_null()       # temporary disable Ctypes stderr warnings
 
         # if target dir is already a file
         if targetDir.endswith(self.nameFilter):
@@ -85,5 +86,6 @@ class RecursiveBrowser(QObject):
         """
         Called to to job after all work is finished (media files are all parsed).
         """
-        StdErrRedirector.redirect_C_stderr_back()
+        pass
+        # StdErrRedirector.redirect_C_stderr_back()
 
