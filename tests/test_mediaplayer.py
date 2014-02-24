@@ -54,7 +54,7 @@ class TestMediaPlayer(TestCase):
 
             self.assertEquals(new_mrl, ret_mrl)                     # mrl comparison
             self.assertEqual(self.mp.listCount(), 1)        # is media only one in the list
-            self.assertEqual(self.mp.source_list[0], unicode_str)        # is media stored in the helper list
+            # self.assertEqual(self.mp.source_list[0], unicode_str)        # is media stored in the helper list
 
     def test_addSource(self):
         """
@@ -68,8 +68,8 @@ class TestMediaPlayer(TestCase):
         new_list_count = self.mp.listCount()
 
         self.assertEqual(list_count + 1, new_list_count)
-        self.assertIn(unicode_str, self.mp.source_list)
-        self.assertEqual(new_list_count, len(self.mp.source_list))
+        # self.assertIn(unicode_str, self.mp.source_list)
+        # self.assertEqual(new_list_count, len(self.mp.source_list))
 
     def test_addSources(self):
         list_count = self.mp.listCount()
@@ -79,8 +79,8 @@ class TestMediaPlayer(TestCase):
         self.assertEqual(list_count + len(self.source_set), new_list_count)
         for source in self.source_set:
             unicode_str, byte_str = unicode2bytes(source)
-            self.assertIn(unicode_str, self.mp.source_list)
-        self.assertEqual(new_list_count, len(self.mp.source_list))
+            # self.assertIn(unicode_str, self.mp.source_list)
+        # self.assertEqual(new_list_count, len(self.mp.source_list))
 
     def test_clearList(self):
         """

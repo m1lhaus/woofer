@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uic\mainform.ui'
 #
-# Created: Sun Feb 16 16:09:39 2014
+# Created: Mon Feb 24 11:07:38 2014
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -132,9 +132,9 @@ class Ui_MainWindow(object):
         self.controlsHLayout = QtGui.QHBoxLayout()
         self.controlsHLayout.setContentsMargins(9, 9, 9, 9)
         self.controlsHLayout.setObjectName("controlsHLayout")
-        self.label = QtGui.QLabel(self.controlsFrame)
-        self.label.setObjectName("label")
-        self.controlsHLayout.addWidget(self.label)
+        self.timeLbl = QtGui.QLabel(self.controlsFrame)
+        self.timeLbl.setObjectName("timeLbl")
+        self.controlsHLayout.addWidget(self.timeLbl)
         self.repeatBtn = QtGui.QPushButton(self.controlsFrame)
         self.repeatBtn.setMinimumSize(QtCore.QSize(30, 30))
         self.repeatBtn.setText("")
@@ -277,7 +277,7 @@ class Ui_MainWindow(object):
         self.playlist.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Favorite", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Duration", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(3).setText(QtGui.QApplication.translate("MainWindow", "Path", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("MainWindow", "00:00", None, QtGui.QApplication.UnicodeUTF8))
+        self.timeLbl.setText(QtGui.QApplication.translate("MainWindow", "00:00:00", None, QtGui.QApplication.UnicodeUTF8))
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "Media", None, QtGui.QApplication.UnicodeUTF8))
         self.menuPlayback.setTitle(QtGui.QApplication.translate("MainWindow", "Playback", None, QtGui.QApplication.UnicodeUTF8))
         self.menuEdit.setTitle(QtGui.QApplication.translate("MainWindow", "Edit", None, QtGui.QApplication.UnicodeUTF8))
