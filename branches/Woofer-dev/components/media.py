@@ -24,7 +24,8 @@ logger.debug('Import ' + __name__)
 
 class MediaPlayer(QObject):
     """
-    Media player class
+    Media player interface class to vlc module.
+    Runs in MainThread!
     """
 
     TICK_INTERVAL = 1000        # in ms
@@ -157,25 +158,21 @@ class MediaPlayer(QObject):
             logger.debug("Player has no media set, setting first media from list %s", sources[0])
             self._media_player.set_media(self._media_list.item_at_index(0))
 
-    def addMedia(self, path, media):
-        self.addMediaList([(path, media)])
-
     @Slot()
-    def addMediaList(self, mList):
+    def addMedia(self, mList):
         """
         Adds list of media objects to player media_list.
         Usually called as slot from parser thread.
         @param mList: list of (unicode_path, media_object)
         @type mList: list of (unicode, vlc.Media)
         """
-        export = []
+        displayToPlaylist = []
 
         self._media_list.lock()
         for path, media in mList:
             self._media_list.add_media(media)
-            # self.source_list.append(path)
             media.release()
-            export.append((path, media.get_duration()))
+            displayToPlaylist.append((path, media.get_duration()))
         self._media_list.unlock()
 
         # set media if none
@@ -184,7 +181,7 @@ class MediaPlayer(QObject):
             logger.debug("Player has no media set, setting current media %s", path)
             self._media_player.set_media(media)
 
-        self.mediaAdded.emit(export)
+        self.mediaAdded.emit(displayToPlaylist)
 
     def clearList(self):
         """
@@ -421,13 +418,13 @@ class MediaParser(QObject):
     """
 
     finished = Signal()
-    parsed = Signal(list)
+    parsedData = Signal(list)
 
     def __init__(self):
         super(MediaParser, self).__init__()
         self.vlcInstance = vlc.Instance()
         """@type: vlc.Instance"""
-        logger.debug("Media parser initialized.")
+        logger.debug("Media parser instance initialized.")
 
     @Slot(list)
     def parseMedia(self, sources):
@@ -448,4 +445,7 @@ class MediaParser(QObject):
             mMedia.parse()
             mediaList.append((unicode_path, mMedia))
 
-        self.parsed.emit(mediaList)
+        self.parsedData.emit(mediaList)
+
+    def __del__(self):
+        self.vlcInstance.release()

@@ -105,6 +105,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         # self.mediaPlayerThread.start()
 
+    # def printTime(self):
+    #     print (time.time() - self.t0) * 1000, "ms"
+
     def setupScanner(self):
         # asynchronous scanner
         self.scanner = disk.RecursiveBrowser(nameFilter=FileExt_, followSym=False)
@@ -116,10 +119,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.parser.moveToThread(self.parserThread)
 
         self.scanFiles.connect(self.scanner.scanFiles)
-        self.parser.finished.connect(self.printTime)    # FIXME debug only
+        # self.parser.finished.connect(self.printTime)    # FIXME debug only
         self.parser.finished.connect(self.clearProgress)
-        self.parser.finished.connect(self.scanner.finish)
-        self.parser.parsed.connect(self.mediaPlayer.addMediaList)
+        # self.parser.finished.connect(self.scanner.finish)
+        self.parser.parsedData.connect(self.mediaPlayer.addMedia)
         self.scanner.parseData.connect(self.parser.parseMedia)
 
         self.scannerThread.start()
@@ -241,13 +244,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         if self.sourceType == Sources.RADIO:
             logger.debug("Opening radio browser context menu.")
 
-    def printTime(self):
-        print (time.time() - self.t0) * 1000
-
     def fileBrowserContextMenu(self, pos):
-
-        self.t0 = time.time()
-
         """
         Context menu for file browser treeView.
         @type pos: QPointF
@@ -277,6 +274,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         logger.debug("Opening file browser context menu.")
         choice = menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
+
+        # self.t0 = time.time()
 
         # PLAY NOW
         if choice is playNow:
