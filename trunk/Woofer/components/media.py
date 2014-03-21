@@ -8,6 +8,7 @@ Media components
 
 __version__ = "$Id$"
 
+import time
 import logging
 import os
 
@@ -15,6 +16,7 @@ from PySide.QtGui import *
 from PySide.QtCore import *
 
 from components import vlc
+from tools.misc import unicode2bytes
 
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
@@ -22,7 +24,8 @@ logger.debug('Import ' + __name__)
 
 class MediaPlayer(QObject):
     """
-    Media player class
+    Media player interface class to vlc module.
+    Runs in MainThread!
     """
 
     TICK_INTERVAL = 1000        # in ms
@@ -30,131 +33,155 @@ class MediaPlayer(QObject):
     error = Signal(str)
     tick = Signal(int)
 
-    source_list = []
-    is_playing = False
-    is_paused = False
-    is_stopped = True
+    mediaAdded = Signal(list)
+    playing = Signal()
+    stopped = Signal()
+    paused = Signal()
+    timeChanged = Signal(int)
 
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
 
         self.instance = vlc.Instance()
         """@type: vlc.Instance"""
-
-        logger.debug("Created instance of VLC player")
-
         self._media_player = self.instance.media_player_new()
         """@type: vlc.MediaPlayer"""
         self._media_list_player = self.instance.media_list_player_new()
         """@type: vlc.MediaListPlayer"""
         self._media_list = self.instance.media_list_new()
         """@type: vlc.MediaList"""
+        logger.debug("Core instances of VLC player created")
 
         # connect player and media list with media_list_player
         self._media_list_player.set_media_player(self._media_player)
         self._media_list_player.set_media_list(self._media_list)
 
+        # self.source_list = []
+        self.is_playing = False
+        self.is_paused = False
+        self.is_stopped = True
+
         self.__setupEvents()
 
-        self.tick_timer = QTimer()
-        self.tick_timer.timeout.connect(self.timer_tick)
         logger.debug("Created woofer player instance")
 
     def __setupEvents(self):
         self.media_player_event_manager = self._media_player.event_manager()
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerOpening, self.playerStateChanged)
+        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerOpening, self.playerStateChanged)
         # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPlaying, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPaused, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerStopped, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerForward, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBackward, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEncounteredError, self.playerStateChanged)
-        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.playerStateChanged)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPlaying, self.__playingCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPaused, self.__pausedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerForward, self.__forwardCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBackward, self.__backwardCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
 
     def setSource(self, source_path):
         """
-        Set the media source that will be used by the media_player.
-        @param source_path: path to media file (unicode not supported)
-        @type source_path: str
-        @raise ValueError: If given source path not exist
+        Sets the media source that will be played by the media_player.
+        @param source_path: path to media file
+        @type source_path: str or unicode
         """
-        # because vlc works with bytes address (string -> bytes), source must be in str (ascii)
-        # but os.path can't handle nonAscii characters => converts to unicode
-        unicode_source_path = unicode(source_path, "utf-8")
-        if not os.path.isfile(unicode_source_path):
-            logger.error("Given source path is invalid: %s", source_path)
-            raise ValueError("Given source path '%s' is invalid" % source_path)
+        unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
 
-        self.stop()
+        # if path exists
+        if not os.path.isfile(unicode_path):
+            self.error.emit("Given media file '%s' does not exist!" % source_path)
+            return
 
         # empty the media list
         logger.debug("Deleting items from media list")
+        self.stop()
         self.source_list = []
         self.clearList()
 
         # put the media to media list
         self._media_list.lock()
-        self._media_list.add_media(self.instance.media_new(source_path))
+        self._media_list.add_media(self.instance.media_new(byte_path))
         self._media_list.unlock()
 
         self._media_player.set_media(self._media_list.item_at_index(0))
-        self.source_list.append(source_path)
+        # self.source_list.append(unicode_path)
 
         logger.debug("New media source set to: %s", source_path)
 
-    def addSource(self, item):
+    def addSource(self, source_path):
         """
-        Adds one or more new MRLs to media list (queue).
+        Adds one new media path to media list (queue).
         If player has no media set, method automatically sets added media as current.
-        @param item: one or more source path in ascii str
-        @type item: str or tuple of str or list of str
-        @raise ValueError: if given param is unsupported or mrl path is invalid
+        @type source_path: str or unicode
         """
-        has_media = bool(self.getMedia())
+        unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
 
-        # for MULTIPLE items
-        if isinstance(item, list) or isinstance(item, tuple):
-            for single_item in item:
-                # because vlc works with bytes address (string -> bytes), source must be in str (ascii)
-                # but os.path can't handle nonAscii characters => converts to unicode
-                unicode_source_path = unicode(single_item, "utf-8")
-                if not os.path.isfile(unicode_source_path):
-                    logger.error("Given mrl path is invalid: %s", unicode_source_path)
-                    raise ValueError("Given mrl path is invalid. Could not locate the file on disk!")
+        # if path exists
+        if not os.path.isfile(unicode_path):
+            self.error.emit("Given media file '%s' does not exist!" % source_path)
+            return
 
-                logger.debug("Adding new mrl: %s", single_item)
-                media = self.instance.media_new(single_item)
+        logger.debug("Adding new media source: %s", source_path)
+        media = self.instance.media_new(byte_path)
+        self._media_list.lock()
+        self._media_list.add_media(media)
+        self._media_list.unlock()
+        # self.source_list.append(unicode_path)
+
+        if not bool(self.getMedia()):
+            logger.debug("Player has no media set, setting current media %s", source_path)
+            self._media_player.set_media(media)
+
+    def addSources(self, sources):
+        """
+        Appends list of new media paths to media list (queue).
+        If player has no media set, method automatically sets first media path from list as current.
+        @type sources: list of str or list of unicode
+        """
+        logger.debug("Adding new media sources.")
+        try:
+            self._media_list.lock()
+            for single_path in sources:
+                unicode_path, byte_path = unicode2bytes(single_path)            # vlc needs byte array (ascii str)
+
+                # if path exists
+                if not os.path.isfile(unicode_path):
+                    self.error.emit("Given media file '%s' does not exist!" % single_path)
+                    return
+
+                media = self.instance.media_new(byte_path)
                 self._media_list.add_media(media)
-                self.source_list.append(single_item)
+                # self.source_list.append(unicode_path)
+        finally:
+            self._media_list.unlock()
 
-                if not has_media:
-                    logger.debug("Player has no media set, setting current media %s", item)
-                    self._media_player.set_media(media)
-                    has_media = True
+        if not bool(self.getMedia()):
+            logger.debug("Player has no media set, setting first media from list %s", sources[0])
+            self._media_player.set_media(self._media_list.item_at_index(0))
 
-        # for SINGLE item
-        elif isinstance(item, str):
-            unicode_source_path = unicode(item, "utf-8")
-            if not os.path.isfile(unicode_source_path):
-                logger.error("Given mrl path is invalid: %s", unicode_source_path)
-                raise ValueError("Given mrl path is invalid. Could not locate the file on disk!")
+    @Slot()
+    def addMedia(self, mList):
+        """
+        Adds list of media objects to player media_list.
+        Usually called as slot from parser thread.
+        @param mList: list of (unicode_path, media_object)
+        @type mList: list of (unicode, vlc.Media)
+        """
+        displayToPlaylist = []
 
-            logger.debug("Adding new mrl: %s", item)
-            media = self.instance.media_new(item)
+        self._media_list.lock()
+        for path, media in mList:
             self._media_list.add_media(media)
-            self.source_list.append(item)
+            media.release()
+            displayToPlaylist.append((path, media.get_duration()))
+        self._media_list.unlock()
 
-            if not has_media:
-                logger.debug("Player has no media set, setting current media %s", item)
-                self._media_player.set_media(media)
-                has_media = True
+        # set media if none
+        if not self.getMedia():
+            path, media = mList[0]
+            logger.debug("Player has no media set, setting current media %s", path)
+            self._media_player.set_media(media)
 
-        else:
-            logger.error("Unsupported mrl parameter type, type: %s", type(item))
-            raise ValueError("Unsupported parameter type. Only list and tuple are supported for multiple items "
-                             "or str for single item. Given type: %s" % type(item))
+        self.mediaAdded.emit(displayToPlaylist)
 
     def clearList(self):
         """
@@ -175,11 +202,7 @@ class MediaPlayer(QObject):
         @rtype: str or None
         """
         media = self.getMedia()
-
-        if media:
-            return media.get_mrl()
-        else:
-            return None
+        return media.get_mrl() if media else None
 
     def getMedia(self):
         """
@@ -195,6 +218,12 @@ class MediaPlayer(QObject):
         @rtype : int
         """
         return self._media_list.count()
+
+    def playPause(self):
+        if self.is_playing:
+            self._media_list_player.pause()
+        else:
+            self._media_list_player.play()
 
     def play(self):
         """
@@ -325,12 +354,7 @@ class MediaPlayer(QObject):
         @rtype : int or None
         """
         length = self._media_player.get_length()
-
-        if length == -1:
-            logger.warning("There is no media set to get its length")
-            length = None
-
-        return length
+        return length if length != -1 else None
 
     def remainingTime(self):
         """
@@ -349,50 +373,79 @@ class MediaPlayer(QObject):
 
         return remaining_time
 
-    def playerStateChanged(self, event):
-        """
-        Called when media_player state has changed.
-        @type event: vlc.Event
-        """
+    def __timeChangedCallback(self, event):
+        self.timeChanged.emit(event.u.new_time)
 
-        if event.type == vlc.EventType.MediaPlayerOpening:
-            logger.debug("Opening the media")
-        elif event.type == vlc.EventType.MediaPlayerPlaying:
-            logger.debug("Media player is playing")
-            self.is_playing = True
-            self.is_paused = False
-            self.is_stopped = False
-            self.tick_timer.start(self.TICK_INTERVAL)
-        elif event.type == vlc.EventType.MediaPlayerPaused:
-            logger.debug("Media player paused")
-            self.is_playing = False
-            self.is_paused = True
-            self.is_stopped = False
-            self.tick_timer.stop()
-        elif event.type == vlc.EventType.MediaPlayerStopped:
-            logger.debug("Media player is stopped")
-            self.is_playing = False
-            self.is_paused = False
-            self.is_stopped = True
-            self.tick_timer.stop()
-        elif event.type == vlc.EventType.MediaPlayerForward:
-            logger.debug("Media player skipped forward")
-        elif event.type == vlc.EventType.MediaPlayerBackward:
-            logger.debug("Media player skipped backward")
-        elif event.type == vlc.EventType.MediaPlayerEndReached:
-            logger.debug("Media end reached")
-        elif event.type == vlc.EventType.MediaPlayerEncounteredError:
-            logger.debug("Media encountered error")
-        elif event.type == vlc.EventType.MediaPlayerTimeChanged:
-            # logger.debug("Media Player Time Changed encountered error")
-            print event.u.new_time
+    def __playingCallback(self, event):
+        logger.debug("Media player is playing")
+        self.is_playing = True
+        self.is_paused = False
+        self.is_stopped = False
+        self.playing.emit()
 
-    @Slot()
-    def timer_tick(self):
-        self.tick.emit(self.currentTime())
+    def __pausedCallback(self, event):
+        logger.debug("Media player paused")
+        self.is_playing = False
+        self.is_paused = True
+        self.is_stopped = False
+        self.paused.emit()
+
+    def __stoppedCallback(self, event):
+        logger.debug("Media player is stopped")
+        self.is_playing = False
+        self.is_paused = False
+        self.is_stopped = True
+        self.stopped.emit()
+
+    def __forwardCallback(self, event):
+        logger.debug("Media player skipped forward")
+
+    def __backwardCallback(self, event):
+        logger.debug("Media player skipped backward")
+
+    def __endReachedCallback(self, event):
+        logger.debug("Media encountered error")
+
+    def __errorCallback(self, event):
+        logger.debug("Media end reached")
 
 
-class RadioPlayer(QObject):
+class MediaParser(QObject):
     """
-    Internet radio streaming class
+    Class for parsing media object.
+    Runs in separated thread.
+    Data are transfered via Signal/Slot mechanism.
     """
+
+    finished = Signal()
+    parsedData = Signal(list)
+
+    def __init__(self):
+        super(MediaParser, self).__init__()
+        self.vlcInstance = vlc.Instance()
+        """@type: vlc.Instance"""
+        logger.debug("Media parser instance initialized.")
+
+    @Slot(list)
+    def parseMedia(self, sources):
+        """
+        Thread worker!. Parses media files. Result is send to media player in separated thread.
+        @type sources: list of unicode
+        """
+        # if end flag has been sent
+        if not sources:
+            logger.debug("Finishing parsing.")
+            self.finished.emit()
+            return
+
+        mediaList = []
+        for unicode_path in sources:
+            byte_path = unicode_path.encode("utf8")
+            mMedia = self.vlcInstance.media_new(byte_path)
+            mMedia.parse()
+            mediaList.append((unicode_path, mMedia))
+
+        self.parsedData.emit(mediaList)
+
+    def __del__(self):
+        self.vlcInstance.release()

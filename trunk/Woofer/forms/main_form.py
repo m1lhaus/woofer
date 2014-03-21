@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uic\mainform.ui'
 #
-# Created: Mon Jan 06 23:10:21 2014
+# Created: Mon Feb 24 11:07:38 2014
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -106,16 +106,17 @@ class Ui_MainWindow(object):
         self.playlist.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         self.playlist.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.playlist.setGridStyle(QtCore.Qt.DotLine)
-        self.playlist.setRowCount(10)
         self.playlist.setObjectName("playlist")
-        self.playlist.setColumnCount(3)
-        self.playlist.setRowCount(10)
+        self.playlist.setColumnCount(4)
+        self.playlist.setRowCount(0)
         item = QtGui.QTableWidgetItem()
         self.playlist.setHorizontalHeaderItem(0, item)
         item = QtGui.QTableWidgetItem()
         self.playlist.setHorizontalHeaderItem(1, item)
         item = QtGui.QTableWidgetItem()
         self.playlist.setHorizontalHeaderItem(2, item)
+        item = QtGui.QTableWidgetItem()
+        self.playlist.setHorizontalHeaderItem(3, item)
         self.playlist.horizontalHeader().setDefaultSectionSize(200)
         self.playlist.verticalHeader().setVisible(True)
         self.playlist.verticalHeader().setDefaultSectionSize(19)
@@ -131,9 +132,9 @@ class Ui_MainWindow(object):
         self.controlsHLayout = QtGui.QHBoxLayout()
         self.controlsHLayout.setContentsMargins(9, 9, 9, 9)
         self.controlsHLayout.setObjectName("controlsHLayout")
-        self.label = QtGui.QLabel(self.controlsFrame)
-        self.label.setObjectName("label")
-        self.controlsHLayout.addWidget(self.label)
+        self.timeLbl = QtGui.QLabel(self.controlsFrame)
+        self.timeLbl.setObjectName("timeLbl")
+        self.controlsHLayout.addWidget(self.timeLbl)
         self.repeatBtn = QtGui.QPushButton(self.controlsFrame)
         self.repeatBtn.setMinimumSize(QtCore.QSize(30, 30))
         self.repeatBtn.setText("")
@@ -271,10 +272,12 @@ class Ui_MainWindow(object):
         self.sourceBrowser.topLevelItem(1).setText(1, QtGui.QApplication.translate("MainWindow", "2", None, QtGui.QApplication.UnicodeUTF8))
         self.sourceBrowser.setSortingEnabled(__sortingEnabled)
         self.folderLbl.setText(QtGui.QApplication.translate("MainWindow", "Folder:", None, QtGui.QApplication.UnicodeUTF8))
+        self.libraryBtn.setToolTip(QtGui.QApplication.translate("MainWindow", "Edit media library", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Title", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Favorite", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Duration", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("MainWindow", "00:00", None, QtGui.QApplication.UnicodeUTF8))
+        self.playlist.horizontalHeaderItem(3).setText(QtGui.QApplication.translate("MainWindow", "Path", None, QtGui.QApplication.UnicodeUTF8))
+        self.timeLbl.setText(QtGui.QApplication.translate("MainWindow", "00:00:00", None, QtGui.QApplication.UnicodeUTF8))
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "Media", None, QtGui.QApplication.UnicodeUTF8))
         self.menuPlayback.setTitle(QtGui.QApplication.translate("MainWindow", "Playback", None, QtGui.QApplication.UnicodeUTF8))
         self.menuEdit.setTitle(QtGui.QApplication.translate("MainWindow", "Edit", None, QtGui.QApplication.UnicodeUTF8))
