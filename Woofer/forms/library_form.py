@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uic\library.ui'
 #
-# Created: Thu Jan 30 16:52:36 2014
+# Created: Wed Feb 12 14:21:33 2014
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -44,7 +44,7 @@ class Ui_libraryDialog(object):
         QtCore.QMetaObject.connectSlotsByName(libraryDialog)
 
     def retranslateUi(self, libraryDialog):
-        libraryDialog.setWindowTitle(QtGui.QApplication.translate("libraryDialog", "Media libraries", None, QtGui.QApplication.UnicodeUTF8))
+        libraryDialog.setWindowTitle(QtGui.QApplication.translate("libraryDialog", "Media library", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("libraryDialog", "Add folders for quick access:", None, QtGui.QApplication.UnicodeUTF8))
         self.addBtn.setText(QtGui.QApplication.translate("libraryDialog", "Add", None, QtGui.QApplication.UnicodeUTF8))
         self.removeBtn.setText(QtGui.QApplication.translate("libraryDialog", "Remove", None, QtGui.QApplication.UnicodeUTF8))

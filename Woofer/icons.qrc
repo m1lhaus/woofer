@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="/new/icons">
+    <file>icons/info.png</file>
+    <file>icons/error.png</file>
+    <file>icons/warning.png</file>
     <file>icons/delete.png</file>
     <file>icons/play-next.png</file>
     <file>icons/play-now.png</file>
