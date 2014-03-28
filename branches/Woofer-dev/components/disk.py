@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Disk components module
-- RecursiveBrowser - recursively browses given path in separated thread
+Disk components
+- Recursive disk browser for searching media files on folder tree.
 """
 
 __version__ = "$Id$"
@@ -19,12 +19,12 @@ logger.debug('Import ' + __name__)
 class RecursiveBrowser(QObject):
     """
     Recursive disk browser for searching media files on folder tree.
-    Runs in separated thread! Data are transferred via Signal/Slot mechanism.
+    Runs in separated thread!
+    Data are transfered via Signal/Slot mechanism.
     """
-
     parseData = Signal(list)
 
-    SEND_LIMIT = 25
+    SEND_LIMIT = 10     # cca 100ms blocks for parsing
 
     def __init__(self, nameFilter=None, followSym=False):
         """
@@ -67,11 +67,19 @@ class RecursiveBrowser(QObject):
                 n += 1
                 if n == self.SEND_LIMIT:
                     self.parseData.emit(result)
-                    result = []
                     n = 0
+                    result = []
 
         if result:
             self.parseData.emit(result)
 
         logger.debug("Recursive search finished, sending finish_parser flag.")
         self.parseData.emit([])
+
+    @Slot()
+    def finish(self):
+        """
+        Called to to job after all work is finished (media files are all parsed).
+        """
+        pass
+

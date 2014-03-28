@@ -55,7 +55,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.stBarMsgText = QLabel(self)
         self.progressBar = QProgressBar(self)
         self.progressLabel = QLabel(self)
-        self.appendToPlaylist = False
         self.setupUi(self)
         self.checkPaths()
         self.setupFileBrowser(initModel=True)
@@ -68,6 +67,11 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def setupUi(self, parent):
         super(MainApp, self).setupUi(parent)
+        self.seekerSlider = MediaSeeker(self)
+        self.volumeSlider = VolumeSeeker(self)
+        self.controlsHLayout.addWidget(self.seekerSlider)
+        self.controlsHLayout.addWidget(self.volumeSlider)
+
         self.sourceBrowser.expandAll()
         self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
         self.playlist.setColumnHidden(self.playlist.columnCount() - 1, True)
@@ -78,6 +82,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.playlist.setColumnWidth(1, 100)
         self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
         self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.timeLbl.setFixedSize(self.timeLbl.minimumSizeHint())       # prevent 1px oscillation
 
     def setupGUISignals(self):
         self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
@@ -91,19 +96,19 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.stopBtn.clicked.connect(self.mediaPlayer.stop)
         self.nextBtn.clicked.connect(self.mediaPlayer.next)
         self.previousBtn.clicked.connect(self.mediaPlayer.prev)
+        self.seekerSlider.valueChanged.connect(self.mediaPlayer.setPosition)
+        self.volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
 
     def setupPlayer(self):
         self.mediaPlayer = media.MediaPlayer()
-        # self.mediaPlayerThread = QThread(self)
-        # self.mediaPlayer.moveToThread(self.mediaPlayerThread)
 
         self.mediaPlayer.mediaAdded.connect(self.addToPlaylist)
         self.mediaPlayer.playing.connect(self.playing)
         self.mediaPlayer.paused.connect(self.paused)
         self.mediaPlayer.stopped.connect(self.stopped)
-        self.mediaPlayer.timeChanged.connect(self.displayTime)
-
-        # self.mediaPlayerThread.start()
+        self.mediaPlayer.timeChanged.connect(self.syncPlayTime)
+        self.mediaPlayer.positionChanged.connect(self.syncSeeker)
+        self.mediaPlayer.mediaChanged.connect(self.displayCurrentMedia)
 
     # def printTime(self):
     #     print (time.time() - self.t0) * 1000, "ms"
@@ -279,27 +284,27 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         # PLAY NOW
         if choice is playNow:
-            self.appendToPlaylist = False
+            self.mediaPlayer.clearList()
+            self.mediaPlayer.append_mode = False
             targetPath = fileInfo.absoluteFilePath()
-            # asynchronously recursively search for media files
-            self.scanFiles.emit(targetPath)
-            self.displayProgress(u"Searching...")
+            self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
+            self.displayProgress(u"Adding...")
 
         # PLAY ALL
         elif choice is playAll:
-            self.appendToPlaylist = False
+            StdErrRedirector.redirect_C_stderr_null()
+            self.mediaPlayer.clearList()
+            self.mediaPlayer.append_mode = False
             targetPath = fileInfo.absoluteFilePath()
-            # asynchronously recursively search for media files
-            self.scanFiles.emit(targetPath)
-            self.displayProgress(u"Searching...")
+            self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
+            self.displayProgress(u"Adding...")
 
         # ADD TO PLAYLIST
         elif choice is addToPlayList:
-            self.appendToPlaylist = True
             targetPath = fileInfo.absoluteFilePath()
             # asynchronously recursively search for media files
             self.scanFiles.emit(targetPath)
-            self.displayProgress(u"Searching...")
+            self.displayProgress(u"Adding...")
 
         # REMOVE FROM DISK
         elif choice is removeFromDisk:
@@ -391,7 +396,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         libraryDialog.exec_()
 
     @Slot(list)
-    def addToPlaylist(self, sources):
+    def addToPlaylist(self, sources, append):
         """
         Sets and adds media files to playlist.
         @param sources: list of (path, duration)
@@ -400,21 +405,17 @@ class MainApp(QMainWindow, Ui_MainWindow):
         n = len(sources)
         logger.debug("Adding '%s' sources to current playlist.", n)
 
-        if self.appendToPlaylist:
-            last = self.playlist.rowCount()
-        else:
-            self.appendToPlaylist = True        # next data needs to be appended to current
-            last = 0
+        lastItemIndex = self.playlist.rowCount() if append else 0
+        self.playlist.setRowCount(lastItemIndex + n)
 
-        self.playlist.setRowCount(last + n)
         i = 0
         for path, duration in sources:
             titleItem = QTableWidgetItem(os.path.basename(path))
             durationItem = QTableWidgetItem(QTime().addMSecs(duration).toString("hh:mm:ss"))
             pathItem = QTableWidgetItem(path)
-            self.playlist.setItem(i + last, 0, titleItem)
-            self.playlist.setItem(i + last, 2, durationItem)
-            self.playlist.setItem(i + last, 3, pathItem)
+            self.playlist.setItem(i + lastItemIndex, 0, titleItem)
+            self.playlist.setItem(i + lastItemIndex, 2, durationItem)
+            self.playlist.setItem(i + lastItemIndex, 3, pathItem)
             i += 1
 
     def closeEvent(self, event):
@@ -528,13 +529,107 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def stopped(self):
         self.paused()
         self.timeLbl.setText("00:00:00")
+        self.seekerSlider.blockSignals(True)        # prevent syncing
+        self.seekerSlider.setValue(0)
+        self.seekerSlider.blockSignals(False)
 
     @Slot(int)
-    def displayTime(self, value):
+    def syncPlayTime(self, value):
+        """
+        @param value: time in milliseconds
+        @type value: int
+        """
         self.timeLbl.setText(QTime().addMSecs(value).toString("hh:mm:ss"))
 
+    @Slot(float)
+    def syncSeeker(self, value):
+        """
+        When media time is changed, sync seeker position.
+        @param value: Relative position from [0; 1]
+        @type value: float
+        """
+        # do not sync if user is going to change slider position
+        if not self.seekerSlider.mouseLBPressed:
+            value = int(value * 100)
+            self.seekerSlider.blockSignals(True)
+            self.seekerSlider.setValue(value)
+            self.seekerSlider.blockSignals(False)
+
+    # def printTime(self):
+    #     # FIXME debug only
+    #     print (time.time() - self.t0) * 1000
+
+    @Slot(int)
+    def displayCurrentMedia(self, index):
+        """
+        When media is changed, select row corresponding with media.
+        @param index: position of media in media_list == position in playlist table
+        @type index: int
+        """
+        self.playlist.setCurrentCell(index, 0)          # select the entire row due to table selection behaviour
 
 
+class MediaSeeker(QSlider):
+    """
+    Custom QSlider with implemented direct jumping and left-mouse-button semaphore.
+    - when left mouse button is pressed, seeker will not sync
+    """
+
+    mouseLBPressed = False
+
+    def __init__(self, parent=None):
+        super(MediaSeeker, self).__init__(parent)
+        self.setMinimum(0)
+        self.setMaximum(100)
+        self.setOrientation(Qt.Horizontal)
+
+    def mousePressEvent(self, event):
+        """
+        @type event: QMouseEvent
+        """
+        if event.button() == Qt.LeftButton:
+            # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
+            self.mouseLBPressed = True
+            newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
+            self.setValue(newValue)
+            event.accept()
+
+        super(MediaSeeker, self).mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """
+        @type event: QMouseEvent
+        """
+        super(MediaSeeker, self).mouseReleaseEvent(event)
+
+        if event.button() == Qt.LeftButton:
+            self.mouseLBPressed = False
+
+
+class VolumeSeeker(QSlider):
+    """
+    Custom QSlider with implemented direct jumping.
+    """
+
+    def __init__(self, parent=None):
+        super(VolumeSeeker, self).__init__(parent)
+        self.setMinimum(0)
+        self.setMaximum(100)
+        self.setValue(100)
+        self.setMaximumWidth(80)
+        self.setOrientation(Qt.Horizontal)
+
+    def mousePressEvent(self, event):
+        """
+        @type event: QMouseEvent
+        """
+        if event.button() == Qt.LeftButton:
+            # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
+            newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
+            self.setValue(newValue)
+            event.accept()
+
+        super(VolumeSeeker, self).mousePressEvent(event)
 
 
 
