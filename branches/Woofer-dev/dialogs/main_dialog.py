@@ -110,9 +110,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.mediaPlayer.positionChanged.connect(self.syncSeeker)
         self.mediaPlayer.mediaChanged.connect(self.displayCurrentMedia)
 
-    # def printTime(self):
-    #     print (time.time() - self.t0) * 1000, "ms"
-
     def setupScanner(self):
         # asynchronous scanner
         self.scanner = disk.RecursiveBrowser(nameFilter=FileExt_, followSym=False)
@@ -126,8 +123,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.scanFiles.connect(self.scanner.scanFiles)
         # self.parser.finished.connect(self.printTime)    # FIXME debug only
         self.parser.finished.connect(self.clearProgress)
-        # self.parser.finished.connect(self.scanner.finish)
-        self.parser.parsedData.connect(self.mediaPlayer.addMedia)
+        self.parser.finished.connect(self.scanner.finish)
+        self.parser.parsed.connect(self.mediaPlayer.addMediaList)
         self.scanner.parseData.connect(self.parser.parseMedia)
 
         self.scannerThread.start()
@@ -279,8 +276,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         logger.debug("Opening file browser context menu.")
         choice = menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
-
-        # self.t0 = time.time()
 
         # PLAY NOW
         if choice is playNow:
