@@ -24,8 +24,7 @@ logger.debug('Import ' + __name__)
 
 class MediaPlayer(QObject):
     """
-    Media player interface class to vlc module.
-    Runs in MainThread!
+    Media player class
     """
 
     TICK_INTERVAL = 1000        # in ms
@@ -33,11 +32,13 @@ class MediaPlayer(QObject):
     error = Signal(str)
     tick = Signal(int)
 
-    mediaAdded = Signal(list)
+    mediaAdded = Signal(list, bool)
     playing = Signal()
     stopped = Signal()
     paused = Signal()
     timeChanged = Signal(int)
+    positionChanged = Signal(float)
+    mediaChanged = Signal(int)          # TODO: add metadata
 
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
@@ -60,6 +61,7 @@ class MediaPlayer(QObject):
         self.is_playing = False
         self.is_paused = False
         self.is_stopped = True
+        self.append_mode = True
 
         self.__setupEvents()
 
@@ -77,6 +79,8 @@ class MediaPlayer(QObject):
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
 
     def setSource(self, source_path):
         """
@@ -158,42 +162,48 @@ class MediaPlayer(QObject):
             logger.debug("Player has no media set, setting first media from list %s", sources[0])
             self._media_player.set_media(self._media_list.item_at_index(0))
 
+    def addMedia(self, path, media):
+        self.addMediaList([(path, media)])
+
     @Slot()
-    def addMedia(self, mList):
+    def addMediaList(self, mList):
         """
         Adds list of media objects to player media_list.
         Usually called as slot from parser thread.
         @param mList: list of (unicode_path, media_object)
         @type mList: list of (unicode, vlc.Media)
         """
-        displayToPlaylist = []
+        export = []
 
         self._media_list.lock()
         for path, media in mList:
             self._media_list.add_media(media)
+            # self.source_list.append(path)
             media.release()
-            displayToPlaylist.append((path, media.get_duration()))
+            export.append((path, media.get_duration()))
         self._media_list.unlock()
 
-        # set media if none
-        if not self.getMedia():
-            path, media = mList[0]
-            logger.debug("Player has no media set, setting current media %s", path)
-            self._media_player.set_media(media)
+        self.mediaAdded.emit(export, self.append_mode)
 
-        self.mediaAdded.emit(displayToPlaylist)
+        # set set_mode, set media and switch to append mode for next iteration
+        if not self.append_mode:
+            path, media = mList[0]
+            logger.debug("Setting current media %s", path)
+            self._media_player.set_media(media)
+            self.append_mode = True
+            self.play()         # in set_mode, Play or Play All has been chosen => play()
 
     def clearList(self):
         """
         Clears all existing items in media_list
         """
         logger.debug("Clearing media_list")
-        self._media_list.lock()
-        # FIXME potentially slow, checks for memory leaks
-        while self._media_list.count() > 0:
-            if self._media_list.remove_index(0) == -1:
-                logger.error("Error when removing media from media list")
-        self._media_list.unlock()
+        self.stop()
+        self._media_list.release()      # delete old media list
+
+        self._media_list = self.instance.media_list_new()
+        self._media_list_player.set_media_list(self._media_list)
+        self._media_player.set_media(None)
 
     def getMrl(self):
         """
@@ -274,11 +284,11 @@ class MediaPlayer(QObject):
         @rtype: bool
         @raise ValueError: if value not in range [0, 100]
         """
-        if 0 <= value <= 100:
-            logger.debug("Setting volume to value %s", value)
-            return self._media_player.audio_set_volume(int(value)) == -1
-        else:
+        if not 0 <= value <= 100:
             raise ValueError("Volume must be in range <0, 100>")
+
+        logger.debug("Setting volume to value %s", value)
+        return self._media_player.audio_set_volume(int(value)) == -1
 
     def volume(self):
         """
@@ -313,25 +323,19 @@ class MediaPlayer(QObject):
 
     def setPosition(self, new_pos):
         """
-        Set movie position as percentage between 0.0 and 1.0. This has no effect if playback is not enabled.
+        Set movie position as percentage between 0 and 100. This has no effect if playback is not enabled.
         This might not work depending on the underlying input format and protocol.
         Method returns False if media is not seekable.
         @param new_pos: the position
-        @type new_pos: int
+        @type new_pos: float
         @rtype: bool
-        @raise ValueError: if value not in range [0, 1.0]
+        @raise ValueError: if value not in range [0, 100]
         """
-        if not self._media_player.is_seekable():
-            logger.error("Media is not seekable")
-            return False
+        if not 0 <= new_pos <= 100:
+            raise ValueError("New position must be in range [0, 100]")
 
-        if 0 <= new_pos <= 1.0:
-            self._media_player.set_position(new_pos)
-            logger.debug("Media play set to new position: %s", new_pos)
-        else:
-            raise ValueError("New position must be in range [0, 1.0]")
-
-        return True
+        logger.debug("Setting media to new position : %s", new_pos)
+        return self._media_player.set_position(new_pos / 100.0)
 
     def currentTime(self):
         """
@@ -376,6 +380,11 @@ class MediaPlayer(QObject):
     def __timeChangedCallback(self, event):
         self.timeChanged.emit(event.u.new_time)
 
+    def __positionChangedCallback(self, event):
+        newPos = event.u.new_position
+        newPos = 0 if newPos > 1 else newPos
+        self.positionChanged.emit(newPos)
+
     def __playingCallback(self, event):
         logger.debug("Media player is playing")
         self.is_playing = True
@@ -404,10 +413,21 @@ class MediaPlayer(QObject):
         logger.debug("Media player skipped backward")
 
     def __endReachedCallback(self, event):
-        logger.debug("Media encountered error")
+        logger.debug("Media end reached")
+        self.is_playing = False
+        self.is_paused = False
+        self.is_stopped = True
+        self.stopped.emit()
+
+    def __mediaChangedCallback(self, event):
+        logger.debug("Media changed")
+        currentMedia = self._media_player.get_media()
+        index = self._media_list.index_of_item(currentMedia)
+        currentMedia.release()
+        self.mediaChanged.emit(index)
 
     def __errorCallback(self, event):
-        logger.debug("Media end reached")
+        logger.warning("Media encountered error")
 
 
 class MediaParser(QObject):
@@ -418,13 +438,13 @@ class MediaParser(QObject):
     """
 
     finished = Signal()
-    parsedData = Signal(list)
+    parsed = Signal(list)
 
     def __init__(self):
         super(MediaParser, self).__init__()
         self.vlcInstance = vlc.Instance()
         """@type: vlc.Instance"""
-        logger.debug("Media parser instance initialized.")
+        logger.debug("Media parser initialized.")
 
     @Slot(list)
     def parseMedia(self, sources):
@@ -434,7 +454,7 @@ class MediaParser(QObject):
         """
         # if end flag has been sent
         if not sources:
-            logger.debug("Finishing parsing.")
+            logger.debug("Parser finished.")
             self.finished.emit()
             return
 
@@ -445,7 +465,4 @@ class MediaParser(QObject):
             mMedia.parse()
             mediaList.append((unicode_path, mMedia))
 
-        self.parsedData.emit(mediaList)
-
-    def __del__(self):
-        self.vlcInstance.release()
+        self.parsed.emit(mediaList)
