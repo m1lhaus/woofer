@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'uic/mainform.ui'
+# Form implementation generated from reading ui file 'uic\mainform.ui'
 #
-# Created: Fri Mar 28 20:12:30 2014
+# Created: Sun Mar 30 22:06:40 2014
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -223,7 +223,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.splitter, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 973, 25))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 973, 21))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtGui.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -269,6 +269,7 @@ class Ui_MainWindow(object):
         self.playlist.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Duration", None, QtGui.QApplication.UnicodeUTF8))
         self.playlist.horizontalHeaderItem(3).setText(QtGui.QApplication.translate("MainWindow", "Path", None, QtGui.QApplication.UnicodeUTF8))
         self.timeLbl.setText(QtGui.QApplication.translate("MainWindow", "00:00:00", None, QtGui.QApplication.UnicodeUTF8))
+        self.playPauseBtn.setShortcut(QtGui.QApplication.translate("MainWindow", "Ctrl+Alt+P", None, QtGui.QApplication.UnicodeUTF8))
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "Media", None, QtGui.QApplication.UnicodeUTF8))
         self.menuPlayback.setTitle(QtGui.QApplication.translate("MainWindow", "Playback", None, QtGui.QApplication.UnicodeUTF8))
         self.menuEdit.setTitle(QtGui.QApplication.translate("MainWindow", "Edit", None, QtGui.QApplication.UnicodeUTF8))
