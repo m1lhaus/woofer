@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Main application GUI module
+Main application GUI module.
 """
 
 __version__ = "$Id$"
