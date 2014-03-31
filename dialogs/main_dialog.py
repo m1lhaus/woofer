@@ -92,6 +92,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
         self.sourceItemsBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
         self.playlist.customContextMenuRequested.connect(self.playlistContextMenu)
+        self.playlist.cellDoubleClicked.connect(self.playNow)
 
         self.errorEncountered.connect(self.displayErrorMsg)
 
@@ -103,18 +104,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
 
     def setupActions(self):
-        self.playNowAction = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", self)
-        self.playNowAction.setShortcut(QApplication.translate("MainWindow", "Ctrl+D", None, QApplication.UnicodeUTF8))
-        self.playNowAction.setShortcutContext(Qt.ApplicationShortcut)
-
-        self.remFromPlaylistAction = QAction(QIcon(":/new/icons/icons/remove_close.png"), "Remove", self)
-        self.remFromPlaylistAction.setShortcut(QKeySequence(Qt.Key_Delete))
-        self.remFromDiskAction = QAction(QIcon(":/new/icons/icons/delete.png"), "Remove from disk", self)
-        self.remFromPlaylistAction.setShortcut(QKeySequence(Qt.Key_Shift + Qt.Key_Delete))
-
-        self.playNowAction.triggered.connect(self.playNowSong)
-        self.remFromPlaylistAction.triggered.connect(self.remFromPlaylist)
-        self.remFromDiskAction.triggered.connect(self.remFromDisk)
+        pass
 
     def setupPlayer(self):
         self.mediaPlayer = media.MediaPlayer()
@@ -141,7 +131,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         # self.parser.finished.connect(self.printTime)    # FIXME debug only
         self.parser.finished.connect(self.clearProgress)
         self.parser.finished.connect(self.scanner.finish)
-        self.parser.parsed.connect(self.mediaPlayer.addMediaList)
+        self.parser.parsed.connect(self.mediaPlayer.addMedia)
         self.scanner.parseData.connect(self.parser.parseMedia)
 
         self.scannerThread.start()
@@ -335,23 +325,28 @@ class MainApp(QMainWindow, Ui_MainWindow):
             return
 
         logger.debug("Playlist context menu called.")
+        menu = QMenu(self.playlist)
+        playNowAction = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", menu)
+        playNowAction.setShortcut(QKeySequence(Qt.Key_Enter))
+        remFromPlaylistAction = QAction("Remove from playlist", menu)
+        remFromPlaylistAction.setShortcut(QKeySequence(Qt.Key_Delete))
+        remFromDiskAction = QAction(QIcon(":/new/icons/icons/delete.png"), "Remove from disk", menu)
+        remFromDiskAction.setShortcut(QKeySequence(Qt.SHIFT + Qt.Key_Delete))
+        separator = QAction(menu)
+        separator.setSeparator(True)
 
-        # menu = QMenu(self.playlist)
-        #
-        # separator = QAction(menu)
-        # separator.setSeparator(True)
-        # playNowAction = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", self.playlist)
-        # playNowAction.setShortcut(QApplication.translate("MainWindow", "Ctrl+D", None, QApplication.UnicodeUTF8))
-        # # playNowAction.setShortcutContext(Qt.ApplicationShortcut)
-        #
-        # playNowAction.triggered.connect(self.playNowSong)
-        # menu.addAction(playNowAction)
-        # # menu.addActions([self.playNowAction, separator])
-        # # removeMenu = menu.addMenu("Remove")
-        # # removeMenu.addActions([self.remFromPlaylistAction, self.remFromDiskAction])
-        #
-        # choice = menu.exec_(self.playlist.viewport().mapToGlobal(pos))
+        menu.addActions([playNowAction, separator])
+        removeMenu = menu.addMenu("Remove")
+        removeMenu.addActions([remFromPlaylistAction, remFromDiskAction])
+        choice = menu.exec_(self.playlist.viewport().mapToGlobal(pos))
 
+        index = self.playlist.row(item)
+        if choice is playNowAction:
+            self.playNow(index)
+        elif choice is remFromPlaylistAction:
+            self.remFromPlaylist(index)
+        elif choice is remFromDiskAction:
+            self.remFromDisk(index)
 
     @Slot()
     def changeSource(self, source_id=None):
@@ -605,17 +600,19 @@ class MainApp(QMainWindow, Ui_MainWindow):
         """
         self.playlist.setCurrentCell(index, 0)          # select the entire row due to table selection behaviour
 
-    def playNowSong(self):
-        pass
-        print "play now"
+    def playNow(self, row=None, col=None):
+        index = self.playlist.currentRow() if row is None else row
+        self.mediaPlayer.play(index)
 
-    def remFromPlaylist(self):
-        pass
-        print "remove from playlist"
+    def remFromPlaylist(self, row=None):
+        index = self.playlist.currentRow() if row is None else row
+        self.mediaPlayer.removeItem(index)
+        self.playlist.removeRow(index)
 
-    def remFromDisk(self):
-        pass
-        print "remove from disk"
+    def remFromDisk(self, index=None):
+        index = self.playlist.currentRow() if index is None else index
+        print "remove from disk", index
+        # TODO implement
 
 
 class MediaSeeker(QSlider):
