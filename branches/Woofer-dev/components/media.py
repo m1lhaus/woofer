@@ -162,11 +162,8 @@ class MediaPlayer(QObject):
             logger.debug("Player has no media set, setting first media from list %s", sources[0])
             self._media_player.set_media(self._media_list.item_at_index(0))
 
-    def addMedia(self, path, media):
-        self.addMediaList([(path, media)])
-
     @Slot()
-    def addMediaList(self, mList):
+    def addMedia(self, mList):
         """
         Adds list of media objects to player media_list.
         Usually called as slot from parser thread.
@@ -192,6 +189,37 @@ class MediaPlayer(QObject):
             self._media_player.set_media(media)
             self.append_mode = True
             self.play()         # in set_mode, Play or Play All has been chosen => play()
+
+    def removeItem(self, index):
+        """
+        Removes item from media list by index.
+        If media is currently being played, next media is played.
+        If there is no next media, playing is stopped.
+        @param index: index of removed item in media_list
+        @type index: int
+        """
+        logger.debug("Removing media item in index: %s", index)
+
+        # get removed and current mrl for comparison
+        playedMedia = self._media_player.get_media()
+        self._media_list.lock()
+        removedMedia = self._media_list.item_at_index(index)
+        self._media_list.unlock()
+        playedMrl = playedMedia.get_mrl()
+        removedMrl = removedMedia.get_mrl()
+        playedMedia.release()
+        removedMedia.release()
+
+        mustChangeSong = True if playedMrl == removedMrl else False
+
+        self._media_list.lock()
+        self._media_list.remove_index(index)
+        count = self._media_list.count()
+        self._media_list.unlock()
+
+        # change song if removed == played, but stop if there is no next song
+        if mustChangeSong:
+            self._media_list_player.play_item_at_index(index) if index < count else self.stop()
 
     def clearList(self):
         """
@@ -235,14 +263,20 @@ class MediaPlayer(QObject):
         else:
             self._media_list_player.play()
 
-    def play(self):
+    def play(self, index=None):
         """
         Plays the media in media_list. Emits error signal when something went wrong.
         Method returns False if there is no media or unable to play the source.
         @rtype : bool
         """
-        logger.debug("Play method called")
-        return self._media_list_player.play() == -1
+        if index is not None:
+            logger.debug("Play method called with index: %s" % index)
+            error = self._media_list_player.play_item_at_index(index)
+        else:
+            logger.debug("Play method called")
+            error = self._media_list_player.play()
+
+        return error
 
     def pause(self):
         """
