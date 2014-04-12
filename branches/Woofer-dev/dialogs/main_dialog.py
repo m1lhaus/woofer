@@ -16,7 +16,7 @@ import time
 from PySide.QtGui import *
 from PySide.QtCore import *
 
-from forms.main_form import Ui_MainWindow
+from forms.main_form import MainForm
 from dialogs.library_dialog import LibraryDialog
 from components import disk
 from components import media
@@ -34,7 +34,7 @@ StdErrRedirector = misc.RedirectDescriptor()
 StdErrRedirector.redirect_C_stderr_null()
 
 
-class MainApp(QMainWindow, Ui_MainWindow):
+class MainApp(QMainWindow, MainForm):
     """
     Main application GUI form.
     - setup main window dialog
@@ -68,22 +68,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def setupUi(self, parent):
         super(MainApp, self).setupUi(parent)
-        self.seekerSlider = MediaSeeker(self)
-        self.volumeSlider = VolumeSeeker(self)
-        self.controlsHLayout.addWidget(self.seekerSlider)
-        self.controlsHLayout.addWidget(self.volumeSlider)
-
         self.sourceBrowser.expandAll()
-        self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
-        self.playlist.setColumnHidden(self.playlist.columnCount() - 1, True)
-        header = self.playlist.horizontalHeader()
-        header.setResizeMode(0, QHeaderView.Stretch)
-        header.setResizeMode(1, QHeaderView.Fixed)
-        header.setResizeMode(2, QHeaderView.ResizeToContents)
-        self.playlist.setColumnWidth(1, 100)
-        self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
-        self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.playlist.setContextMenuPolicy(Qt.CustomContextMenu)
         self.timeLbl.setFixedSize(self.timeLbl.minimumSizeHint())       # prevent 1px oscillation
 
     def setupGUISignals(self):
@@ -102,6 +87,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.previousBtn.clicked.connect(self.mediaPlayer.prev)
         self.seekerSlider.valueChanged.connect(self.mediaPlayer.setPosition)
         self.volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
+
+        # self.playlist.enterShortcut.activated.connect(self.printNeco)
 
     def setupActions(self):
         pass
@@ -615,67 +602,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         # TODO implement
 
 
-class MediaSeeker(QSlider):
-    """
-    Custom QSlider with implemented direct jumping and left-mouse-button semaphore.
-    - when left mouse button is pressed, seeker will not sync
-    """
 
-    mouseLBPressed = False
-
-    def __init__(self, parent=None):
-        super(MediaSeeker, self).__init__(parent)
-        self.setMinimum(0)
-        self.setMaximum(100)
-        self.setOrientation(Qt.Horizontal)
-
-    def mousePressEvent(self, event):
-        """
-        @type event: QMouseEvent
-        """
-        if event.button() == Qt.LeftButton:
-            # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
-            self.mouseLBPressed = True
-            newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
-            self.setValue(newValue)
-            event.accept()
-
-        super(MediaSeeker, self).mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        """
-        @type event: QMouseEvent
-        """
-        super(MediaSeeker, self).mouseReleaseEvent(event)
-
-        if event.button() == Qt.LeftButton:
-            self.mouseLBPressed = False
-
-
-class VolumeSeeker(QSlider):
-    """
-    Custom QSlider with implemented direct jumping.
-    """
-
-    def __init__(self, parent=None):
-        super(VolumeSeeker, self).__init__(parent)
-        self.setMinimum(0)
-        self.setMaximum(100)
-        self.setValue(100)
-        self.setMaximumWidth(80)
-        self.setOrientation(Qt.Horizontal)
-
-    def mousePressEvent(self, event):
-        """
-        @type event: QMouseEvent
-        """
-        if event.button() == Qt.LeftButton:
-            # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
-            newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
-            self.setValue(newValue)
-            event.accept()
-
-        super(VolumeSeeker, self).mousePressEvent(event)
 
 
 

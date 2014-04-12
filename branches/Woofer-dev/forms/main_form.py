@@ -1,244 +1,276 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'uic\mainform.ui'
-#
-# Created: Sun Mar 30 22:06:40 2014
-#      by: pyside-uic 0.2.15 running on PySide 1.2.1
-#
-# WARNING! All changes made in this file will be lost!
+"""
+All GUI components stored here.
+"""
 
-from PySide import QtCore, QtGui
+__version__ = "$Id$"
 
-class Ui_MainWindow(object):
+import icons_rc
+
+from PySide.QtGui import *
+from PySide.QtCore import *
+
+
+class MediaSeeker(QSlider):
+    """
+    Custom QSlider with implemented direct jumping and left-mouse-button semaphore.
+    - when left mouse button is pressed, seeker will not sync
+    """
+
+    mouseLBPressed = False
+
+    def __init__(self, parent=None):
+        super(MediaSeeker, self).__init__(parent)
+        self.setMinimum(0)
+        self.setMaximum(100)
+        self.setOrientation(Qt.Horizontal)
+
+    def mousePressEvent(self, event):
+        """
+        @type event: QMouseEvent
+        """
+        if event.button() == Qt.LeftButton:
+            # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
+            self.mouseLBPressed = True
+            newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
+            self.setValue(newValue)
+            event.accept()
+
+        super(MediaSeeker, self).mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """
+        @type event: QMouseEvent
+        """
+        super(MediaSeeker, self).mouseReleaseEvent(event)
+
+        if event.button() == Qt.LeftButton:
+            self.mouseLBPressed = False
+
+
+class VolumeSeeker(QSlider):
+    """
+    Custom QSlider with implemented direct jumping.
+    """
+
+    def __init__(self, parent=None):
+        super(VolumeSeeker, self).__init__(parent)
+        self.setMinimum(0)
+        self.setMaximum(100)
+        self.setValue(100)
+        self.setMaximumWidth(80)
+        self.setOrientation(Qt.Horizontal)
+
+    def mousePressEvent(self, event):
+        """
+        @type event: QMouseEvent
+        """
+        if event.button() == Qt.LeftButton:
+            # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
+            newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
+            self.setValue(newValue)
+            event.accept()
+
+        super(VolumeSeeker, self).mousePressEvent(event)
+
+
+class PlaylistTable(QTableWidget):
+
+    def __init__(self, parent):
+        super(PlaylistTable, self).__init__(parent)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setTabKeyNavigation(False)
+        self.setAlternatingRowColors(True)
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.setGridStyle(Qt.DotLine)
+        self.setColumnCount(4)
+        self.setRowCount(0)
+        self.setHorizontalHeaderItem(0, QTableWidgetItem())
+        self.setHorizontalHeaderItem(1, QTableWidgetItem())
+        self.setHorizontalHeaderItem(2, QTableWidgetItem())
+        self.setHorizontalHeaderItem(3, QTableWidgetItem())
+        self.horizontalHeader().setDefaultSectionSize(200)
+        self.verticalHeader().setDefaultSectionSize(19)
+        self.setColumnHidden(self.columnCount() - 1, True)
+        header = self.horizontalHeader()
+        header.setResizeMode(0, QHeaderView.Stretch)
+        header.setResizeMode(1, QHeaderView.Fixed)
+        header.setResizeMode(2, QHeaderView.ResizeToContents)
+        self.setColumnWidth(1, 100)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+
+        self.enterShortcut = QShortcut(QKeySequence(Qt.Key_Return), self, context=Qt.WidgetShortcut)
+        self.enterShortcut.setAutoRepeat(False)
+
+
+class MainForm(object):
+    """
+    Build main form
+    """
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(973, 497)
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/new/icons/icons/app_icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon = QIcon()
+        icon.addPixmap(QPixmap(":/new/icons/icons/app_icon.png"), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
-        self.centralwidget = QtGui.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.gridLayout = QtGui.QGridLayout(self.centralwidget)
+
+        # start MAIN LAYOUT
+        self.centralwidget = QWidget(MainWindow)
+        self.gridLayout = QGridLayout(self.centralwidget)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setHorizontalSpacing(0)
         self.gridLayout.setVerticalSpacing(6)
-        self.gridLayout.setObjectName("gridLayout")
-        self.splitter = QtGui.QSplitter(self.centralwidget)
-        self.splitter.setOrientation(QtCore.Qt.Horizontal)
+
+        # start SPLITTER
+        self.splitter = QSplitter(self.centralwidget)
+        self.splitter.setOrientation(Qt.Horizontal)
         self.splitter.setHandleWidth(1)
-        self.splitter.setObjectName("splitter")
-        self.layoutWidget = QtGui.QWidget(self.splitter)
-        self.layoutWidget.setObjectName("layoutWidget")
-        self.mainLeftVLayout = QtGui.QVBoxLayout(self.layoutWidget)
+        self.layoutWidget = QWidget(self.splitter)
+
+        # LEFT LAYOUT
+        # -----------
+        self.mainLeftVLayout = QVBoxLayout(self.layoutWidget)
         self.mainLeftVLayout.setSpacing(0)
         self.mainLeftVLayout.setContentsMargins(0, 0, 0, 0)
-        self.mainLeftVLayout.setObjectName("mainLeftVLayout")
-        self.sourceBrowser = QtGui.QTreeWidget(self.layoutWidget)
-        self.sourceBrowser.setMaximumSize(QtCore.QSize(16777215, 110))
-        self.sourceBrowser.setAutoExpandDelay(-1)
+        # SOURCE BROWSER
+        self.sourceBrowser = QTreeWidget(self.layoutWidget)
+        self.sourceBrowser.setMaximumHeight(110)
         self.sourceBrowser.setAnimated(True)
-        self.sourceBrowser.setHeaderHidden(False)
-        self.sourceBrowser.setObjectName("sourceBrowser")
-        item_0 = QtGui.QTreeWidgetItem(self.sourceBrowser)
-        icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(":/new/icons/icons/music-cd.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.sourceBrowser.setColumnCount(2)
+        self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
+        item_0 = QTreeWidgetItem(self.sourceBrowser)
+        icon1 = QIcon(QPixmap(":/new/icons/icons/music-cd.png"))
         item_0.setIcon(0, icon1)
-        item_1 = QtGui.QTreeWidgetItem(item_0)
-        icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap(":/new/icons/icons/folder.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        item_1 = QTreeWidgetItem(item_0)
+        icon2 = QIcon(QPixmap(":/new/icons/icons/folder.png"))
         item_1.setIcon(0, icon2)
-        item_1 = QtGui.QTreeWidgetItem(item_0)
-        icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap(":/new/icons/icons/playlist.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        item_1 = QTreeWidgetItem(item_0)
+        icon3 = QIcon(QPixmap(":/new/icons/icons/playlist.png"))
         item_1.setIcon(0, icon3)
-        item_0 = QtGui.QTreeWidgetItem(self.sourceBrowser)
-        icon4 = QtGui.QIcon()
-        icon4.addPixmap(QtGui.QPixmap(":/new/icons/icons/radio.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        item_0 = QTreeWidgetItem(self.sourceBrowser)
+        icon4 = QIcon(QPixmap(":/new/icons/icons/radio.png"))
         item_0.setIcon(0, icon4)
         self.mainLeftVLayout.addWidget(self.sourceBrowser)
-        self.filterHLayout = QtGui.QHBoxLayout()
+        # FOLDER SELECTION
+        self.filterHLayout = QHBoxLayout()
         self.filterHLayout.setSpacing(1)
         self.filterHLayout.setContentsMargins(3, 1, 1, 1)
-        self.filterHLayout.setObjectName("filterHLayout")
-        self.folderLbl = QtGui.QLabel(self.layoutWidget)
-        self.folderLbl.setObjectName("folderLbl")
+        self.folderLbl = QLabel(self.layoutWidget)
         self.filterHLayout.addWidget(self.folderLbl)
-        self.folderCombo = QtGui.QComboBox(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
+        self.folderCombo = QComboBox(self.layoutWidget)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.folderCombo.sizePolicy().hasHeightForWidth())
         self.folderCombo.setSizePolicy(sizePolicy)
-        self.folderCombo.setObjectName("folderCombo")
         self.filterHLayout.addWidget(self.folderCombo)
-        self.libraryBtn = QtGui.QPushButton(self.layoutWidget)
-        self.libraryBtn.setText("")
-        icon5 = QtGui.QIcon()
-        icon5.addPixmap(QtGui.QPixmap(":/new/icons/icons/settings.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.libraryBtn = QPushButton(self.layoutWidget)
+        icon5 = QIcon(QPixmap(":/new/icons/icons/settings.png"))
         self.libraryBtn.setIcon(icon5)
-        self.libraryBtn.setFlat(False)
-        self.libraryBtn.setObjectName("libraryBtn")
         self.filterHLayout.addWidget(self.libraryBtn)
         self.mainLeftVLayout.addLayout(self.filterHLayout)
-        self.sourceItemsBrowser = QtGui.QTreeView(self.layoutWidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
+        # SOURCE ITEM BROWSER
+        self.sourceItemsBrowser = QTreeView(self.layoutWidget)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHeightForWidth(self.sourceItemsBrowser.sizePolicy().hasHeightForWidth())
         self.sourceItemsBrowser.setSizePolicy(sizePolicy)
-        self.sourceItemsBrowser.setObjectName("sourceItemsBrowser")
+        self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
         self.mainLeftVLayout.addWidget(self.sourceItemsBrowser)
-        self.layoutWidget1 = QtGui.QWidget(self.splitter)
-        self.layoutWidget1.setObjectName("layoutWidget1")
-        self.mainRightVLayout = QtGui.QVBoxLayout(self.layoutWidget1)
+        self.layoutWidget1 = QWidget(self.splitter)
+
+        # RIGHT LAYOUT
+        # -----------
+        self.mainRightVLayout = QVBoxLayout(self.layoutWidget1)
         self.mainRightVLayout.setSpacing(1)
         self.mainRightVLayout.setContentsMargins(0, 0, 0, 0)
-        self.mainRightVLayout.setObjectName("mainRightVLayout")
-        self.playlist = QtGui.QTableWidget(self.layoutWidget1)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.playlist.sizePolicy().hasHeightForWidth())
-        self.playlist.setSizePolicy(sizePolicy)
-        self.playlist.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
-        self.playlist.setTabKeyNavigation(False)
-        self.playlist.setAlternatingRowColors(True)
-        self.playlist.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
-        self.playlist.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.playlist.setGridStyle(QtCore.Qt.DotLine)
-        self.playlist.setObjectName("playlist")
-        self.playlist.setColumnCount(4)
-        self.playlist.setRowCount(0)
-        item = QtGui.QTableWidgetItem()
-        self.playlist.setHorizontalHeaderItem(0, item)
-        item = QtGui.QTableWidgetItem()
-        self.playlist.setHorizontalHeaderItem(1, item)
-        item = QtGui.QTableWidgetItem()
-        self.playlist.setHorizontalHeaderItem(2, item)
-        item = QtGui.QTableWidgetItem()
-        self.playlist.setHorizontalHeaderItem(3, item)
-        self.playlist.horizontalHeader().setDefaultSectionSize(200)
-        self.playlist.verticalHeader().setVisible(True)
-        self.playlist.verticalHeader().setDefaultSectionSize(19)
+        # PLAYLIST
+        self.playlist = PlaylistTable(self.layoutWidget1)
         self.mainRightVLayout.addWidget(self.playlist)
-        self.controlsFrame = QtGui.QFrame(self.layoutWidget1)
-        self.controlsFrame.setMinimumSize(QtCore.QSize(0, 0))
-        self.controlsFrame.setFrameShape(QtGui.QFrame.StyledPanel)
-        self.controlsFrame.setFrameShadow(QtGui.QFrame.Plain)
-        self.controlsFrame.setObjectName("controlsFrame")
-        self.verticalLayout = QtGui.QVBoxLayout(self.controlsFrame)
+        # CONTROLS
+        self.controlsFrame = QFrame(self.layoutWidget1)
+        self.controlsFrame.setFrameShape(QFrame.StyledPanel)
+        self.controlsFrame.setFrameShadow(QFrame.Plain)
+        self.verticalLayout = QVBoxLayout(self.controlsFrame)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.controlsHLayout = QtGui.QHBoxLayout()
+        self.controlsHLayout = QHBoxLayout()
         self.controlsHLayout.setContentsMargins(9, 9, 9, 9)
-        self.controlsHLayout.setObjectName("controlsHLayout")
-        self.timeLbl = QtGui.QLabel(self.controlsFrame)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
+        self.timeLbl = QLabel(self.controlsFrame)
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         sizePolicy.setHeightForWidth(self.timeLbl.sizePolicy().hasHeightForWidth())
         self.timeLbl.setSizePolicy(sizePolicy)
-        self.timeLbl.setMinimumSize(QtCore.QSize(0, 0))
-        self.timeLbl.setObjectName("timeLbl")
         self.controlsHLayout.addWidget(self.timeLbl)
-        self.repeatBtn = QtGui.QPushButton(self.controlsFrame)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
+        self.repeatBtn = QPushButton(self.controlsFrame)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.repeatBtn.sizePolicy().hasHeightForWidth())
         self.repeatBtn.setSizePolicy(sizePolicy)
-        self.repeatBtn.setMinimumSize(QtCore.QSize(30, 30))
-        self.repeatBtn.setText("")
-        icon6 = QtGui.QIcon()
-        icon6.addPixmap(QtGui.QPixmap(":/new/icons/icons/media-repeat.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.repeatBtn.setMinimumSize(QSize(30, 30))
+        icon6 = QIcon(QPixmap(":/new/icons/icons/media-repeat.png"))
         self.repeatBtn.setIcon(icon6)
-        self.repeatBtn.setIconSize(QtCore.QSize(16, 16))
+        self.repeatBtn.setIconSize(QSize(16, 16))
         self.repeatBtn.setFlat(True)
-        self.repeatBtn.setObjectName("repeatBtn")
         self.controlsHLayout.addWidget(self.repeatBtn)
-        self.previousBtn = QtGui.QPushButton(self.controlsFrame)
-        self.previousBtn.setMinimumSize(QtCore.QSize(30, 30))
-        self.previousBtn.setText("")
-        icon7 = QtGui.QIcon()
-        icon7.addPixmap(QtGui.QPixmap(":/new/icons/icons/media-previous.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.previousBtn = QPushButton(self.controlsFrame)
+        self.previousBtn.setMinimumSize(QSize(30, 30))
+        icon7 = QIcon(QPixmap(":/new/icons/icons/media-previous.png"))
         self.previousBtn.setIcon(icon7)
-        self.previousBtn.setIconSize(QtCore.QSize(24, 24))
-        self.previousBtn.setFlat(False)
-        self.previousBtn.setObjectName("previousBtn")
+        self.previousBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.previousBtn)
-        self.playPauseBtn = QtGui.QPushButton(self.controlsFrame)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
+        self.playPauseBtn = QPushButton(self.controlsFrame)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.playPauseBtn.sizePolicy().hasHeightForWidth())
         self.playPauseBtn.setSizePolicy(sizePolicy)
-        self.playPauseBtn.setMinimumSize(QtCore.QSize(0, 0))
-        self.playPauseBtn.setText("")
-        icon8 = QtGui.QIcon()
-        icon8.addPixmap(QtGui.QPixmap(":/new/icons/icons/media-play.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon8 = QIcon(QPixmap(":/new/icons/icons/media-play.png"))
         self.playPauseBtn.setIcon(icon8)
-        self.playPauseBtn.setIconSize(QtCore.QSize(32, 32))
-        self.playPauseBtn.setFlat(False)
-        self.playPauseBtn.setObjectName("playPauseBtn")
+        self.playPauseBtn.setIconSize(QSize(32, 32))
         self.controlsHLayout.addWidget(self.playPauseBtn)
-        self.stopBtn = QtGui.QPushButton(self.controlsFrame)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
+        self.stopBtn = QPushButton(self.controlsFrame)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.stopBtn.sizePolicy().hasHeightForWidth())
         self.stopBtn.setSizePolicy(sizePolicy)
-        self.stopBtn.setMinimumSize(QtCore.QSize(0, 0))
-        self.stopBtn.setText("")
-        icon9 = QtGui.QIcon()
-        icon9.addPixmap(QtGui.QPixmap(":/new/icons/icons/media-stop.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon9 = QIcon(QPixmap(":/new/icons/icons/media-stop.png"))
         self.stopBtn.setIcon(icon9)
-        self.stopBtn.setIconSize(QtCore.QSize(32, 32))
-        self.stopBtn.setFlat(False)
-        self.stopBtn.setObjectName("stopBtn")
+        self.stopBtn.setIconSize(QSize(32, 32))
         self.controlsHLayout.addWidget(self.stopBtn)
-        self.nextBtn = QtGui.QPushButton(self.controlsFrame)
-        self.nextBtn.setMinimumSize(QtCore.QSize(30, 30))
-        self.nextBtn.setText("")
-        icon10 = QtGui.QIcon()
-        icon10.addPixmap(QtGui.QPixmap(":/new/icons/icons/media-next.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.nextBtn = QPushButton(self.controlsFrame)
+        self.nextBtn.setMinimumSize(QSize(30, 30))
+        icon10 = QIcon(QPixmap(":/new/icons/icons/media-next.png"))
         self.nextBtn.setIcon(icon10)
-        self.nextBtn.setIconSize(QtCore.QSize(24, 24))
-        self.nextBtn.setFlat(False)
-        self.nextBtn.setObjectName("nextBtn")
+        self.nextBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.nextBtn)
-        self.shuffleBtn = QtGui.QPushButton(self.controlsFrame)
-        self.shuffleBtn.setMinimumSize(QtCore.QSize(30, 30))
-        self.shuffleBtn.setText("")
-        icon11 = QtGui.QIcon()
-        icon11.addPixmap(QtGui.QPixmap(":/new/icons/icons/media-shuffle.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.shuffleBtn = QPushButton(self.controlsFrame)
+        self.shuffleBtn.setMinimumSize(QSize(30, 30))
+        icon11 = QIcon(QPixmap(":/new/icons/icons/media-shuffle.png"))
         self.shuffleBtn.setIcon(icon11)
-        self.shuffleBtn.setIconSize(QtCore.QSize(16, 16))
+        self.shuffleBtn.setIconSize(QSize(16, 16))
         self.shuffleBtn.setFlat(True)
-        self.shuffleBtn.setObjectName("shuffleBtn")
         self.controlsHLayout.addWidget(self.shuffleBtn)
-        spacerItem = QtGui.QSpacerItem(10, 20, QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Minimum)
+        spacerItem = QSpacerItem(10, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
         self.controlsHLayout.addItem(spacerItem)
+        self.seekerSlider = MediaSeeker(self)
+        self.volumeSlider = VolumeSeeker(self)
+        self.controlsHLayout.addWidget(self.seekerSlider)
+        self.controlsHLayout.addWidget(self.volumeSlider)
         self.verticalLayout.addLayout(self.controlsHLayout)
         self.mainRightVLayout.addWidget(self.controlsFrame)
         self.gridLayout.addWidget(self.splitter, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 973, 21))
-        self.menubar.setObjectName("menubar")
-        self.menuFile = QtGui.QMenu(self.menubar)
-        self.menuFile.setObjectName("menuFile")
-        self.menuPlayback = QtGui.QMenu(self.menubar)
-        self.menuPlayback.setObjectName("menuPlayback")
-        self.menuEdit = QtGui.QMenu(self.menubar)
-        self.menuEdit.setObjectName("menuEdit")
-        self.menuHelp = QtGui.QMenu(self.menubar)
-        self.menuHelp.setObjectName("menuHelp")
+
+        # MAIN MENU
+        self.menubar = QMenuBar(MainWindow)
+        self.menubar.setGeometry(QRect(0, 0, 973, 21))
+        self.menuFile = QMenu(self.menubar)
+        self.menuPlayback = QMenu(self.menubar)
+        self.menuEdit = QMenu(self.menubar)
+        self.menuHelp = QMenu(self.menubar)
         MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtGui.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
+        self.statusbar = QStatusBar(MainWindow)
+        self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
         MainWindow.setStatusBar(self.statusbar)
-        self.actionAbout = QtGui.QAction(MainWindow)
-        self.actionAbout.setObjectName("actionAbout")
+        self.actionAbout = QAction(MainWindow)
         self.menuHelp.addAction(self.actionAbout)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuPlayback.menuAction())
@@ -246,34 +278,31 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Woofer", None, QtGui.QApplication.UnicodeUTF8))
-        self.sourceBrowser.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Playback source", None, QtGui.QApplication.UnicodeUTF8))
-        self.sourceBrowser.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "ID", None, QtGui.QApplication.UnicodeUTF8))
+        MainWindow.setWindowTitle(QApplication.translate("MainWindow", "Woofer", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.headerItem().setText(0, QApplication.translate("MainWindow", "Playback source", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.headerItem().setText(1, QApplication.translate("MainWindow", "ID", None, QApplication.UnicodeUTF8))
         __sortingEnabled = self.sourceBrowser.isSortingEnabled()
         self.sourceBrowser.setSortingEnabled(False)
-        self.sourceBrowser.topLevelItem(0).setText(0, QtGui.QApplication.translate("MainWindow", "Music", None, QtGui.QApplication.UnicodeUTF8))
-        self.sourceBrowser.topLevelItem(0).child(0).setText(0, QtGui.QApplication.translate("MainWindow", "Folders", None, QtGui.QApplication.UnicodeUTF8))
-        self.sourceBrowser.topLevelItem(0).child(0).setText(1, QtGui.QApplication.translate("MainWindow", "0", None, QtGui.QApplication.UnicodeUTF8))
-        self.sourceBrowser.topLevelItem(0).child(1).setText(0, QtGui.QApplication.translate("MainWindow", "Playlists", None, QtGui.QApplication.UnicodeUTF8))
-        self.sourceBrowser.topLevelItem(0).child(1).setText(1, QtGui.QApplication.translate("MainWindow", "1", None, QtGui.QApplication.UnicodeUTF8))
-        self.sourceBrowser.topLevelItem(1).setText(0, QtGui.QApplication.translate("MainWindow", "Radios", None, QtGui.QApplication.UnicodeUTF8))
-        self.sourceBrowser.topLevelItem(1).setText(1, QtGui.QApplication.translate("MainWindow", "2", None, QtGui.QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).setText(0, QApplication.translate("MainWindow", "Music", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).child(0).setText(0, QApplication.translate("MainWindow", "Folders", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).child(0).setText(1, QApplication.translate("MainWindow", "0", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).child(1).setText(0, QApplication.translate("MainWindow", "Playlists", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).child(1).setText(1, QApplication.translate("MainWindow", "1", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(1).setText(0, QApplication.translate("MainWindow", "Radios", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(1).setText(1, QApplication.translate("MainWindow", "2", None, QApplication.UnicodeUTF8))
         self.sourceBrowser.setSortingEnabled(__sortingEnabled)
-        self.folderLbl.setText(QtGui.QApplication.translate("MainWindow", "Folder:", None, QtGui.QApplication.UnicodeUTF8))
-        self.libraryBtn.setToolTip(QtGui.QApplication.translate("MainWindow", "Edit media library", None, QtGui.QApplication.UnicodeUTF8))
-        self.playlist.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Title", None, QtGui.QApplication.UnicodeUTF8))
-        self.playlist.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Favorite", None, QtGui.QApplication.UnicodeUTF8))
-        self.playlist.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Duration", None, QtGui.QApplication.UnicodeUTF8))
-        self.playlist.horizontalHeaderItem(3).setText(QtGui.QApplication.translate("MainWindow", "Path", None, QtGui.QApplication.UnicodeUTF8))
-        self.timeLbl.setText(QtGui.QApplication.translate("MainWindow", "00:00:00", None, QtGui.QApplication.UnicodeUTF8))
-        self.playPauseBtn.setShortcut(QtGui.QApplication.translate("MainWindow", "Ctrl+Alt+P", None, QtGui.QApplication.UnicodeUTF8))
-        self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "Media", None, QtGui.QApplication.UnicodeUTF8))
-        self.menuPlayback.setTitle(QtGui.QApplication.translate("MainWindow", "Playback", None, QtGui.QApplication.UnicodeUTF8))
-        self.menuEdit.setTitle(QtGui.QApplication.translate("MainWindow", "Edit", None, QtGui.QApplication.UnicodeUTF8))
-        self.menuHelp.setTitle(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
-        self.actionAbout.setText(QtGui.QApplication.translate("MainWindow", "About", None, QtGui.QApplication.UnicodeUTF8))
-
-import icons_rc
+        self.folderLbl.setText(QApplication.translate("MainWindow", "Folder:", None, QApplication.UnicodeUTF8))
+        self.libraryBtn.setToolTip(QApplication.translate("MainWindow", "Edit media library", None, QApplication.UnicodeUTF8))
+        self.playlist.horizontalHeaderItem(0).setText(QApplication.translate("MainWindow", "Title", None, QApplication.UnicodeUTF8))
+        self.playlist.horizontalHeaderItem(1).setText(QApplication.translate("MainWindow", "Favorite", None, QApplication.UnicodeUTF8))
+        self.playlist.horizontalHeaderItem(2).setText(QApplication.translate("MainWindow", "Duration", None, QApplication.UnicodeUTF8))
+        self.playlist.horizontalHeaderItem(3).setText(QApplication.translate("MainWindow", "Path", None, QApplication.UnicodeUTF8))
+        self.timeLbl.setText(QApplication.translate("MainWindow", "00:00:00", None, QApplication.UnicodeUTF8))
+        self.playPauseBtn.setShortcut(QApplication.translate("MainWindow", "Ctrl+Alt+P", None, QApplication.UnicodeUTF8))
+        self.menuFile.setTitle(QApplication.translate("MainWindow", "Media", None, QApplication.UnicodeUTF8))
+        self.menuPlayback.setTitle(QApplication.translate("MainWindow", "Playback", None, QApplication.UnicodeUTF8))
+        self.menuEdit.setTitle(QApplication.translate("MainWindow", "Edit", None, QApplication.UnicodeUTF8))
+        self.menuHelp.setTitle(QApplication.translate("MainWindow", "Help", None, QApplication.UnicodeUTF8))
+        self.actionAbout.setText(QApplication.translate("MainWindow", "About", None, QApplication.UnicodeUTF8))
