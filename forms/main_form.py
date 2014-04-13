@@ -105,7 +105,11 @@ class PlaylistTable(QTableWidget):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
 
         self.enterShortcut = QShortcut(QKeySequence(Qt.Key_Return), self, context=Qt.WidgetShortcut)
+        self.delShortcut = QShortcut(QKeySequence(Qt.Key_Delete), self, context=Qt.WidgetShortcut)
+        self.shiftDelShortcut = QShortcut(QKeySequence(Qt.SHIFT + Qt.Key_Delete), self, context=Qt.WidgetShortcut)
         self.enterShortcut.setAutoRepeat(False)
+        self.delShortcut.setAutoRepeat(False)
+        self.shiftDelShortcut.setAutoRepeat(False)
 
 
 class MainForm(object):

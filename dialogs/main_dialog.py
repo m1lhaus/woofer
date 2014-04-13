@@ -30,8 +30,8 @@ Message = misc.enum('WARNING', 'ERROR', 'CRITICAL')
 FileExt = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
 FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
 
-StdErrRedirector = misc.RedirectDescriptor()
-StdErrRedirector.redirect_C_stderr_null()
+# StdErrRedirector = misc.RedirectDescriptor()
+# StdErrRedirector.redirect_C_stderr_null()
 
 
 class MainApp(QMainWindow, MainForm):
@@ -41,7 +41,7 @@ class MainApp(QMainWindow, MainForm):
     - connects signals from dialogs widgets
     """
 
-    errorEncountered = Signal(int, unicode, unicode)
+    errorEncountered = Signal(int, unicode, unicode)        # (Message.CRITICAL, main_text, description)
     scanFiles = Signal(unicode)
 
     myComputerPathIndex = None
@@ -88,7 +88,9 @@ class MainApp(QMainWindow, MainForm):
         self.seekerSlider.valueChanged.connect(self.mediaPlayer.setPosition)
         self.volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
 
-        # self.playlist.enterShortcut.activated.connect(self.printNeco)
+        self.playlist.enterShortcut.activated.connect(self.playNow)
+        self.playlist.delShortcut.activated.connect(self.remFromPlaylist)
+        self.playlist.shiftDelShortcut.activated.connect(self.remFromDisk)
 
     def setupActions(self):
         pass
@@ -281,7 +283,6 @@ class MainApp(QMainWindow, MainForm):
 
         # PLAY ALL
         elif choice is playAll:
-            StdErrRedirector.redirect_C_stderr_null()
             self.mediaPlayer.clearList()
             self.mediaPlayer.append_mode = False
             targetPath = fileInfo.absoluteFilePath()
@@ -442,7 +443,9 @@ class MainApp(QMainWindow, MainForm):
         self.scannerThread.quit()
         self.parserThread.quit()
 
-        StdErrRedirector.redirect_C_stderr_back()
+        # print >> sys.stderr, "neco"
+        # logger.error("neco log")
+        # StdErrRedirector.redirect_C_stderr_back()
         event.accept()
 
     @Slot(int, unicode, unicode)
@@ -587,19 +590,59 @@ class MainApp(QMainWindow, MainForm):
         """
         self.playlist.setCurrentCell(index, 0)          # select the entire row due to table selection behaviour
 
+    @Slot()
     def playNow(self, row=None, col=None):
+        """
+        Play song from playlist table immediately.
+        @param row: song row number
+        @param col: ignore - just slot requirement
+        """
         index = self.playlist.currentRow() if row is None else row
+        if index == -1:
+            return
+
+        fileName = os.path.basename(self.playlist.item(index, self.playlist.columnCount()-1).text())
+        logger.debug("Play now called, playing #%s song from playlist named '%s'.", index, fileName)
+
         self.mediaPlayer.play(index)
 
+    @Slot()
     def remFromPlaylist(self, row=None):
+        """
+        Removes song from playlist table and from player (media_list).
+        @param row: row number in playlist table
+        """
         index = self.playlist.currentRow() if row is None else row
+        if index == -1:
+            return
+
+        fileName = os.path.basename(self.playlist.item(index, self.playlist.columnCount()-1).text())
+        logger.debug("Removing from playlist #%s song named '%s'", index, fileName)
+
         self.mediaPlayer.removeItem(index)
         self.playlist.removeRow(index)
 
-    def remFromDisk(self, index=None):
-        index = self.playlist.currentRow() if index is None else index
-        print "remove from disk", index
-        # TODO implement
+    @Slot()
+    def remFromDisk(self, row=None):
+        """
+        Removes song from playlist table, from player (media_list) and from disk if possible.
+        @param row: row number in playlist table
+        """
+        index = self.playlist.currentRow() if row is None else row
+        if index == -1:
+            return
+
+        filePath = self.playlist.item(index, self.playlist.columnCount()-1).text()
+        fileName = os.path.basename(filePath)
+        self.remFromPlaylist(index)
+
+        logger.debug("Removing from disk #%s song named '%s' on path '%s'", index, fileName, filePath)
+
+        try:
+            misc.moveToTrash(filePath)
+        except OSError, exception:
+            self.errorEncountered.emit(Message.ERROR, "Unable to move path to Trash path '%s'!" % filePath,
+                                       "Details: %s" % exception.message)
 
 
 
