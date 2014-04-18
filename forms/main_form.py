@@ -270,16 +270,30 @@ class MainForm(object):
         self.menuPlayback = QMenu(self.menubar)
         self.menuEdit = QMenu(self.menubar)
         self.menuHelp = QMenu(self.menubar)
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QStatusBar(MainWindow)
-        self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
-        MainWindow.setStatusBar(self.statusbar)
         self.actionAbout = QAction(MainWindow)
         self.menuHelp.addAction(self.actionAbout)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuPlayback.menuAction())
         self.menubar.addAction(self.menuEdit.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
+
+        # STATUSBAR
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QStatusBar(MainWindow)
+        self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
+        MainWindow.setStatusBar(self.statusbar)
+        self.progressBar = QProgressBar(self)
+        self.progressLabel = QLabel(self)
+        self.statusbar.addPermanentWidget(self.progressLabel)
+        self.statusbar.addPermanentWidget(self.progressBar)
+        self.progressLabel.hide()
+        self.progressBar.hide()
+        self.stBarMsgIcon = QLabel(self)
+        self.stBarMsgText = QLabel(self)
+        self.statusbar.addWidget(self.stBarMsgIcon)
+        self.statusbar.addWidget(self.stBarMsgText)
+        self.stBarMsgIcon.hide()
+        self.stBarMsgText.hide()
 
         self.retranslateUi(MainWindow)
 
