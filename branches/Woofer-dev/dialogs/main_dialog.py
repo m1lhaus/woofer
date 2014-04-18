@@ -46,15 +46,17 @@ class MainApp(QMainWindow, MainForm):
 
     myComputerPathIndex = None
 
+    WARNING_MSG_DELAY = 5000
+    ERROR_MSG_DELAY = 10000
+
     def __init__(self):
         super(MainApp, self).__init__()
         self.appRootPath = os.path.dirname(sys.argv[0])
         self.appDataPath = os.path.join(self.appRootPath, 'data')
         self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
-        self.stBarMsgIcon = QLabel(self)
-        self.stBarMsgText = QLabel(self)
-        self.progressBar = QProgressBar(self)
-        self.progressLabel = QLabel(self)
+        # self.stBarMsgIcon = QLabel(self)
+        # self.stBarMsgText = QLabel(self)
+
         self.setupUi(self)
         self.checkPaths()
         self.setupFileBrowser(initModel=True)
@@ -231,7 +233,7 @@ class MainApp(QMainWindow, MainForm):
         @type pos: QPointF
         """
 
-        logger.debug("SourceItemBrowser context menu called. Choosing appropriate context menu...")
+        logger.debug("Browser context menu called. Choosing appropriate context menu...")
 
         if self.sourceType == Sources.FILES:
             self.fileBrowserContextMenu(pos)
@@ -312,7 +314,7 @@ class MainApp(QMainWindow, MainForm):
         if not item:
             return
 
-        logger.debug("Playlist context menu called.")
+        logger.debug("Opening playlist context menu.")
         menu = QMenu(self.playlist)
         playNowAction = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", menu)
         playNowAction.setShortcut(QKeySequence(Qt.Key_Enter))
@@ -344,8 +346,6 @@ class MainApp(QMainWindow, MainForm):
         @param source_id: enum Source
         @type source_id: int
         """
-        logger.debug("Change source called.")
-
         # get only valid source id from sourceBrowser
         if source_id is None:
             table_item = self.sourceBrowser.currentItem()
@@ -366,16 +366,18 @@ class MainApp(QMainWindow, MainForm):
             if self.myComputerPathIndex is None:
                 self.myComputerPathIndex = self.sourceItemsBrowser.rootIndex()
 
-            logger.debug("File source has been selected.")
+            logger.debug("Browser source has been selected to FILES.")
 
         elif source_id == Sources.PLAYLISTS:
             self.sourceType = Sources.PLAYLISTS
-            logger.debug("Playlist source has been selected.")
+            logger.debug("Browser source has been selected to PLAYLISTS.")
+            logger.warning("PLAYLISTS NOT IMPLEMENTED!")
             # TODO future: implement playlists
 
         elif source_id == Sources.RADIO:
             self.sourceType = Sources.RADIO
-            logger.debug("Radio source has been selected.")
+            logger.debug("Browser source has been selected to RADIOS.")
+            logger.warning("RADIOS NOT IMPLEMENTED!")
             # TODO future: implement radios
 
     @Slot(int)
@@ -392,12 +394,14 @@ class MainApp(QMainWindow, MainForm):
         if newMediaFolder == self.fileBrowserModel.myComputer(Qt.DisplayRole):
             # display MyComputer folder (root on Linux)
             if self.myComputerPathIndex is not None:
+                logger.debug("Changing file_browser root to 'My Computer/root'.")
                 self.sourceItemsBrowser.setRootIndex(self.myComputerPathIndex)
                 self.fileBrowserModel.setRootPath(QDir.rootPath())
         else:
             # if valid, display given folder as root
             folderIndex = self.fileBrowserModel.index(newMediaFolder)
             if folderIndex.row() != -1 and folderIndex.column() != -1:
+                logger.debug("Changing file_browser root to '%s'.", newMediaFolder)
                 self.sourceItemsBrowser.setRootIndex(folderIndex)
                 self.fileBrowserModel.setRootPath(newMediaFolder)
             else:
@@ -438,16 +442,6 @@ class MainApp(QMainWindow, MainForm):
             self.playlist.setItem(i + lastItemIndex, 3, pathItem)
             i += 1
 
-    def closeEvent(self, event):
-        # self.mediaPlayerThread.quit()
-        self.scannerThread.quit()
-        self.parserThread.quit()
-
-        # print >> sys.stderr, "neco"
-        # logger.error("neco log")
-        # StdErrRedirector.redirect_C_stderr_back()
-        event.accept()
-
     @Slot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u""):
         """
@@ -460,20 +454,16 @@ class MainApp(QMainWindow, MainForm):
             icon = QPixmap(":/new/icons/icons/warning.png").scaled(14, 14, mode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
-            self.statusbar.addWidget(self.stBarMsgIcon)
-            self.statusbar.addWidget(self.stBarMsgText)
             self.stBarMsgIcon.show()
             self.stBarMsgText.show()
-            QTimer.singleShot(5000, self.clearErrorMsg)
+            QTimer.singleShot(self.WARNING_MSG_DELAY, self.clearErrorMsg)
         elif er_type == Message.ERROR:
             icon = QPixmap(":/new/icons/icons/error.png").scaled(14, 14, mode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
-            self.statusbar.addWidget(self.stBarMsgIcon)
-            self.statusbar.addWidget(self.stBarMsgText)
             self.stBarMsgIcon.show()
             self.stBarMsgText.show()
-            QTimer.singleShot(10000, self.clearErrorMsg)
+            QTimer.singleShot(self.ERROR_MSG_DELAY, self.clearErrorMsg)
             QApplication.beep()
         elif er_type == Message.CRITICAL:
             msgBox = QMessageBox(self)
@@ -488,8 +478,8 @@ class MainApp(QMainWindow, MainForm):
         """
         Called to clear statusbar after displaying error message (widgets).
         """
-        self.statusbar.removeWidget(self.stBarMsgIcon)
-        self.statusbar.removeWidget(self.stBarMsgText)
+        self.stBarMsgIcon.hide()
+        self.stBarMsgText.hide()
 
     def displayProgress(self, description, minimum=0, maximum=0):
         """
@@ -503,10 +493,6 @@ class MainApp(QMainWindow, MainForm):
         self.progressBar.setMinimum(minimum)
         self.progressBar.setMaximum(maximum)
         self.progressLabel.setText(description)
-
-        self.statusbar.addPermanentWidget(self.progressLabel)
-        self.statusbar.addPermanentWidget(self.progressBar)
-        # show widgets if not visible <= removeWidget() hides widgets
         self.progressBar.show()
         self.progressLabel.show()
 
@@ -532,23 +518,26 @@ class MainApp(QMainWindow, MainForm):
         """
         Hides progress bar and label from statusbar when showing progress
         """
-        self.statusbar.removeWidget(self.progressLabel)
-        self.statusbar.removeWidget(self.progressBar)
+        self.progressLabel.hide()
+        self.progressBar.hide()
 
     @Slot()
     def playing(self):
+        logger.debug("Media player playing.")
         icon = QIcon()
         icon.addPixmap(QPixmap(":/new/icons/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
 
     @Slot()
     def paused(self):
+        logger.debug("Media player paused.")
         icon = QIcon()
         icon.addPixmap(QPixmap(":/new/icons/icons/media-play.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
 
     @Slot()
     def stopped(self):
+        logger.debug("Media player stopped.")
         self.paused()
         self.timeLbl.setText("00:00:00")
         self.seekerSlider.blockSignals(True)        # prevent syncing
@@ -643,6 +632,16 @@ class MainApp(QMainWindow, MainForm):
         except OSError, exception:
             self.errorEncountered.emit(Message.ERROR, "Unable to move path to Trash path '%s'!" % filePath,
                                        "Details: %s" % exception.message)
+
+    def closeEvent(self, event):
+        # self.mediaPlayerThread.quit()
+        self.scannerThread.quit()
+        self.parserThread.quit()
+
+        # print >> sys.stderr, "neco"
+        # logger.error("neco log")
+        # StdErrRedirector.redirect_C_stderr_back()
+        event.accept()
 
 
 
