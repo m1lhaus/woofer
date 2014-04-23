@@ -477,26 +477,46 @@ class MediaParser(QObject):
     def __init__(self):
         super(MediaParser, self).__init__()
         self.vlcInstance = vlc.Instance()
-        """@type: vlc.Instance"""
+        self._mutex = QMutex()
+        self._cancel = False
+
         logger.debug("Media parser initialized.")
+
+    def stop(self, value=None):
+        """
+        Return or set stopped flag, which cancel parsing.
+        Thread safe method!
+        @type value: bool or None
+        @rtype: bool
+        """
+        self._mutex.lock()
+        if value is not None:
+            self._cancel = value
+        self._mutex.unlock()
+
+        return self._cancel
 
     @Slot(list)
     def parseMedia(self, sources):
         """
-        Thread worker!. Parses media files. Result is send to media player in separated thread.
+        Parses media files. Result is send to media player in separated thread.
+        Thread worker!
         @type sources: list of unicode
         """
-        # if end flag has been sent
+        # END FLAG RECEIVED
         if not sources:
-            logger.debug("Parser finished.")
+            logger.debug("Parser finished, end flag received.")
+            self.stop(False)            # reset stop flag
+
             self.finished.emit()
-            return
 
-        mediaList = []
-        for unicode_path in sources:
-            byte_path = unicode_path.encode("utf8")
-            mMedia = self.vlcInstance.media_new(byte_path)
-            mMedia.parse()
-            mediaList.append((unicode_path, mMedia))
+        # PARSE MEDIA FILES
+        elif not self.stop():
+            mediaList = []
+            for unicode_path in sources:
+                byte_path = unicode_path.encode("utf8")
+                mMedia = self.vlcInstance.media_new(byte_path)
+                mMedia.parse()
+                mediaList.append((unicode_path, mMedia))
 
-        self.parsed.emit(mediaList)
+            self.parsed.emit(mediaList)

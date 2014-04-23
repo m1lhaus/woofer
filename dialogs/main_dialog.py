@@ -80,6 +80,7 @@ class MainApp(QMainWindow, MainForm):
         self.sourceItemsBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
         self.playlist.customContextMenuRequested.connect(self.playlistContextMenu)
         self.playlist.cellDoubleClicked.connect(self.playNow)
+        self.progressCancelBtn.clicked.connect(self.cancelAdding)
 
         self.errorEncountered.connect(self.displayErrorMsg)
 
@@ -442,6 +443,12 @@ class MainApp(QMainWindow, MainForm):
             self.playlist.setItem(i + lastItemIndex, 3, pathItem)
             i += 1
 
+    @Slot()
+    def cancelAdding(self):
+        logger.debug("Canceling adding new files to playlist (parsing).")
+        self.parser.stop(True)
+
+
     @Slot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u""):
         """
@@ -489,12 +496,13 @@ class MainApp(QMainWindow, MainForm):
         @type minimum: int
         @type maximum: int
         """
-        self.progressBar.setMaximumSize(200, self.progressBar.minimumSizeHint().height())
+        # self.progressBar.setMaximumSize(200, self.progressBar.minimumSizeHint().height())
         self.progressBar.setMinimum(minimum)
         self.progressBar.setMaximum(maximum)
         self.progressLabel.setText(description)
         self.progressBar.show()
         self.progressLabel.show()
+        self.progressCancelBtn.show()
 
     def updateProgress(self, value, description=None, minimum=None, maximum=None):
         """
@@ -520,6 +528,7 @@ class MainApp(QMainWindow, MainForm):
         """
         self.progressLabel.hide()
         self.progressBar.hide()
+        self.progressCancelBtn.hide()
 
     @Slot()
     def playing(self):
