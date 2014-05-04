@@ -65,7 +65,8 @@ class MainApp(QMainWindow, MainForm):
         self.setupActions()
         self.setupGUISignals()
 
-        self.changeSource(Sources.FILES)        # display file browser as default
+        self.loadSettings()
+        # QTimer.singleShot(100, self.loadSettingsQueued)
         logger.debug("Main application dialog initialized")
 
     def setupUi(self, parent):
@@ -77,7 +78,7 @@ class MainApp(QMainWindow, MainForm):
         self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
         self.folderCombo.currentIndexChanged.connect(self.changeFileBrowserRoot)
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
-        self.sourceItemsBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
+        self.mainTreeBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
         self.playlist.customContextMenuRequested.connect(self.playlistContextMenu)
         self.playlist.cellDoubleClicked.connect(self.playNow)
         self.progressCancelBtn.clicked.connect(self.cancelAdding)
@@ -215,8 +216,15 @@ class MainApp(QMainWindow, MainForm):
                 self.errorEncountered.emit(Message.WARNING, "Some folders in media library do not exist.", "")
 
     def loadSettings(self):
-        # TODO implement QSettings
+        logger.debug("Global load settings called. Loading settings...")
+        self.changeSource(Sources.FILES)                    # display file browser as default
+
+    def loadSettingsQueued(self):
         pass
+
+    def saveSettings(self):
+        logger.debug("Global save settings called. Saving settings...")
+        self.mainTreeBrowser.saveState()
 
     def setupPlaylistBrowser(self):
         # TODO future: implement
@@ -250,12 +258,12 @@ class MainApp(QMainWindow, MainForm):
         Context menu for file browser treeView.
         @type pos: QPointF
         """
-        fileInfo = self.fileBrowserModel.fileInfo(self.sourceItemsBrowser.indexAt(pos))
+        fileInfo = self.fileBrowserModel.fileInfo(self.mainTreeBrowser.indexAt(pos))
         isFile = fileInfo.isFile()
         isDir = fileInfo.isDir()
 
         # menu setup
-        menu = QMenu(self.sourceItemsBrowser)
+        menu = QMenu(self.mainTreeBrowser)
         playNow = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play now", menu)
         addToPlayList = QAction(QIcon(":/new/icons/icons/play-next.png"), "Add to playlist", menu)
         playAll = QAction(QIcon(":/new/icons/icons/play-now.png"), "Play all", menu)
@@ -274,7 +282,7 @@ class MainApp(QMainWindow, MainForm):
             return
 
         logger.debug("Opening file browser context menu.")
-        choice = menu.exec_(self.sourceItemsBrowser.viewport().mapToGlobal(pos))
+        choice = menu.exec_(self.mainTreeBrowser.viewport().mapToGlobal(pos))
 
         # PLAY NOW
         if choice is playNow:
@@ -355,28 +363,38 @@ class MainApp(QMainWindow, MainForm):
             except ValueError:
                 return
 
+        oldTreeMode = self.mainTreeBrowser.getMode()
+        if oldTreeMode is not None and oldTreeMode != source_id:
+            self.mainTreeBrowser.saveState()
+
         if source_id == Sources.FILES:
             self.sourceType = Sources.FILES
-            self.sourceItemsBrowser.setModel(self.fileBrowserModel)
+            self.mainTreeBrowser.setMode(Sources.FILES)
+
+            self.mainTreeBrowser.setModel(self.fileBrowserModel)
 
             # hide unwanted columns
             for i in range(1, self.fileBrowserModel.columnCount()):
-                self.sourceItemsBrowser.setColumnHidden(i, True)
+                self.mainTreeBrowser.setColumnHidden(i, True)
 
             # remember my_computer root index for the first time
             if self.myComputerPathIndex is None:
-                self.myComputerPathIndex = self.sourceItemsBrowser.rootIndex()
+                self.myComputerPathIndex = self.mainTreeBrowser.rootIndex()
+
+            self.mainTreeBrowser.restoreState()
 
             logger.debug("Browser source has been selected to FILES.")
 
         elif source_id == Sources.PLAYLISTS:
             self.sourceType = Sources.PLAYLISTS
+            self.mainTreeBrowser.setMode(Sources.FILES)
             logger.debug("Browser source has been selected to PLAYLISTS.")
             logger.warning("PLAYLISTS NOT IMPLEMENTED!")
             # TODO future: implement playlists
 
         elif source_id == Sources.RADIO:
             self.sourceType = Sources.RADIO
+            self.mainTreeBrowser.setMode(Sources.FILES)
             logger.debug("Browser source has been selected to RADIOS.")
             logger.warning("RADIOS NOT IMPLEMENTED!")
             # TODO future: implement radios
@@ -396,14 +414,14 @@ class MainApp(QMainWindow, MainForm):
             # display MyComputer folder (root on Linux)
             if self.myComputerPathIndex is not None:
                 logger.debug("Changing file_browser root to 'My Computer/root'.")
-                self.sourceItemsBrowser.setRootIndex(self.myComputerPathIndex)
+                self.mainTreeBrowser.setRootIndex(self.myComputerPathIndex)
                 self.fileBrowserModel.setRootPath(QDir.rootPath())
         else:
             # if valid, display given folder as root
             folderIndex = self.fileBrowserModel.index(newMediaFolder)
             if folderIndex.row() != -1 and folderIndex.column() != -1:
                 logger.debug("Changing file_browser root to '%s'.", newMediaFolder)
-                self.sourceItemsBrowser.setRootIndex(folderIndex)
+                self.mainTreeBrowser.setRootIndex(folderIndex)
                 self.fileBrowserModel.setRootPath(newMediaFolder)
             else:
                 logger.error("Media path from folderCombo could not be found in fileSystemModel!")
@@ -646,6 +664,8 @@ class MainApp(QMainWindow, MainForm):
         # self.mediaPlayerThread.quit()
         self.scannerThread.quit()
         self.parserThread.quit()
+
+        self.saveSettings()
 
         # print >> sys.stderr, "neco"
         # logger.error("neco log")

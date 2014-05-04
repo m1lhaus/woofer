@@ -22,6 +22,9 @@ if __name__ == "__main__":
     logger.debug("Initializing application launcher in debug mode")
 
     app = QApplication(sys.argv)
+
+    app.setOrganizationName("WooferPlayer")
+    app.setOrganizationDomain("wooferplayer.com")
     app.setApplicationName("Woofer")
 
     main = MainApp()
