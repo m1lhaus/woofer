@@ -7,9 +7,15 @@ All GUI components stored here.
 __version__ = "$Id$"
 
 import icons_rc
+import logging
+import time
 
 from PySide.QtGui import *
 from PySide.QtCore import *
+from tools import misc
+
+logger = logging.getLogger(__name__)
+logger.debug('Import ' + __name__)
 
 
 class MediaSeeker(QSlider):
@@ -112,6 +118,115 @@ class PlaylistTable(QTableWidget):
         self.shiftDelShortcut.setAutoRepeat(False)
 
 
+class MainTreeBrowserTreeView(QTreeView):
+
+    FILES = 0
+    PLAYLISTS = 1
+    RADIOS = 2
+
+    def __init__(self, parent=None):
+        super(MainTreeBrowserTreeView, self).__init__(parent)
+        self._expandedItems = []
+        self._mode = None
+
+        self.expanded.connect(self.itemExpanded)
+        self.collapsed.connect(self.itemCollapsed)
+
+    def restoreState(self):
+        """
+        Restores previously expanded items in mainTreeBrowser for each mode (FILES, PLAYLISTS, RADIOS)
+        """
+        logger.debug("Restoring mainTreeBrowser state for mode enum %s ...", self._mode)
+
+        settings = QSettings()
+
+        # self.thread().msleep(2000)
+        t0 = time.time()
+
+        # FILES mode
+        if self._mode == MainTreeBrowserTreeView.FILES:
+            model = self.model()
+            expandedItems = settings.value("gui/mtbtw/expanded/files", [])
+
+            # find and expand restored paths from settings storage
+            if expandedItems:
+                self._expandedItems = expandedItems
+
+                # for each path try find its index in fileSystemModel
+                for filePath in self._expandedItems:
+                    index = model.index(filePath)
+
+                    # expand item in tree, else remove record from list if not found on disk
+                    if index is not None:
+                        self.expand(index)
+                    else:
+                        self._expandedItems.remove(filePath)
+
+        # PLAYLISTS mode
+        elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
+            pass
+
+        # RADIOS mode
+        elif self._mode == MainTreeBrowserTreeView.RADIOS:
+            pass
+
+        print (time.time() - t0) * 1000
+
+    def saveState(self):
+        """
+        Saves list of expanded items to settings platform depending on current mode.
+        """
+        logger.debug("Saving mainTreeBrowser state for mode enum %s ...", self._mode)
+
+        settings = QSettings()
+
+        # FILES mode
+        if self._mode == MainTreeBrowserTreeView.FILES:
+            settings.setValue("gui/mtbtw/expanded/files", self._expandedItems)
+
+        # PLAYLISTS mode
+        elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
+            pass
+
+        # RADIOS mode
+        elif self._mode == MainTreeBrowserTreeView.RADIO:
+            pass
+
+    def setMode(self, mode):
+        """
+        Change mode to:
+            FILES = 0
+            PLAYLISTS = 1
+            RADIOS = 2
+        @type mode: int
+        """
+        if mode not in range(0, 4):
+            raise ValueError("Given mode %s is not implemented!" % mode)
+        self._mode = mode
+
+    def getMode(self):
+        """
+        Returns current mode number:
+            FILES = 0
+            PLAYLISTS = 1
+            RADIOS = 2
+        @rtype: int
+        """
+        return self._mode
+
+    @Slot(QModelIndex)
+    def itemExpanded(self, index):
+        fileInfo = self.model().fileInfo(index)
+        filePath = fileInfo.absoluteFilePath()
+        self._expandedItems.append(filePath)
+
+    @Slot(QModelIndex)
+    def itemCollapsed(self, index):
+        fileInfo = self.model().fileInfo(index)
+        filePath = fileInfo.absoluteFilePath()
+        self._expandedItems.remove(filePath)
+
+
 class MainForm(object):
     """
     Build main form
@@ -178,12 +293,12 @@ class MainForm(object):
         self.filterHLayout.addWidget(self.libraryBtn)
         self.mainLeftVLayout.addLayout(self.filterHLayout)
         # SOURCE ITEM BROWSER
-        self.sourceItemsBrowser = QTreeView(self.layoutWidget)
+        self.mainTreeBrowser = MainTreeBrowserTreeView(self.layoutWidget)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sizePolicy.setHeightForWidth(self.sourceItemsBrowser.sizePolicy().hasHeightForWidth())
-        self.sourceItemsBrowser.setSizePolicy(sizePolicy)
-        self.sourceItemsBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.mainLeftVLayout.addWidget(self.sourceItemsBrowser)
+        sizePolicy.setHeightForWidth(self.mainTreeBrowser.sizePolicy().hasHeightForWidth())
+        self.mainTreeBrowser.setSizePolicy(sizePolicy)
+        self.mainTreeBrowser.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.mainLeftVLayout.addWidget(self.mainTreeBrowser)
         self.layoutWidget1 = QWidget(self.splitter)
 
         # RIGHT LAYOUT
