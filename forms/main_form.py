@@ -226,6 +226,11 @@ class MainTreeBrowserTreeView(QTreeView):
         filePath = fileInfo.absoluteFilePath()
         self._expandedItems.remove(filePath)
 
+        # for i, item in enumerate(self._expandedItems):
+        #     if item.startswith(filePath):
+        #         print "startswith"
+        #         del self._expandedItems[i]
+
 
 class MainForm(object):
     """
