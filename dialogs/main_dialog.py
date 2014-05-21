@@ -46,6 +46,8 @@ class MainApp(QMainWindow, MainForm):
 
     myComputerPathIndex = None
 
+    queuedLoad = Signal()
+
     WARNING_MSG_DELAY = 5000
     ERROR_MSG_DELAY = 10000
 
@@ -54,8 +56,6 @@ class MainApp(QMainWindow, MainForm):
         self.appRootPath = os.path.dirname(sys.argv[0])
         self.appDataPath = os.path.join(self.appRootPath, 'data')
         self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
-        # self.stBarMsgIcon = QLabel(self)
-        # self.stBarMsgText = QLabel(self)
 
         self.setupUi(self)
         self.checkPaths()
@@ -66,7 +66,8 @@ class MainApp(QMainWindow, MainForm):
         self.setupGUISignals()
 
         self.loadSettings()
-        # QTimer.singleShot(100, self.loadSettingsQueued)
+
+        QTimer.singleShot(0, self.loadSettingsQueued)           # run method after dialog is opened
         logger.debug("Main application dialog initialized")
 
     def setupUi(self, parent):
@@ -217,10 +218,10 @@ class MainApp(QMainWindow, MainForm):
 
     def loadSettings(self):
         logger.debug("Global load settings called. Loading settings...")
-        self.changeSource(Sources.FILES)                    # display file browser as default
+        # self.changeSource(Sources.FILES)                    # display file browser as default
 
     def loadSettingsQueued(self):
-        pass
+        self.changeSource(Sources.FILES)
 
     def saveSettings(self):
         logger.debug("Global save settings called. Saving settings...")
