@@ -124,29 +124,38 @@ class MainTreeBrowserTreeView(QTreeView):
     PLAYLISTS = 1
     RADIOS = 2
 
-    def __init__(self, parent=None):
+    def __init__(self, parent, folderCombo):
+        """
+
+        :type parent:
+        :type folderCombo: QComboBox
+        :return:
+        """
         super(MainTreeBrowserTreeView, self).__init__(parent)
         self._expandedItems = []
+
         self._mode = None
+        self.folderCombo = folderCombo
 
         self.expanded.connect(self.itemExpanded)
         self.collapsed.connect(self.itemCollapsed)
 
-    def restoreState(self):
+    def restoreSettings(self):
         """
         Restores previously expanded items in mainTreeBrowser for each mode (FILES, PLAYLISTS, RADIOS)
         """
         logger.debug("Restoring mainTreeBrowser state for mode enum %s ...", self._mode)
 
         settings = QSettings()
+        # settings.clear()          # clears all entries
 
-        # self.thread().msleep(2000)
         t0 = time.time()
 
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
-            model = self.model()
             expandedItems = settings.value("gui/mtbtw/expanded/files", [])
+            rootFolder = settings.value("gui/mtbtw/root/files", '/')
+            model = self.model()
 
             # find and expand restored paths from settings storage
             if expandedItems:
@@ -162,6 +171,14 @@ class MainTreeBrowserTreeView(QTreeView):
                     else:
                         self._expandedItems.remove(filePath)
 
+            # restore media folder root index from last session
+            if rootFolder != '/':
+                targetIndex = self.folderCombo.findText(rootFolder)
+                if targetIndex != -1:
+                    self.folderCombo.setCurrentIndex(targetIndex)
+                else:
+                    print "ERROR index .. delete me!!!"
+
         # PLAYLISTS mode
         elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
             pass
@@ -170,19 +187,36 @@ class MainTreeBrowserTreeView(QTreeView):
         elif self._mode == MainTreeBrowserTreeView.RADIOS:
             pass
 
-        print (time.time() - t0) * 1000
+        print (time.time() - t0) * 1000     # FIXME debug only
 
-    def saveState(self):
+    def saveSettings(self):
         """
         Saves list of expanded items to settings platform depending on current mode.
         """
         logger.debug("Saving mainTreeBrowser state for mode enum %s ...", self._mode)
-
         settings = QSettings()
 
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
-            settings.setValue("gui/mtbtw/expanded/files", self._expandedItems)
+            currentRootFolder = self.folderCombo.currentText()
+            currentRootFolderIndex = self.folderCombo.currentIndex()
+            expandedItems = []
+
+            # if some folder is set as root
+            if currentRootFolderIndex != 0:
+                # save only folder which are nested under the currentRootFolder
+                for item in self._expandedItems:
+                    print item, currentRootFolder
+                    if item.startswith(currentRootFolder):
+                        expandedItems.append(item)
+
+            # if MyComputer (root) is set as current root folder
+            else:
+                expandedItems = self._expandedItems
+                currentRootFolder = '/'                 # ... == MyComputer == root
+
+            settings.setValue("gui/mtbtw/expanded/files", expandedItems)
+            settings.setValue("gui/mtbtw/root/files", currentRootFolder)
 
         # PLAYLISTS mode
         elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
@@ -218,7 +252,8 @@ class MainTreeBrowserTreeView(QTreeView):
     def itemExpanded(self, index):
         fileInfo = self.model().fileInfo(index)
         filePath = fileInfo.absoluteFilePath()
-        self._expandedItems.append(filePath)
+        if filePath not in self._expandedItems:
+            self._expandedItems.append(filePath)
 
     @Slot(QModelIndex)
     def itemCollapsed(self, index):
@@ -226,10 +261,10 @@ class MainTreeBrowserTreeView(QTreeView):
         filePath = fileInfo.absoluteFilePath()
         self._expandedItems.remove(filePath)
 
-        # for i, item in enumerate(self._expandedItems):
-        #     if item.startswith(filePath):
-        #         print "startswith"
-        #         del self._expandedItems[i]
+        # removes also nested paths
+        for i, item in enumerate(self._expandedItems):
+            if item.startswith(filePath):
+                del self._expandedItems[i]
 
 
 class MainForm(object):
@@ -298,7 +333,7 @@ class MainForm(object):
         self.filterHLayout.addWidget(self.libraryBtn)
         self.mainLeftVLayout.addLayout(self.filterHLayout)
         # SOURCE ITEM BROWSER
-        self.mainTreeBrowser = MainTreeBrowserTreeView(self.layoutWidget)
+        self.mainTreeBrowser = MainTreeBrowserTreeView(self.layoutWidget, self.folderCombo)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHeightForWidth(self.mainTreeBrowser.sizePolicy().hasHeightForWidth())
         self.mainTreeBrowser.setSizePolicy(sizePolicy)
