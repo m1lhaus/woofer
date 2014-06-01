@@ -210,7 +210,8 @@ class MainApp(QMainWindow, MainForm):
         self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))      # get default name
         # add only valid folders from medialib to folderCombobox
         for folder in mediaFolders:
-            folder = os.path.normpath(folder)       # normalize => remove redundant slashes, etc.
+            # folder = os.path.normpath(folder)       # normalize => remove redundant slashes, etc.
+            folder = QDir.cleanPath(folder)       # normalize => remove redundant slashes, etc.
             if os.path.isdir(folder):
                 self.folderCombo.addItem(folder)
             else:
@@ -225,7 +226,7 @@ class MainApp(QMainWindow, MainForm):
 
     def saveSettings(self):
         logger.debug("Global save settings called. Saving settings...")
-        self.mainTreeBrowser.saveState()
+        self.mainTreeBrowser.saveSettings()
 
     def setupPlaylistBrowser(self):
         # TODO future: implement
@@ -364,14 +365,14 @@ class MainApp(QMainWindow, MainForm):
             except ValueError:
                 return
 
+        # save TreeBrowser settings if switched to another mode
         oldTreeMode = self.mainTreeBrowser.getMode()
         if oldTreeMode is not None and oldTreeMode != source_id:
-            self.mainTreeBrowser.saveState()
+            self.mainTreeBrowser.saveSettings()
 
         if source_id == Sources.FILES:
             self.sourceType = Sources.FILES
             self.mainTreeBrowser.setMode(Sources.FILES)
-
             self.mainTreeBrowser.setModel(self.fileBrowserModel)
 
             # hide unwanted columns
@@ -382,7 +383,7 @@ class MainApp(QMainWindow, MainForm):
             if self.myComputerPathIndex is None:
                 self.myComputerPathIndex = self.mainTreeBrowser.rootIndex()
 
-            self.mainTreeBrowser.restoreState()
+            self.mainTreeBrowser.restoreSettings()
 
             logger.debug("Browser source has been selected to FILES.")
 
@@ -417,6 +418,7 @@ class MainApp(QMainWindow, MainForm):
                 logger.debug("Changing file_browser root to 'My Computer/root'.")
                 self.mainTreeBrowser.setRootIndex(self.myComputerPathIndex)
                 self.fileBrowserModel.setRootPath(QDir.rootPath())
+                # self.mainTreeBrowser.currentRootFolder = '/'
         else:
             # if valid, display given folder as root
             folderIndex = self.fileBrowserModel.index(newMediaFolder)
@@ -424,6 +426,7 @@ class MainApp(QMainWindow, MainForm):
                 logger.debug("Changing file_browser root to '%s'.", newMediaFolder)
                 self.mainTreeBrowser.setRootIndex(folderIndex)
                 self.fileBrowserModel.setRootPath(newMediaFolder)
+                # self.mainTreeBrowser.currentRootFolder = newMediaFolder
             else:
                 logger.error("Media path from folderCombo could not be found in fileSystemModel!")
                 self.errorEncountered.emit(Message.ERROR, "Media folder '%s' could not be found!" % newMediaFolder, "")
