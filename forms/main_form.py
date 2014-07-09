@@ -149,7 +149,7 @@ class MainTreeBrowserTreeView(QTreeView):
         settings = QSettings()
         # settings.clear()          # clears all entries
 
-        t0 = time.time()
+        # t0 = time.time()
 
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
@@ -176,8 +176,8 @@ class MainTreeBrowserTreeView(QTreeView):
                 targetIndex = self.folderCombo.findText(rootFolder)
                 if targetIndex != -1:
                     self.folderCombo.setCurrentIndex(targetIndex)
-                else:
-                    print "ERROR index .. delete me!!!"
+                # else:
+                #     print "ERROR index .. delete me!!!"
 
         # PLAYLISTS mode
         elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
@@ -187,7 +187,7 @@ class MainTreeBrowserTreeView(QTreeView):
         elif self._mode == MainTreeBrowserTreeView.RADIOS:
             pass
 
-        print (time.time() - t0) * 1000     # FIXME debug only
+        # print (time.time() - t0) * 1000     # FIXME debug only
 
     def saveSettings(self):
         """
@@ -206,7 +206,7 @@ class MainTreeBrowserTreeView(QTreeView):
             if currentRootFolderIndex != 0:
                 # save only folder which are nested under the currentRootFolder
                 for item in self._expandedItems:
-                    print item, currentRootFolder
+                    # print item, currentRootFolder
                     if item.startswith(currentRootFolder):
                         expandedItems.append(item)
 

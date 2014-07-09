@@ -11,6 +11,7 @@ __version__ = "$Id$"
 import time
 import logging
 import os
+import random
 
 from PySide.QtGui import *
 from PySide.QtCore import *
@@ -39,6 +40,7 @@ class MediaPlayer(QObject):
     timeChanged = Signal(int)
     positionChanged = Signal(float)
     mediaChanged = Signal(int)          # TODO: add metadata
+    endReached = Signal()
 
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
@@ -61,6 +63,9 @@ class MediaPlayer(QObject):
         self.append_mode = True
 
         self.__setupEvents()
+
+        # self.endReached.connect(self.stop)
+        self.endReached.connect(self.next)
 
         logger.debug("Created woofer player instance")
 
@@ -326,18 +331,15 @@ class MediaPlayer(QObject):
 
         if self._media_player.is_playing():
             self._media_player.stop()
-            play = True
-        else:
-            play = False
 
         if self.playlist_pointer + 1 < len(self.id_playlist):
             self.playlist_pointer += 1
             media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
             self._media_player.set_media(media)
             media.release()
-
-            if play:
-                self._media_player.play()
+            self._media_player.play()
+        else:
+            self._media_player.stop()
 
     def prev(self):
         """
@@ -349,9 +351,6 @@ class MediaPlayer(QObject):
 
         if self._media_player.is_playing():
             self._media_player.stop()
-            play = True
-        else:
-            play = False
 
         if self.playlist_pointer - 1 >= 0:
             self.playlist_pointer -= 1
@@ -359,8 +358,7 @@ class MediaPlayer(QObject):
             self._media_player.set_media(media)
             media.release()
 
-        if play:
-            self._media_player.play()
+        self._media_player.play()
 
     def setVolume(self, value):
         """
@@ -385,28 +383,28 @@ class MediaPlayer(QObject):
         """
         return self._media_player.audio_get_volume()
 
-    def setTime(self, new_time):
-        """
-        Set the movie time (in ms). This has no effect if no media is being played.
-        Not all formats and protocols support this. Rather use setPosition() method!
-        Method returns False if media is not seekable.
-        @param new_time: the movie time (in ms).
-        @type new_time: int
-        @rtype: bool
-        @raise ValueError: if value not in range [0, totalTime]
-        """
-        if not self._media_player.is_seekable():
-            logger.error("Media is not seekable")
-            return False
-
-        total_time = self.totalTime()
-        if 0 <= new_time <= total_time:
-            self._media_player.set_time(int(new_time))
-            logger.debug("Media play set to new time: %s ms", new_time)
-        else:
-            raise ValueError("New time must be in range [0, %d]" % total_time)
-
-        return True
+    # def setTime(self, new_time):
+    #     """
+    #     Set the movie time (in ms). This has no effect if no media is being played.
+    #     Not all formats and protocols support this. Rather use setPosition() method!
+    #     Method returns False if media is not seekable.
+    #     @param new_time: the movie time (in ms).
+    #     @type new_time: int
+    #     @rtype: bool
+    #     @raise ValueError: if value not in range [0, totalTime]
+    #     """
+    #     if not self._media_player.is_seekable():
+    #         logger.error("Media is not seekable")
+    #         return False
+    #
+    #     total_time = self.totalTime()
+    #     if 0 <= new_time <= total_time:
+    #         self._media_player.set_time(int(new_time))
+    #         logger.debug("Media play set to new time: %s ms", new_time)
+    #     else:
+    #         raise ValueError("New time must be in range [0, %d]" % total_time)
+    #
+    #     return True
 
     def setPosition(self, new_pos):
         """
@@ -420,6 +418,8 @@ class MediaPlayer(QObject):
         """
         if not 0 <= new_pos <= 100:
             raise ValueError("New position must be in range [0, 100]")
+
+        new_pos = 99 if new_pos == 100 else new_pos
 
         logger.debug("Setting media to new position : %s", new_pos)
         return self._media_player.set_position(new_pos / 100.0)
@@ -464,6 +464,18 @@ class MediaPlayer(QObject):
 
         return remaining_time
 
+    # def setShuffle(self, boolean):
+    #     current_id = self.id_playlist[self.playlist_pointer]
+    #
+    #     if boolean:
+    #         random.shuffle(self.id_playlist)
+
+
+
+
+
+
+
     # WARNING: CALLBACKS CALLED FROM ANOTHER THREAD !!!!
     # todo: fix
 
@@ -507,7 +519,8 @@ class MediaPlayer(QObject):
         self.is_playing = False
         self.is_paused = False
         self.is_stopped = True
-        self.stopped.emit()
+
+        self.endReached.emit()
 
     def __mediaChangedCallback(self, event):
         logger.debug("Media changed")
