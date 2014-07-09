@@ -288,7 +288,7 @@ class MainApp(QMainWindow, MainForm):
 
         # PLAY NOW
         if choice is playNow:
-            self.mediaPlayer.clearList()
+            self.mediaPlayer.clearMediaList()
             self.mediaPlayer.append_mode = False
             targetPath = fileInfo.absoluteFilePath()
             self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
@@ -296,7 +296,7 @@ class MainApp(QMainWindow, MainForm):
 
         # PLAY ALL
         elif choice is playAll:
-            self.mediaPlayer.clearList()
+            self.mediaPlayer.clearMediaList()
             self.mediaPlayer.append_mode = False
             targetPath = fileInfo.absoluteFilePath()
             self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
