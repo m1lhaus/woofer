@@ -10,7 +10,7 @@ import os
 import time
 
 from unittest import TestCase
-from components import media
+from components import media_old
 from components import vlc
 from tools.misc import unicode2bytes
 
@@ -22,7 +22,7 @@ class TestMediaPlayer(TestCase):
     Class testing media player functionality
     """
 
-    mp = media.MediaPlayer()
+    mp = media_old.MediaPlayer()
     tests_data_folder = os.path.join(os.path.dirname(__file__), 'data')
     vlc_instance = vlc.Instance()
 
