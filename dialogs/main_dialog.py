@@ -127,6 +127,7 @@ class MainApp(QMainWindow, MainForm):
         # self.parser.finished.connect(self.printTime)    # FIXME debug only
         self.parser.finished.connect(self.clearProgress)
         self.parser.finished.connect(self.scanner.finish)
+        self.parser.finished.connect(self.mediaPlayer.mediaAddingFinished)
         self.parser.parsed.connect(self.mediaPlayer.addMedia)
         self.scanner.parseData.connect(self.parser.parseMedia)
 
@@ -291,7 +292,7 @@ class MainApp(QMainWindow, MainForm):
         # PLAY NOW
         if choice is playNow:
             self.mediaPlayer.clearMediaList()
-            self.mediaPlayer.append_mode = False
+            self.mediaPlayer.initMediaAdding(append=False)
             targetPath = fileInfo.absoluteFilePath()
             self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
             self.displayProgress(u"Adding...")
@@ -299,7 +300,7 @@ class MainApp(QMainWindow, MainForm):
         # PLAY ALL
         elif choice is playAll:
             self.mediaPlayer.clearMediaList()
-            self.mediaPlayer.append_mode = False
+            self.mediaPlayer.initMediaAdding(append=False)
             targetPath = fileInfo.absoluteFilePath()
             self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
             self.displayProgress(u"Adding...")
@@ -307,6 +308,7 @@ class MainApp(QMainWindow, MainForm):
         # ADD TO PLAYLIST
         elif choice is addToPlayList:
             targetPath = fileInfo.absoluteFilePath()
+            self.mediaPlayer.initMediaAdding(append=True)
             # asynchronously recursively search for media files
             self.scanFiles.emit(targetPath)
             self.displayProgress(u"Adding...")

@@ -62,7 +62,8 @@ class MediaPlayer(QObject):
         self.is_playing = False
         self.is_paused = False
         self.is_stopped = True
-        self.append_mode = True
+        self.append_media = True        # append to playlist or clear playlist
+        self.appending_mode = True      # flag that says if newly added media has been appended
         self.shuffle_mode = False
         self.repeat_mode = False
 
@@ -97,7 +98,7 @@ class MediaPlayer(QObject):
         @type mList: list of (unicode, vlc.Media)
         """
         export = []
-        # todo: check for ref count
+
         self._media_list.lock()
         for path, media in mList:
             self._media_list.add_media(media)
@@ -108,14 +109,14 @@ class MediaPlayer(QObject):
             export.append((path, media.get_duration()))
         self._media_list.unlock()
 
-        self.mediaAdded.emit(export, self.append_mode)
+        self.mediaAdded.emit(export, self.append_media)
 
         # set set_mode, set media and switch to append mode for next iteration
-        if not self.append_mode:
+        if not self.append_media:
             path, media = mList[0]
             logger.debug("Setting current media %s", path)
             self._media_player.set_media(media)
-            self.append_mode = True
+            self.append_media = True
             self.play()         # in set_mode, Play or Play All has been chosen => play()
 
     def removeItem(self, index):
@@ -394,28 +395,66 @@ class MediaPlayer(QObject):
         return remaining_time
 
     def setShuffle(self, state):
-        current_id = self.id_playlist[self.playlist_pointer]
+        """
+        Enable/disable shuffle mode
+        @param state: enable/disable
+        @type state: bool
+        """
+        self.shuffle_mode = state
 
-        if state:
-            random.shuffle(self.id_playlist)
-            self.id_playlist.remove(current_id)
-            self.id_playlist.insert(0, current_id)
-            self.shuffle_mode = True
-            logger.debug("SHUFFLE playback mode turned ON")
-        else:
-            self.id_playlist = sorted(self.id_playlist)
-            self.playlist_pointer = current_id                          # id_playlist is range-type (sorted) array
-            self.shuffle_mode = False
-            logger.debug("SHUFFLE playback mode turned OFF")
+        # playlist is not empty
+        if self.id_playlist:
+            current_id = self.id_playlist[self.playlist_pointer]
+
+            if state:
+                random.shuffle(self.id_playlist)
+                self.id_playlist.remove(current_id)
+                self.id_playlist.insert(0, current_id)
+                logger.debug("SHUFFLE playback mode turned ON")
+            else:
+                self.id_playlist = sorted(self.id_playlist)
+                self.playlist_pointer = current_id                          # id_playlist is range-type (sorted) array
+                logger.debug("SHUFFLE playback mode turned OFF")
 
     def setRepeat(self, state):
+        """
+        Enable/disable repeat mode
+        @type state: bool
+        """
+        self.repeat_mode = state
 
         if state:
-            self.repeat_mode = True
             logger.debug("REPEAT playback mode turned ON")
         else:
-            self.repeat_mode = False
             logger.debug("REPEAT playback mode turned OFF")
+
+    def initMediaAdding(self, append=True):
+        """
+        Called before media adding is started from scanner/parser thread.
+        @param append: append mode flag
+        @type append: bool
+        """
+        self.appending_mode = append
+        self.append_media = append
+
+    @Slot()
+    def mediaAddingFinished(self):
+        """
+        Called when media adding ends.
+        If shuffle_mode set, newly added media are shuffled with unplayed media.
+        """
+
+        # shuffle newly added media with the rest, which have not been played yet
+        if self.appending_mode and self.shuffle_mode:
+            logger.debug("Shuffling newly added media")
+            index = self.playlist_pointer+1
+            tmp_list = self.id_playlist[index:]
+            random.shuffle(tmp_list)
+            self.id_playlist[index:] = tmp_list
+
+        elif not self.appending_mode and self.shuffle_mode:
+            logger.debug("Newly added media which has not been appended are not shuffled. Shuffling...")
+            self.setShuffle(True)
 
     # ----
     # WARNING: CALLBACKS CALLED FROM ANOTHER THREAD !!!!  todo: fix
@@ -556,7 +595,7 @@ class MediaParser(QObject):
     #     # put the media to media list
     #     self._media_list.lock()
     #     self._media_list.add_media(self.instance.media_new(byte_path))
-    #     # todo: check ref counter
+    #
     #     self._media_player.set_media(self._media_list.item_at_index(0))
     #     self._media_list.unlock()
     #
@@ -580,7 +619,7 @@ class MediaParser(QObject):
     #         return
     #
     #     logger.debug("Adding new media source: %s", source_path)
-    #     # todo: check ref counter
+    #
     #     media = self.instance.media_new(byte_path)
     #     self._media_list.lock()
     #     self._media_list.add_media(media)
