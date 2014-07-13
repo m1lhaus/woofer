@@ -92,6 +92,8 @@ class MainApp(QMainWindow, MainForm):
         self.previousBtn.clicked.connect(self.mediaPlayer.prev)
         self.seekerSlider.valueChanged.connect(self.mediaPlayer.setPosition)
         self.volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
+        self.shuffleBtn.toggled.connect(self.toggleShuffle)
+        self.repeatBtn.toggled.connect(self.toggleRepeat)
 
         self.playlist.enterShortcut.activated.connect(self.playNow)
         self.playlist.delShortcut.activated.connect(self.remFromPlaylist)
@@ -663,6 +665,14 @@ class MainApp(QMainWindow, MainForm):
         except OSError, exception:
             self.errorEncountered.emit(Message.ERROR, "Unable to move path to Trash path '%s'!" % filePath,
                                        "Details: %s" % exception.message)
+
+    @Slot(bool)
+    def toggleShuffle(self, checked):
+        self.mediaPlayer.setShuffle(checked)
+
+    @Slot(bool)
+    def toggleRepeat(self, checked):
+        self.mediaPlayer.setRepeat(checked)
 
     def closeEvent(self, event):
         # self.mediaPlayerThread.quit()

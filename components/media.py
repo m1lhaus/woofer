@@ -13,10 +13,12 @@ import logging
 import os
 import random
 
+
 from PySide.QtGui import *
 from PySide.QtCore import *
 
 from components import vlc
+from tools import misc
 from tools.misc import unicode2bytes
 
 logger = logging.getLogger(__name__)
@@ -40,7 +42,7 @@ class MediaPlayer(QObject):
     timeChanged = Signal(int)
     positionChanged = Signal(float)
     mediaChanged = Signal(int)          # TODO: add metadata
-    endReached = Signal()
+    endReached = Signal(bool)
 
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
@@ -61,6 +63,8 @@ class MediaPlayer(QObject):
         self.is_paused = False
         self.is_stopped = True
         self.append_mode = True
+        self.shuffle_mode = False
+        self.repeat_mode = False
 
         self.__setupEvents()
 
@@ -83,93 +87,6 @@ class MediaPlayer(QObject):
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
-
-    # def setSource(self, source_path):
-    #     """
-    #     Sets the media source that will be played by the media_player.
-    #     @param source_path: path to media file
-    #     @type source_path: str or unicode
-    #     """
-    #     unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
-    #
-    #     # if path exists
-    #     if not os.path.isfile(unicode_path):
-    #         self.error.emit("Given media file '%s' does not exist!" % source_path)
-    #         return
-    #
-    #     # stops playback and clears media_list
-    #     logger.debug("Deleting items from media list")
-    #     self.clearMediaList()
-    #
-    #     # put the media to media list
-    #     self._media_list.lock()
-    #     self._media_list.add_media(self.instance.media_new(byte_path))
-    #     # todo: check ref counter
-    #     self._media_player.set_media(self._media_list.item_at_index(0))
-    #     self._media_list.unlock()
-    #
-    #     self.id_playlist.append(0)        # new media has id #0 (it is first in the list)
-    #     self.playlist_len = 1
-    #     self.playlist_pointer = 0
-    #
-    #     logger.debug("New media source set to: %s", source_path)
-    #
-    # def addSource(self, source_path):
-    #     """
-    #     Adds one new media path to media list (queue).
-    #     If player has no media set, method automatically sets added media as current.
-    #     @type source_path: str or unicode
-    #     """
-    #     unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
-    #
-    #     # if path exists
-    #     if not os.path.isfile(unicode_path):
-    #         self.error.emit("Given media file '%s' does not exist!" % source_path)
-    #         return
-    #
-    #     logger.debug("Adding new media source: %s", source_path)
-    #     # todo: check ref counter
-    #     media = self.instance.media_new(byte_path)
-    #     self._media_list.lock()
-    #     self._media_list.add_media(media)
-    #     self._media_list.unlock()
-    #
-    #     if not bool(self.getMedia()):
-    #         logger.debug("Player has no media set, setting current media %s", source_path)
-    #         self._media_player.set_media(media)
-    #
-    #     self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
-    #     self.playlist_len += 1
-    #
-    # def addSources(self, sources):
-    #     """
-    #     Appends list of new media paths to media list (queue).
-    #     If player has no media set, method automatically sets first media path from list as current.
-    #     @type sources: list of str or list of unicode
-    #     """
-    #     logger.debug("Adding new media sources.")
-    #     try:
-    #         self._media_list.lock()
-    #         for single_path in sources:
-    #             unicode_path, byte_path = unicode2bytes(single_path)            # vlc needs byte array (ascii str)
-    #
-    #             # if path exists
-    #             if not os.path.isfile(unicode_path):
-    #                 self.error.emit("Given media file '%s' does not exist!" % single_path)
-    #                 return
-    #
-    #             media = self.instance.media_new(byte_path)
-    #             self._media_list.add_media(media)
-    #
-    #             self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
-    #             self.playlist_len += 1
-    #     finally:
-    #         self._media_list.unlock()
-    #
-    #     # todo: check for ref counter !!!
-    #     if not bool(self.getMedia()):
-    #         logger.debug("Player has no media set, setting first media from list %s", sources[0])
-    #         self._media_player.set_media(self._media_list.item_at_index(0))
 
     @Slot()
     def addMedia(self, mList):
@@ -321,25 +238,35 @@ class MediaPlayer(QObject):
         """
         Stop (no effect if there is no media)
         """
+        logger.debug("Stop method called, stopping playback...")
         self._media_player.stop()
 
-    def next(self):
+    def next(self, repeat=False):
         """
         Switches to next media in media_list if any.
+        @param repeat: if set, current media is played again
+        @type repeat: bool
         """
-        logger.debug("Next media method called")
-
-        if self._media_player.is_playing():
+        if repeat:
+            logger.debug("Next media method called, repeating current song")
             self._media_player.stop()
-
-        if self.playlist_pointer + 1 < len(self.id_playlist):
-            self.playlist_pointer += 1
-            media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
-            self._media_player.set_media(media)
-            media.release()
             self._media_player.play()
+
         else:
-            self._media_player.stop()
+            logger.debug("Next media method called, switching to next song if any...")
+
+            if self._media_player.is_playing():
+                self._media_player.stop()
+
+            if self.playlist_pointer + 1 < len(self.id_playlist):
+                self.playlist_pointer += 1
+                media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
+                self._media_player.set_media(media)
+                media.release()
+                self._media_player.play()
+            else:
+                logger.debug("There is no next media (song) to play!")
+                self._media_player.stop()
 
     def prev(self):
         """
@@ -357,6 +284,8 @@ class MediaPlayer(QObject):
             media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
             self._media_player.set_media(media)
             media.release()
+        else:
+            logger.debug("There is no previous media (song) to play!")
 
         self._media_player.play()
 
@@ -383,28 +312,28 @@ class MediaPlayer(QObject):
         """
         return self._media_player.audio_get_volume()
 
-    # def setTime(self, new_time):
-    #     """
-    #     Set the movie time (in ms). This has no effect if no media is being played.
-    #     Not all formats and protocols support this. Rather use setPosition() method!
-    #     Method returns False if media is not seekable.
-    #     @param new_time: the movie time (in ms).
-    #     @type new_time: int
-    #     @rtype: bool
-    #     @raise ValueError: if value not in range [0, totalTime]
-    #     """
-    #     if not self._media_player.is_seekable():
-    #         logger.error("Media is not seekable")
-    #         return False
-    #
-    #     total_time = self.totalTime()
-    #     if 0 <= new_time <= total_time:
-    #         self._media_player.set_time(int(new_time))
-    #         logger.debug("Media play set to new time: %s ms", new_time)
-    #     else:
-    #         raise ValueError("New time must be in range [0, %d]" % total_time)
-    #
-    #     return True
+    def setTime(self, new_time):
+        """
+        Set the movie time (in ms). This has no effect if no media is being played.
+        Not all formats and protocols support this. Rather use setPosition() method!
+        Method returns False if media is not seekable.
+        @param new_time: the movie time (in ms).
+        @type new_time: int
+        @rtype: bool
+        @raise ValueError: if value not in range [0, totalTime]
+        """
+        if not self._media_player.is_seekable():
+            logger.error("Media is not seekable")
+            return False
+
+        total_time = self.totalTime()
+        if 0 <= new_time <= total_time:
+            self._media_player.set_time(int(new_time))
+            logger.debug("Media play set to new time: %s ms", new_time)
+        else:
+            raise ValueError("New time must be in range [0, %d]" % total_time)
+
+        return True
 
     def setPosition(self, new_pos):
         """
@@ -464,20 +393,33 @@ class MediaPlayer(QObject):
 
         return remaining_time
 
-    # def setShuffle(self, boolean):
-    #     current_id = self.id_playlist[self.playlist_pointer]
-    #
-    #     if boolean:
-    #         random.shuffle(self.id_playlist)
+    def setShuffle(self, state):
+        current_id = self.id_playlist[self.playlist_pointer]
 
+        if state:
+            random.shuffle(self.id_playlist)
+            self.id_playlist.remove(current_id)
+            self.id_playlist.insert(0, current_id)
+            self.shuffle_mode = True
+            logger.debug("SHUFFLE playback mode turned ON")
+        else:
+            self.id_playlist = sorted(self.id_playlist)
+            self.playlist_pointer = current_id                          # id_playlist is range-type (sorted) array
+            self.shuffle_mode = False
+            logger.debug("SHUFFLE playback mode turned OFF")
 
+    def setRepeat(self, state):
 
+        if state:
+            self.repeat_mode = True
+            logger.debug("REPEAT playback mode turned ON")
+        else:
+            self.repeat_mode = False
+            logger.debug("REPEAT playback mode turned OFF")
 
-
-
-
-    # WARNING: CALLBACKS CALLED FROM ANOTHER THREAD !!!!
-    # todo: fix
+    # ----
+    # WARNING: CALLBACKS CALLED FROM ANOTHER THREAD !!!!  todo: fix
+    # ----
 
     def __timeChangedCallback(self, event):
         self.timeChanged.emit(event.u.new_time)
@@ -515,12 +457,12 @@ class MediaPlayer(QObject):
         logger.debug("Media player skipped backward")
 
     def __endReachedCallback(self, event):
-        logger.debug("Media end reached")
+        logger.debug("Media reached end")
         self.is_playing = False
         self.is_paused = False
         self.is_stopped = True
 
-        self.endReached.emit()
+        self.endReached.emit(self.repeat_mode)          # if repeat_mode then do not switch to next song
 
     def __mediaChangedCallback(self, event):
         logger.debug("Media changed")
@@ -589,3 +531,94 @@ class MediaParser(QObject):
                 mediaList.append((unicode_path, mMedia))
 
             self.parsed.emit(mediaList)
+
+
+# ------------------------------------------------------------------------------------------------------------
+# MediaPLayer
+
+    # def setSource(self, source_path):
+    #     """
+    #     Sets the media source that will be played by the media_player.
+    #     @param source_path: path to media file
+    #     @type source_path: str or unicode
+    #     """
+    #     unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
+    #
+    #     # if path exists
+    #     if not os.path.isfile(unicode_path):
+    #         self.error.emit("Given media file '%s' does not exist!" % source_path)
+    #         return
+    #
+    #     # stops playback and clears media_list
+    #     logger.debug("Deleting items from media list")
+    #     self.clearMediaList()
+    #
+    #     # put the media to media list
+    #     self._media_list.lock()
+    #     self._media_list.add_media(self.instance.media_new(byte_path))
+    #     # todo: check ref counter
+    #     self._media_player.set_media(self._media_list.item_at_index(0))
+    #     self._media_list.unlock()
+    #
+    #     self.id_playlist.append(0)        # new media has id #0 (it is first in the list)
+    #     self.playlist_len = 1
+    #     self.playlist_pointer = 0
+    #
+    #     logger.debug("New media source set to: %s", source_path)
+    #
+    # def addSource(self, source_path):
+    #     """
+    #     Adds one new media path to media list (queue).
+    #     If player has no media set, method automatically sets added media as current.
+    #     @type source_path: str or unicode
+    #     """
+    #     unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
+    #
+    #     # if path exists
+    #     if not os.path.isfile(unicode_path):
+    #         self.error.emit("Given media file '%s' does not exist!" % source_path)
+    #         return
+    #
+    #     logger.debug("Adding new media source: %s", source_path)
+    #     # todo: check ref counter
+    #     media = self.instance.media_new(byte_path)
+    #     self._media_list.lock()
+    #     self._media_list.add_media(media)
+    #     self._media_list.unlock()
+    #
+    #     if not bool(self.getMedia()):
+    #         logger.debug("Player has no media set, setting current media %s", source_path)
+    #         self._media_player.set_media(media)
+    #
+    #     self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
+    #     self.playlist_len += 1
+    #
+    # def addSources(self, sources):
+    #     """
+    #     Appends list of new media paths to media list (queue).
+    #     If player has no media set, method automatically sets first media path from list as current.
+    #     @type sources: list of str or list of unicode
+    #     """
+    #     logger.debug("Adding new media sources.")
+    #     try:
+    #         self._media_list.lock()
+    #         for single_path in sources:
+    #             unicode_path, byte_path = unicode2bytes(single_path)            # vlc needs byte array (ascii str)
+    #
+    #             # if path exists
+    #             if not os.path.isfile(unicode_path):
+    #                 self.error.emit("Given media file '%s' does not exist!" % single_path)
+    #                 return
+    #
+    #             media = self.instance.media_new(byte_path)
+    #             self._media_list.add_media(media)
+    #
+    #             self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
+    #             self.playlist_len += 1
+    #     finally:
+    #         self._media_list.unlock()
+    #
+    #     # todo: check for ref counter !!!
+    #     if not bool(self.getMedia()):
+    #         logger.debug("Player has no media set, setting first media from list %s", sources[0])
+    #         self._media_player.set_media(self._media_list.item_at_index(0))
