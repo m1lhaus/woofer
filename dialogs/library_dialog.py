@@ -12,7 +12,7 @@ from PySide.QtCore import *
 from forms.library_form import Ui_libraryDialog
 
 logger = logging.getLogger(__name__)
-logger.debug('Import ' + __name__)
+logger.debug(u'Import ' + __name__)
 
 
 class LibraryDialog(QDialog, Ui_libraryDialog):
@@ -37,11 +37,11 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
             with open(self.mediaLibFile, 'r') as mediaFile:
                 self.mediaFolders = json.load(mediaFile)
         except IOError:
-            logger.exception("Error when reading media file data from disk")
-            QMessageBox(QMessageBox.Critical, "IO Error", "Error when reading media file data from disk!").exec_()
+            logger.exception(u"Error when reading media file data from disk")
+            QMessageBox(QMessageBox.Critical, u"IO Error", u"Error when reading media file data from disk!").exec_()
         except Exception:
-            logger.exception("Error when parsing media file data from json")
-            QMessageBox(QMessageBox.Critical, "Parsing error", "Error when parsing media file data from json!").exec_()
+            logger.exception(u"Error when parsing media file data from json")
+            QMessageBox(QMessageBox.Critical, u"Parsing error", u"Error when parsing media file data from json!").exec_()
 
         # fill QListWidget with folders
         for folder in self.mediaFolders:
@@ -50,7 +50,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
 
             if not os.path.isdir(folder):
                 folder_item.setForeground(QBrush(Qt.red))
-                folder_item.setToolTip("Folder does not exist!")
+                folder_item.setToolTip(u"Folder does not exist!")
 
             self.folderList.addItem(folder_item)
 
@@ -63,12 +63,12 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         """
         When 'Add' button clicked, system folder dialog is opened and new directory is added
         """
-        logger.debug("Opening system file dialog.")
+        logger.debug(u"Opening system file dialog.")
         homeFolder = QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
         newFolder = QFileDialog.getExistingDirectory(self, dir=homeFolder)
 
         if newFolder:
-            logger.debug("Selected directory: %s", newFolder)
+            logger.debug(u"Selected directory: %s", newFolder)
             newFolder = os.path.normpath(newFolder)
             self.mediaFolders.append(newFolder)
             self.folderList.addItem(newFolder)
@@ -93,10 +93,10 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
             with open(self.mediaLibFile, 'w') as mediaFile:
                 json.dump(self.mediaFolders, mediaFile)
         except IOError:
-            logger.exception("Error when writing media file data to disk")
-            QMessageBox(QMessageBox.Critical, "IO Error", "Error when writing media file data to disk!").exec_()
+            logger.exception(u"Error when writing media file data to disk")
+            QMessageBox(QMessageBox.Critical, u"IO Error", u"Error when writing media file data to disk!").exec_()
         except Exception:
-            logger.exception("Error when dumping mediaFolders to media file")
-            QMessageBox(QMessageBox.Critical, "Parsing error", "Error when parsing media file data from json!").exec_()
+            logger.exception(u"Error when dumping mediaFolders to media file")
+            QMessageBox(QMessageBox.Critical, u"Parsing error", u"Error when parsing media file data from json!").exec_()
 
         super(LibraryDialog, self).accept()

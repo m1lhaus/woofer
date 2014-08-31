@@ -22,7 +22,7 @@ from tools import misc
 from tools.misc import unicode2bytes
 
 logger = logging.getLogger(__name__)
-logger.debug('Import ' + __name__)
+logger.debug(u'Import ' + __name__)
 
 
 class MediaPlayer(QObject):
@@ -53,7 +53,7 @@ class MediaPlayer(QObject):
         """@type: vlc.MediaPlayer"""
         self._media_list = self.instance.media_list_new()
         """@type: vlc.MediaList"""
-        logger.debug("Core instances of VLC player created")
+        logger.debug(u"Core instances of VLC player created")
 
         self.id_playlist = []
         self.playlist_pointer = 0        # points which media in idPlaylist is being played
@@ -72,7 +72,7 @@ class MediaPlayer(QObject):
         # self.endReached.connect(self.stop)
         self.endReached.connect(self.next)
 
-        logger.debug("Created woofer player instance")
+        logger.debug(u"Created Woofer player instance")
 
     def __setupEvents(self):
         self.media_player_event_manager = self._media_player.event_manager()
@@ -114,7 +114,7 @@ class MediaPlayer(QObject):
         # set set_mode, set media and switch to append mode for next iteration
         if not self.append_media:
             path, media = mList[0]
-            logger.debug("Setting current media %s", path)
+            logger.debug(u"Setting current media %s", path)
             self._media_player.set_media(media)
             self.append_media = True
             self.play()         # in set_mode, Play or Play All has been chosen => play()
@@ -127,7 +127,7 @@ class MediaPlayer(QObject):
         @param index: index of removed item in media_list
         @type index: int
         """
-        logger.debug("Removing media item in index: %s", index)
+        logger.debug(u"Removing media item in index: %s", index)
 
         # get removed and current mrl for comparison
         playedMedia = self._media_player.get_media()
@@ -162,7 +162,7 @@ class MediaPlayer(QObject):
         """
         Clears all existing items in media_list
         """
-        logger.debug("Clearing media_list")
+        logger.debug(u"Clearing media_list")
         self.stop()
         self._media_list.release()                              # delete old media list
         self._media_list = self.instance.media_list_new()       # create new and empty list
@@ -216,7 +216,7 @@ class MediaPlayer(QObject):
         @type item_playlist_id: int
         """
         if item_playlist_id is not None:
-            logger.debug("Play method called with index: %s" % item_playlist_id)
+            logger.debug(u"Play method called with index: %s" % item_playlist_id)
             self._media_player.stop()
             play_media = self._media_list.item_at_index(item_playlist_id)
             self._media_player.set_media(play_media)
@@ -225,21 +225,21 @@ class MediaPlayer(QObject):
 
             self.playlist_pointer = self.id_playlist.index(item_playlist_id)    # find item in playlist
         else:
-            logger.debug("Play method called")
+            logger.debug(u"Play method called")
             self._media_player.play()
 
     def pause(self):
         """
         Pause media_player (no effect if there is no media).
         """
-        logger.debug("Pause method called")
+        logger.debug(u"Pause method called")
         self._media_player.pause()
 
     def stop(self):
         """
         Stop (no effect if there is no media)
         """
-        logger.debug("Stop method called, stopping playback...")
+        logger.debug(u"Stop method called, stopping playback...")
         self._media_player.stop()
 
     def next(self, repeat=False):
@@ -249,12 +249,12 @@ class MediaPlayer(QObject):
         @type repeat: bool
         """
         if repeat:
-            logger.debug("Next media method called, repeating current song")
+            logger.debug(u"Next media method called, repeating current song")
             self._media_player.stop()
             self._media_player.play()
 
         else:
-            logger.debug("Next media method called, switching to next song if any...")
+            logger.debug(u"Next media method called, switching to next song if any...")
 
             if self._media_player.is_playing():
                 self._media_player.stop()
@@ -266,7 +266,7 @@ class MediaPlayer(QObject):
                 media.release()
                 self._media_player.play()
             else:
-                logger.debug("There is no next media (song) to play!")
+                logger.debug(u"There is no next media (song) to play!")
                 self._media_player.stop()
 
     def prev(self):
@@ -275,7 +275,7 @@ class MediaPlayer(QObject):
         Method returns False if there is no media to switch.
         @rtype : bool
         """
-        logger.debug("Previous media method called")
+        logger.debug(u"Previous media method called")
 
         if self._media_player.is_playing():
             self._media_player.stop()
@@ -286,7 +286,7 @@ class MediaPlayer(QObject):
             self._media_player.set_media(media)
             media.release()
         else:
-            logger.debug("There is no previous media (song) to play!")
+            logger.debug(u"There is no previous media (song) to play!")
 
         self._media_player.play()
 
@@ -300,9 +300,9 @@ class MediaPlayer(QObject):
         @raise ValueError: if value not in range [0, 100]
         """
         if not 0 <= value <= 100:
-            raise ValueError("Volume must be in range <0, 100>")
+            raise ValueError(u"Volume must be in range <0, 100>")
 
-        logger.debug("Setting volume to value %s", value)
+        logger.debug(u"Setting volume to value %s", value)
         return self._media_player.audio_set_volume(int(value)) == -1
 
     def volume(self):
@@ -324,15 +324,15 @@ class MediaPlayer(QObject):
         @raise ValueError: if value not in range [0, totalTime]
         """
         if not self._media_player.is_seekable():
-            logger.error("Media is not seekable")
+            logger.error(u"Media is not seekable")
             return False
 
         total_time = self.totalTime()
         if 0 <= new_time <= total_time:
             self._media_player.set_time(int(new_time))
-            logger.debug("Media play set to new time: %s ms", new_time)
+            logger.debug(u"Media play set to new time: %s ms", new_time)
         else:
-            raise ValueError("New time must be in range [0, %d]" % total_time)
+            raise ValueError(u"New time must be in range [0, %d]" % total_time)
 
         return True
 
@@ -347,11 +347,11 @@ class MediaPlayer(QObject):
         @raise ValueError: if value not in range [0, 100]
         """
         if not 0 <= new_pos <= 100:
-            raise ValueError("New position must be in range [0, 100]")
+            raise ValueError(u"New position must be in range [0, 100]")
 
         new_pos = 99 if new_pos == 100 else new_pos
 
-        logger.debug("Setting media to new position : %s", new_pos)
+        logger.debug(u"Setting media to new position : %s", new_pos)
         return self._media_player.set_position(new_pos / 100.0)
 
     def currentTime(self):
@@ -360,13 +360,13 @@ class MediaPlayer(QObject):
         Method returns None if no media set.
         @rtype : int or None
         """
-        time = self._media_player.get_time()
+        ctime = self._media_player.get_time()
 
-        if time == -1:
-            logger.warning("There is no media set to get current time")
-            time = None
+        if ctime == -1:
+            logger.warning(u"There is no media set to get current time")
+            ctime = None
 
-        return time
+        return ctime
 
     def totalTime(self):
         """
@@ -387,7 +387,7 @@ class MediaPlayer(QObject):
         total_time = self.totalTime()
 
         if current_time == -1 or total_time == -1:
-            logger.warning("There is no media set to get remaining time")
+            logger.warning(u"There is no media set to get remaining time")
             remaining_time = None
         else:
             remaining_time = total_time - current_time
@@ -410,11 +410,11 @@ class MediaPlayer(QObject):
                 random.shuffle(self.id_playlist)
                 self.id_playlist.remove(current_id)
                 self.id_playlist.insert(0, current_id)
-                logger.debug("SHUFFLE playback mode turned ON")
+                logger.debug(u"SHUFFLE playback mode turned ON")
             else:
                 self.id_playlist = sorted(self.id_playlist)
                 self.playlist_pointer = current_id                          # id_playlist is range-type (sorted) array
-                logger.debug("SHUFFLE playback mode turned OFF")
+                logger.debug(u"SHUFFLE playback mode turned OFF")
 
     def setRepeat(self, state):
         """
@@ -424,9 +424,9 @@ class MediaPlayer(QObject):
         self.repeat_mode = state
 
         if state:
-            logger.debug("REPEAT playback mode turned ON")
+            logger.debug(u"REPEAT playback mode turned ON")
         else:
-            logger.debug("REPEAT playback mode turned OFF")
+            logger.debug(u"REPEAT playback mode turned OFF")
 
     def initMediaAdding(self, append=True):
         """
@@ -446,14 +446,14 @@ class MediaPlayer(QObject):
 
         # shuffle newly added media with the rest, which have not been played yet
         if self.appending_mode and self.shuffle_mode:
-            logger.debug("Shuffling newly added media")
+            logger.debug(u"Shuffling newly added media")
             index = self.playlist_pointer+1
             tmp_list = self.id_playlist[index:]
             random.shuffle(tmp_list)
             self.id_playlist[index:] = tmp_list
 
         elif not self.appending_mode and self.shuffle_mode:
-            logger.debug("Newly added media which has not been appended are not shuffled. Shuffling...")
+            logger.debug(u"Newly added media which has not been appended are not shuffled. Shuffling...")
             self.setShuffle(True)
 
     # ----
@@ -469,34 +469,34 @@ class MediaPlayer(QObject):
         self.positionChanged.emit(newPos)
 
     def __playingCallback(self, event):
-        logger.debug("Media player is playing")
+        logger.debug(u"Media player is playing")
         self.is_playing = True
         self.is_paused = False
         self.is_stopped = False
         self.playing.emit()
 
     def __pausedCallback(self, event):
-        logger.debug("Media player paused")
+        logger.debug(u"Media player paused")
         self.is_playing = False
         self.is_paused = True
         self.is_stopped = False
         self.paused.emit()
 
     def __stoppedCallback(self, event):
-        logger.debug("Media player is stopped")
+        logger.debug(u"Media player is stopped")
         self.is_playing = False
         self.is_paused = False
         self.is_stopped = True
         self.stopped.emit()
 
     def __forwardCallback(self, event):
-        logger.debug("Media player skipped forward")
+        logger.debug(u"Media player skipped forward")
 
     def __backwardCallback(self, event):
-        logger.debug("Media player skipped backward")
+        logger.debug(u"Media player skipped backward")
 
     def __endReachedCallback(self, event):
-        logger.debug("Media reached end")
+        logger.debug(u"Media reached end")
         self.is_playing = False
         self.is_paused = False
         self.is_stopped = True
@@ -504,14 +504,14 @@ class MediaPlayer(QObject):
         self.endReached.emit(self.repeat_mode)          # if repeat_mode then do not switch to next song
 
     def __mediaChangedCallback(self, event):
-        logger.debug("Media changed")
+        logger.debug(u"Media changed")
         currentMedia = self._media_player.get_media()
         index = self._media_list.index_of_item(currentMedia)
         currentMedia.release()
         self.mediaChanged.emit(index)
 
     def __errorCallback(self, event):
-        logger.warning("Media encountered error")
+        logger.warning(u"Media encountered error")
 
 
 class MediaParser(QObject):
@@ -530,7 +530,7 @@ class MediaParser(QObject):
         self._mutex = QMutex()
         self._cancel = False
 
-        logger.debug("Media parser initialized.")
+        logger.debug(u"Media Parser initialized.")
 
     def stop(self, value=None):
         """
@@ -555,7 +555,7 @@ class MediaParser(QObject):
         """
         # END FLAG RECEIVED
         if not sources:
-            logger.debug("Parser finished, end flag received.")
+            logger.debug(u"Parser finished, end flag received.")
             self.stop(False)            # reset stop flag
 
             self.finished.emit()
@@ -570,94 +570,3 @@ class MediaParser(QObject):
                 mediaList.append((unicode_path, mMedia))
 
             self.parsed.emit(mediaList)
-
-
-# ------------------------------------------------------------------------------------------------------------
-# MediaPLayer
-
-    # def setSource(self, source_path):
-    #     """
-    #     Sets the media source that will be played by the media_player.
-    #     @param source_path: path to media file
-    #     @type source_path: str or unicode
-    #     """
-    #     unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
-    #
-    #     # if path exists
-    #     if not os.path.isfile(unicode_path):
-    #         self.error.emit("Given media file '%s' does not exist!" % source_path)
-    #         return
-    #
-    #     # stops playback and clears media_list
-    #     logger.debug("Deleting items from media list")
-    #     self.clearMediaList()
-    #
-    #     # put the media to media list
-    #     self._media_list.lock()
-    #     self._media_list.add_media(self.instance.media_new(byte_path))
-    #
-    #     self._media_player.set_media(self._media_list.item_at_index(0))
-    #     self._media_list.unlock()
-    #
-    #     self.id_playlist.append(0)        # new media has id #0 (it is first in the list)
-    #     self.playlist_len = 1
-    #     self.playlist_pointer = 0
-    #
-    #     logger.debug("New media source set to: %s", source_path)
-    #
-    # def addSource(self, source_path):
-    #     """
-    #     Adds one new media path to media list (queue).
-    #     If player has no media set, method automatically sets added media as current.
-    #     @type source_path: str or unicode
-    #     """
-    #     unicode_path, byte_path = unicode2bytes(source_path)            # vlc needs byte array (ascii str)
-    #
-    #     # if path exists
-    #     if not os.path.isfile(unicode_path):
-    #         self.error.emit("Given media file '%s' does not exist!" % source_path)
-    #         return
-    #
-    #     logger.debug("Adding new media source: %s", source_path)
-    #
-    #     media = self.instance.media_new(byte_path)
-    #     self._media_list.lock()
-    #     self._media_list.add_media(media)
-    #     self._media_list.unlock()
-    #
-    #     if not bool(self.getMedia()):
-    #         logger.debug("Player has no media set, setting current media %s", source_path)
-    #         self._media_player.set_media(media)
-    #
-    #     self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
-    #     self.playlist_len += 1
-    #
-    # def addSources(self, sources):
-    #     """
-    #     Appends list of new media paths to media list (queue).
-    #     If player has no media set, method automatically sets first media path from list as current.
-    #     @type sources: list of str or list of unicode
-    #     """
-    #     logger.debug("Adding new media sources.")
-    #     try:
-    #         self._media_list.lock()
-    #         for single_path in sources:
-    #             unicode_path, byte_path = unicode2bytes(single_path)            # vlc needs byte array (ascii str)
-    #
-    #             # if path exists
-    #             if not os.path.isfile(unicode_path):
-    #                 self.error.emit("Given media file '%s' does not exist!" % single_path)
-    #                 return
-    #
-    #             media = self.instance.media_new(byte_path)
-    #             self._media_list.add_media(media)
-    #
-    #             self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
-    #             self.playlist_len += 1
-    #     finally:
-    #         self._media_list.unlock()
-    #
-    #     # todo: check for ref counter !!!
-    #     if not bool(self.getMedia()):
-    #         logger.debug("Player has no media set, setting first media from list %s", sources[0])
-    #         self._media_player.set_media(self._media_list.item_at_index(0))

@@ -27,24 +27,24 @@ class InfoFilter(logging.Filter):
 def setup_logging(mode):
 
     root_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-    log_dir = os.path.join(root_dir, 'log')
+    log_dir = os.path.join(root_dir, u'log')
     date = datetime.datetime.now()
 
     if not os.path.isdir(log_dir):
         os.mkdir(log_dir)
 
-    msg_format = "%(threadName)-15s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
+    msg_format = u"%(threadName)-15s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
     console_formatter = logging.Formatter(msg_format)
 
     # --- BASIC CONFIGURATION ---
-    if mode == "DEBUG":
-        log_path = os.path.join(log_dir, "debug_woofer_%s.log" % date.strftime("%Y-%m-%d"))
+    if mode == u"DEBUG":
+        log_path = os.path.join(log_dir, u"debug_woofer_%s.log" % date.strftime("%Y-%m-%d"))
         level = logging.DEBUG
-    elif mode == "PRODUCTION":
+    elif mode == u"PRODUCTION":
         level = logging.WARNING
-        log_path = os.path.join(log_dir, "production_woofer_%s.log" % date.strftime("%Y-%m-%d"))
+        log_path = os.path.join(log_dir, u"production_woofer_%s.log" % date.strftime("%Y-%m-%d"))
     else:
-        raise NotImplementedError("Logging mode is not implemented!")
+        raise NotImplementedError(u"Logging mode is not implemented!")
 
     logging.basicConfig(level=level, format=msg_format, filename=log_path)
     # ---------------------------

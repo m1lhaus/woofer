@@ -15,7 +15,7 @@ from PySide.QtCore import *
 from tools import misc
 
 logger = logging.getLogger(__name__)
-logger.debug('Import ' + __name__)
+logger.debug(u'Import ' + __name__)
 
 
 class MediaSeeker(QSlider):
@@ -144,7 +144,7 @@ class MainTreeBrowserTreeView(QTreeView):
         """
         Restores previously expanded items in mainTreeBrowser for each mode (FILES, PLAYLISTS, RADIOS)
         """
-        logger.debug("Restoring mainTreeBrowser state for mode enum %s ...", self._mode)
+        logger.debug(u"Restoring mainTreeBrowser state for mode enum %s ...", self._mode)
 
         settings = QSettings()
         # settings.clear()          # clears all entries
@@ -153,8 +153,8 @@ class MainTreeBrowserTreeView(QTreeView):
 
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
-            expandedItems = settings.value("gui/mtbtw/expanded/files", [])
-            rootFolder = settings.value("gui/mtbtw/root/files", '/')
+            expandedItems = settings.value(u"gui/mtbtw/expanded/files", [])
+            rootFolder = settings.value(u"gui/mtbtw/root/files", u'/')
             model = self.model()
 
             # find and expand restored paths from settings storage
@@ -172,7 +172,7 @@ class MainTreeBrowserTreeView(QTreeView):
                         self._expandedItems.remove(filePath)
 
             # restore media folder root index from last session
-            if rootFolder != '/':
+            if rootFolder != u'/':
                 targetIndex = self.folderCombo.findText(rootFolder)
                 if targetIndex != -1:
                     self.folderCombo.setCurrentIndex(targetIndex)
@@ -193,7 +193,7 @@ class MainTreeBrowserTreeView(QTreeView):
         """
         Saves list of expanded items to settings platform depending on current mode.
         """
-        logger.debug("Saving mainTreeBrowser state for mode enum %s ...", self._mode)
+        logger.debug(u"Saving mainTreeBrowser state for mode enum %s ...", self._mode)
         settings = QSettings()
 
         # FILES mode
@@ -213,10 +213,10 @@ class MainTreeBrowserTreeView(QTreeView):
             # if MyComputer (root) is set as current root folder
             else:
                 expandedItems = self._expandedItems
-                currentRootFolder = '/'                 # ... == MyComputer == root
+                currentRootFolder = u'/'                 # ... == MyComputer == root
 
-            settings.setValue("gui/mtbtw/expanded/files", expandedItems)
-            settings.setValue("gui/mtbtw/root/files", currentRootFolder)
+            settings.setValue(u"gui/mtbtw/expanded/files", expandedItems)
+            settings.setValue(u"gui/mtbtw/root/files", currentRootFolder)
 
         # PLAYLISTS mode
         elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
@@ -235,7 +235,7 @@ class MainTreeBrowserTreeView(QTreeView):
         @type mode: int
         """
         if mode not in range(0, 4):
-            raise ValueError("Given mode %s is not implemented!" % mode)
+            raise ValueError(u"Given mode %s is not implemented!" % mode)
         self._mode = mode
 
     def getMode(self):
@@ -273,10 +273,10 @@ class MainForm(object):
     """
 
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
+        MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(973, 497)
         icon = QIcon()
-        icon.addPixmap(QPixmap(":/new/icons/icons/app_icon.png"), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(u":/new/icons/icons/app_icon.png"), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
 
         # start MAIN LAYOUT
@@ -304,16 +304,16 @@ class MainForm(object):
         self.sourceBrowser.setColumnCount(2)
         self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
         item_0 = QTreeWidgetItem(self.sourceBrowser)
-        icon1 = QIcon(QPixmap(":/new/icons/icons/music-cd.png"))
+        icon1 = QIcon(QPixmap(u":/new/icons/icons/music-cd.png"))
         item_0.setIcon(0, icon1)
         item_1 = QTreeWidgetItem(item_0)
-        icon2 = QIcon(QPixmap(":/new/icons/icons/folder.png"))
+        icon2 = QIcon(QPixmap(u":/new/icons/icons/folder.png"))
         item_1.setIcon(0, icon2)
         item_1 = QTreeWidgetItem(item_0)
-        icon3 = QIcon(QPixmap(":/new/icons/icons/playlist.png"))
+        icon3 = QIcon(QPixmap(u":/new/icons/icons/playlist.png"))
         item_1.setIcon(0, icon3)
         item_0 = QTreeWidgetItem(self.sourceBrowser)
-        icon4 = QIcon(QPixmap(":/new/icons/icons/radio.png"))
+        icon4 = QIcon(QPixmap(u":/new/icons/icons/radio.png"))
         item_0.setIcon(0, icon4)
         self.mainLeftVLayout.addWidget(self.sourceBrowser)
         # FOLDER SELECTION
@@ -328,7 +328,7 @@ class MainForm(object):
         self.folderCombo.setSizePolicy(sizePolicy)
         self.filterHLayout.addWidget(self.folderCombo)
         self.libraryBtn = QPushButton(self.layoutWidget)
-        icon5 = QIcon(QPixmap(":/new/icons/icons/settings.png"))
+        icon5 = QIcon(QPixmap(u":/new/icons/icons/settings.png"))
         self.libraryBtn.setIcon(icon5)
         self.filterHLayout.addWidget(self.libraryBtn)
         self.mainLeftVLayout.addLayout(self.filterHLayout)
@@ -367,7 +367,7 @@ class MainForm(object):
         sizePolicy.setHeightForWidth(self.repeatBtn.sizePolicy().hasHeightForWidth())
         self.repeatBtn.setSizePolicy(sizePolicy)
         self.repeatBtn.setMinimumSize(QSize(30, 30))
-        icon6 = QIcon(QPixmap(":/new/icons/icons/media-repeat.png"))
+        icon6 = QIcon(QPixmap(u":/new/icons/icons/media-repeat.png"))
         self.repeatBtn.setIcon(icon6)
         self.repeatBtn.setIconSize(QSize(16, 16))
         self.repeatBtn.setFlat(True)
@@ -375,7 +375,7 @@ class MainForm(object):
         self.controlsHLayout.addWidget(self.repeatBtn)
         self.previousBtn = QPushButton(self.controlsFrame)
         self.previousBtn.setMinimumSize(QSize(30, 30))
-        icon7 = QIcon(QPixmap(":/new/icons/icons/media-previous.png"))
+        icon7 = QIcon(QPixmap(u":/new/icons/icons/media-previous.png"))
         self.previousBtn.setIcon(icon7)
         self.previousBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.previousBtn)
@@ -383,7 +383,7 @@ class MainForm(object):
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.playPauseBtn.sizePolicy().hasHeightForWidth())
         self.playPauseBtn.setSizePolicy(sizePolicy)
-        icon8 = QIcon(QPixmap(":/new/icons/icons/media-play.png"))
+        icon8 = QIcon(QPixmap(u":/new/icons/icons/media-play.png"))
         self.playPauseBtn.setIcon(icon8)
         self.playPauseBtn.setIconSize(QSize(32, 32))
         self.controlsHLayout.addWidget(self.playPauseBtn)
@@ -391,19 +391,19 @@ class MainForm(object):
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.stopBtn.sizePolicy().hasHeightForWidth())
         self.stopBtn.setSizePolicy(sizePolicy)
-        icon9 = QIcon(QPixmap(":/new/icons/icons/media-stop.png"))
+        icon9 = QIcon(QPixmap(u":/new/icons/icons/media-stop.png"))
         self.stopBtn.setIcon(icon9)
         self.stopBtn.setIconSize(QSize(32, 32))
         self.controlsHLayout.addWidget(self.stopBtn)
         self.nextBtn = QPushButton(self.controlsFrame)
         self.nextBtn.setMinimumSize(QSize(30, 30))
-        icon10 = QIcon(QPixmap(":/new/icons/icons/media-next.png"))
+        icon10 = QIcon(QPixmap(u":/new/icons/icons/media-next.png"))
         self.nextBtn.setIcon(icon10)
         self.nextBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.nextBtn)
         self.shuffleBtn = QPushButton(self.controlsFrame)
         self.shuffleBtn.setMinimumSize(QSize(30, 30))
-        icon11 = QIcon(QPixmap(":/new/icons/icons/media-shuffle.png"))
+        icon11 = QIcon(QPixmap(u":/new/icons/icons/media-shuffle.png"))
         self.shuffleBtn.setIcon(icon11)
         self.shuffleBtn.setIconSize(QSize(16, 16))
         self.shuffleBtn.setFlat(True)
@@ -443,7 +443,7 @@ class MainForm(object):
         self.progressLabel = QLabel(self)
         self.progressBar.setMaximumSize(200, self.progressBar.minimumSizeHint().height())
         self.progressCancelBtn = QPushButton()
-        icon_progressCancelBtn = QIcon(QPixmap(":/new/icons/icons/remove_close.png"))
+        icon_progressCancelBtn = QIcon(QPixmap(u":/new/icons/icons/remove_close.png"))
         self.progressCancelBtn.setIcon(icon_progressCancelBtn)
         self.progressCancelBtn.setIconSize(QSize(10, 10))
         self.progressCancelBtn.setFixedSize(QSize(self.progressBar.sizeHint().height(), self.progressBar.sizeHint().height()))

@@ -13,7 +13,7 @@ from PySide.QtGui import *
 from PySide.QtCore import *
 
 logger = logging.getLogger(__name__)
-logger.debug('Import ' + __name__)
+logger.debug(u'Import ' + __name__)
 
 
 class RecursiveBrowser(QObject):
@@ -37,7 +37,7 @@ class RecursiveBrowser(QObject):
         self.followSym = followSym
         self.nameFilter = nameFilter
 
-        logger.debug("Recursive browser initialized.")
+        logger.debug(u"Recursive browser initialized.")
 
     @Slot(unicode)
     def scanFiles(self, targetDir):
@@ -48,7 +48,7 @@ class RecursiveBrowser(QObject):
         """
         # if target dir is already a file
         if targetDir.endswith(self.nameFilter):
-            logger.debug("Scanned target dir is a file.")
+            logger.debug(u"Scanned target dir is a file.")
             self.parseData.emit([targetDir])
             self.parseData.emit([])             # end flag for media parser
             return
@@ -58,7 +58,7 @@ class RecursiveBrowser(QObject):
         result = []
         n = 0
 
-        logger.debug("Dir iterator initialized, starting recursive search and parsing.")
+        logger.debug(u"Dir iterator initialized, starting recursive search and parsing.")
         while dirIter.hasNext():
             path = dirIter.next()
             if path.endswith(self.nameFilter):
@@ -73,7 +73,7 @@ class RecursiveBrowser(QObject):
         if result:
             self.parseData.emit(result)
 
-        logger.debug("Recursive search finished, sending finish_parser flag.")
+        logger.debug(u"Recursive search finished, sending finish_parser flag.")
         self.parseData.emit([])
 
     @Slot()
