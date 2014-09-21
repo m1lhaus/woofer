@@ -209,16 +209,31 @@ class MainApp(QMainWindow, MainForm):
             self.fileBrowserModel.setNameFilterDisables(False)
             self.fileBrowserModel.setNameFilters(FileExt)
 
+        # remember selected folder in combobox to set it back lately
+        # signals must be blocked because currentIndexChanged() signal is emitted after clear()
+        currentFolderText = self.folderCombo.currentText()
+        self.folderCombo.blockSignals(True)
         self.folderCombo.clear()
+
         self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))      # get default name
+        foldersToDisplay = [self.fileBrowserModel.myComputer(Qt.DisplayRole), ]         # save table of contents
+
         # add only valid folders from medialib to folderCombobox
         for folder in mediaFolders:
-            # folder = os.path.normpath(folder)       # normalize => remove redundant slashes, etc.
             folder = QDir.cleanPath(folder)       # normalize => remove redundant slashes, etc.
             if os.path.isdir(folder):
                 self.folderCombo.addItem(folder)
+                foldersToDisplay.append(folder)
             else:
                 self.errorEncountered.emit(Message.WARNING, u"Some folders in media library do not exist.", u"")
+
+        # set back previously selected (current) item in folderCombo if exists (may be deleted => set root folder)
+        if currentFolderText in foldersToDisplay:
+            self.folderCombo.setCurrentIndex(foldersToDisplay.index(currentFolderText))
+            self.folderCombo.blockSignals(False)
+        else:
+            self.folderCombo.blockSignals(False)
+            self.folderCombo.currentIndexChanged.emit(0)
 
     def loadSettings(self):
         logger.debug(u"Global load settings called. Loading settings...")
