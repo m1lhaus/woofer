@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="/new/icons">
+  <qresource prefix="/">
     <file>icons/remove_close.png</file>
     <file>icons/info.png</file>
     <file>icons/error.png</file>
