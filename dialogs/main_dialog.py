@@ -284,10 +284,10 @@ class MainApp(QMainWindow, MainForm):
 
         # menu setup
         menu = QMenu(self.mainTreeBrowser)
-        playNow = QAction(QIcon(u":/new/icons/icons/play-now.png"), u"Play now", menu)
-        addToPlayList = QAction(QIcon(u":/new/icons/icons/play-next.png"), u"Add to playlist", menu)
-        playAll = QAction(QIcon(u":/new/icons/icons/play-now.png"), u"Play all", menu)
-        removeFromDisk = QAction(QIcon(u":/new/icons/icons/delete.png"), u"Remove from disk", menu)
+        playNow = QAction(QIcon(u":/icons/play-now.png"), u"Play now", menu)
+        addToPlayList = QAction(QIcon(u":/icons/play-next.png"), u"Add to playlist", menu)
+        playAll = QAction(QIcon(u":/icons/play-now.png"), u"Play all", menu)
+        removeFromDisk = QAction(QIcon(u":/icons/delete.png"), u"Remove from disk", menu)
         separator = QAction(menu)
         separator.setSeparator(True)
 
@@ -346,11 +346,11 @@ class MainApp(QMainWindow, MainForm):
 
         logger.debug(u"Opening playlist context menu.")
         menu = QMenu(self.playlist)
-        playNowAction = QAction(QIcon(u":/new/icons/icons/play-now.png"), u"Play now", menu)
+        playNowAction = QAction(QIcon(u":/icons/play-now.png"), u"Play now", menu)
         playNowAction.setShortcut(QKeySequence(Qt.Key_Enter))
         remFromPlaylistAction = QAction(u"Remove from playlist", menu)
         remFromPlaylistAction.setShortcut(QKeySequence(Qt.Key_Delete))
-        remFromDiskAction = QAction(QIcon(u":/new/icons/icons/delete.png"), u"Remove from disk", menu)
+        remFromDiskAction = QAction(QIcon(u":/icons/delete.png"), u"Remove from disk", menu)
         remFromDiskAction.setShortcut(QKeySequence(Qt.SHIFT + Qt.Key_Delete))
         separator = QAction(menu)
         separator.setSeparator(True)
@@ -499,14 +499,14 @@ class MainApp(QMainWindow, MainForm):
         @param details: description
         """
         if er_type == Message.WARNING:
-            icon = QPixmap(u":/new/icons/icons/warning.png").scaled(14, 14, mode=Qt.SmoothTransformation)
+            icon = QPixmap(u":/icons/warning.png").scaled(14, 14, mode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
             self.stBarMsgIcon.show()
             self.stBarMsgText.show()
             QTimer.singleShot(self.WARNING_MSG_DELAY, self.clearErrorMsg)
         elif er_type == Message.ERROR:
-            icon = QPixmap(u":/new/icons/icons/error.png").scaled(14, 14, mode=Qt.SmoothTransformation)
+            icon = QPixmap(u":/icons/error.png").scaled(14, 14, mode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
             self.stBarMsgIcon.show()
@@ -575,14 +575,14 @@ class MainApp(QMainWindow, MainForm):
     def playing(self):
         logger.debug(u"Media player playing.")
         icon = QIcon()
-        icon.addPixmap(QPixmap(u":/new/icons/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(u":/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
 
     @Slot()
     def paused(self):
         logger.debug(u"Media player paused.")
         icon = QIcon()
-        icon.addPixmap(QPixmap(u":/new/icons/icons/media-play.png"), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
 
     @Slot()
