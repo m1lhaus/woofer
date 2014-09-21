@@ -42,6 +42,9 @@ def check_requirements():
 
 # APPLICATION LAUNCHER
 def application_start(environment):
+    """
+    :param environment: DEBUG or PRODUCTION string is expected
+    """
     check_requirements()
 
     from PySide.QtGui import QApplication
