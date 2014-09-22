@@ -7,6 +7,7 @@ Main application GUI module.
 __version__ = "$Id$"
 
 import logging
+import pickle
 import sys
 import os
 import errno
@@ -46,8 +47,6 @@ class MainApp(QMainWindow, MainForm):
 
     myComputerPathIndex = None
 
-    queuedLoad = Signal()
-
     WARNING_MSG_DELAY = 5000
     ERROR_MSG_DELAY = 10000
 
@@ -56,6 +55,7 @@ class MainApp(QMainWindow, MainForm):
         self.appRootPath = os.path.dirname(sys.argv[0])
         self.appDataPath = os.path.join(self.appRootPath, u'data')
         self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.json')
+        self.session_file = os.path.join(self.appDataPath, u'session.pkl')
 
         self.setupUi(self)
         self.checkPaths()
@@ -80,8 +80,8 @@ class MainApp(QMainWindow, MainForm):
         self.folderCombo.currentIndexChanged.connect(self.changeFileBrowserRoot)
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
         self.mainTreeBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
-        self.playlist.customContextMenuRequested.connect(self.playlistContextMenu)
-        self.playlist.cellDoubleClicked.connect(self.playNow)
+        self.playlistTable.customContextMenuRequested.connect(self.playlistContextMenu)
+        self.playlistTable.cellDoubleClicked.connect(self.playNow)
         self.progressCancelBtn.clicked.connect(self.cancelAdding)
 
         self.errorEncountered.connect(self.displayErrorMsg)
@@ -95,9 +95,9 @@ class MainApp(QMainWindow, MainForm):
         self.shuffleBtn.toggled.connect(self.toggleShuffle)
         self.repeatBtn.toggled.connect(self.toggleRepeat)
 
-        self.playlist.enterShortcut.activated.connect(self.playNow)
-        self.playlist.delShortcut.activated.connect(self.remFromPlaylist)
-        self.playlist.shiftDelShortcut.activated.connect(self.remFromDisk)
+        self.playlistTable.enterShortcut.activated.connect(self.playNow)
+        self.playlistTable.delShortcut.activated.connect(self.remFromPlaylist)
+        self.playlistTable.shiftDelShortcut.activated.connect(self.remFromDisk)
 
     def setupActions(self):
         pass
@@ -211,25 +211,25 @@ class MainApp(QMainWindow, MainForm):
 
         # remember selected folder in combobox to set it back lately
         # signals must be blocked because currentIndexChanged() signal is emitted after clear()
-        currentFolderText = self.folderCombo.currentText()
+        current_folder_text = self.folderCombo.currentText()
         self.folderCombo.blockSignals(True)
         self.folderCombo.clear()
 
         self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))      # get default name
-        foldersToDisplay = [self.fileBrowserModel.myComputer(Qt.DisplayRole), ]         # save table of contents
+        folders_to_display = [self.fileBrowserModel.myComputer(Qt.DisplayRole), ]         # save table of contents
 
         # add only valid folders from medialib to folderCombobox
         for folder in mediaFolders:
             folder = QDir.cleanPath(folder)       # normalize => remove redundant slashes, etc.
             if os.path.isdir(folder):
                 self.folderCombo.addItem(folder)
-                foldersToDisplay.append(folder)
+                folders_to_display.append(folder)
             else:
                 self.errorEncountered.emit(Message.WARNING, u"Some folders in media library do not exist.", u"")
 
         # set back previously selected (current) item in folderCombo if exists (may be deleted => set root folder)
-        if currentFolderText in foldersToDisplay:
-            self.folderCombo.setCurrentIndex(foldersToDisplay.index(currentFolderText))
+        if current_folder_text in folders_to_display:
+            self.folderCombo.setCurrentIndex(folders_to_display.index(current_folder_text))
             self.folderCombo.blockSignals(False)
         else:
             self.folderCombo.blockSignals(False)
@@ -240,11 +240,111 @@ class MainApp(QMainWindow, MainForm):
         # self.changeSource(Sources.FILES)                    # display file browser as default
 
     def loadSettingsQueued(self):
+        self.loadSession()
         self.changeSource(Sources.FILES)
 
+    def loadSession(self):
+        """
+        Loads last session information
+        e.g. last playlist, volume settings, etc.
+        """
+        if not os.path.isfile(self.session_file):
+            logger.debug(u"No session file found, skipping")
+            return
+
+        logger.debug(u"Loading session file...")
+
+        try:
+            with open(self.session_file, 'rb') as f:
+                session_data = pickle.load(f)
+        except IOError:
+            logger.exception(u"Unable to load data from session file!")
+        else:
+            self.loadPlaylist(session_data)
+
+            logger.debug(u"Session restored successfully")
+
+    def loadPlaylist(self, session_data):
+        """
+        Loads and sets saved playlist from last session (from disk)
+        @param session_data: data from disk are stored in this dict file
+        """
+        table_content = session_data['playlist_table']              # playlistTable content
+        if not table_content:               # playlist is empty
+            return
+
+        n_cols = len(table_content)
+        n_rows = len(table_content[0])
+
+        paths_list = table_content[-1]
+
+        logger.debug(u"Restoring items from playlist in playlistTable...")
+        self.playlistTable.setRowCount(n_rows)
+        self.playlistTable.setColumnCount(n_cols)
+
+        # array is transposed ... [ [1st col], [2nd col], etc ]
+        for row in range(n_rows):
+            for column in range(n_cols):
+                cell_data = table_content[column][row]
+                if not cell_data:       # empty or None cell -> skip
+                    continue
+
+                item = QTableWidgetItem(cell_data)
+                self.playlistTable.setItem(row, column, item)
+
+        logger.debug(u"Restoring items from playlist in mediaPlayer object...")
+        self.mediaPlayer.id_playlist = session_data['id_playlist']
+        self.mediaPlayer.playlist_pointer = session_data['playlist_pointer']
+        self.mediaPlayer.playlist_len = session_data['playlist_len']
+        self.mediaPlayer.addMedia(paths_list, restoring_session=True)
+
     def saveSettings(self):
+        """
+        When program is about to close, all desired settings is saved.
+        Called when dialog closeEvent in caught.
+        """
         logger.debug(u"Global save settings called. Saving settings...")
+        self.saveSession()
         self.mainTreeBrowser.saveSettings()
+
+    def saveSession(self):
+        """
+        Save current session information
+        e.g. current playlist, volume settings, etc.
+        """
+        session_data = {}
+
+        self.savePlaylist(session_data)
+
+        logger.debug(u"Dumping session file to disk...")
+        with open(self.session_file, 'wb') as f:
+            pickle.dump(session_data, f)
+
+    def savePlaylist(self, session_data):
+        """
+        Dump information about playlist from playlist_table and from media_player
+        @param session_data: all information are stored to this dict file
+        """
+        logger.debug(u"Dumping and saving playlist information...")
+
+        n_cols = self.playlistTable.columnCount()
+        n_rows = self.playlistTable.rowCount()
+
+        # array is transposed ... [ [1st col], [2nd col], etc ] for easier manipulation when loading data back
+        table_content = [[None for x in range(n_rows)] for x in range(n_cols)]
+        for row in range(self.playlistTable.rowCount()):
+            for column in range(self.playlistTable.columnCount()):
+                item = self.playlistTable.item(row, column)
+
+                if item is not None:
+                    table_content[column][row] = self.playlistTable.item(row, column).text()
+                else:
+                    table_content[column][row] = None
+
+        session_data['playlist_table'] = table_content
+        session_data['id_playlist'] = self.mediaPlayer.id_playlist
+        session_data['playlist_pointer'] = self.mediaPlayer.playlist_pointer
+        session_data['playlist_len'] = self.mediaPlayer.playlist_len
 
     def setupPlaylistBrowser(self):
         # TODO future: implement
@@ -340,12 +440,12 @@ class MainApp(QMainWindow, MainForm):
 
     @Slot(QPointF)
     def playlistContextMenu(self, pos):
-        item = self.playlist.itemAt(pos)
+        item = self.playlistTable.itemAt(pos)
         if not item:
             return
 
         logger.debug(u"Opening playlist context menu.")
-        menu = QMenu(self.playlist)
+        menu = QMenu(self.playlistTable)
         playNowAction = QAction(QIcon(u":/icons/play-now.png"), u"Play now", menu)
         playNowAction.setShortcut(QKeySequence(Qt.Key_Enter))
         remFromPlaylistAction = QAction(u"Remove from playlist", menu)
@@ -358,9 +458,9 @@ class MainApp(QMainWindow, MainForm):
         menu.addActions([playNowAction, separator])
         removeMenu = menu.addMenu(u"Remove")
         removeMenu.addActions([remFromPlaylistAction, remFromDiskAction])
-        choice = menu.exec_(self.playlist.viewport().mapToGlobal(pos))
+        choice = menu.exec_(self.playlistTable.viewport().mapToGlobal(pos))
 
-        index = self.playlist.row(item)
+        index = self.playlistTable.row(item)
         if choice is playNowAction:
             self.playNow(index)
         elif choice is remFromPlaylistAction:
@@ -471,17 +571,17 @@ class MainApp(QMainWindow, MainForm):
         n = len(sources)
         logger.debug(u"Adding '%s' sources to current playlist.", n)
 
-        lastItemIndex = self.playlist.rowCount() if append else 0
-        self.playlist.setRowCount(lastItemIndex + n)
+        lastItemIndex = self.playlistTable.rowCount() if append else 0
+        self.playlistTable.setRowCount(lastItemIndex + n)
 
         i = 0
         for path, duration in sources:
             titleItem = QTableWidgetItem(os.path.basename(path))
             durationItem = QTableWidgetItem(QTime().addMSecs(duration).toString("hh:mm:ss"))
             pathItem = QTableWidgetItem(path)
-            self.playlist.setItem(i + lastItemIndex, 0, titleItem)
-            self.playlist.setItem(i + lastItemIndex, 2, durationItem)
-            self.playlist.setItem(i + lastItemIndex, 3, pathItem)
+            self.playlistTable.setItem(i + lastItemIndex, 0, titleItem)
+            self.playlistTable.setItem(i + lastItemIndex, 2, durationItem)
+            self.playlistTable.setItem(i + lastItemIndex, 3, pathItem)
             i += 1
 
     @Slot()
@@ -627,7 +727,7 @@ class MainApp(QMainWindow, MainForm):
         @param index: position of media in media_list == position in playlist table
         @type index: int
         """
-        self.playlist.setCurrentCell(index, 0)          # select the entire row due to table selection behaviour
+        self.playlistTable.setCurrentCell(index, 0)          # select the entire row due to table selection behaviour
 
     @Slot()
     def playNow(self, row=None, col=None):
@@ -636,11 +736,11 @@ class MainApp(QMainWindow, MainForm):
         @param row: song row number
         @param col: ignore - just slot requirement
         """
-        index = self.playlist.currentRow() if row is None else row
+        index = self.playlistTable.currentRow() if row is None else row
         if index == -1:
             return
 
-        fileName = os.path.basename(self.playlist.item(index, self.playlist.columnCount()-1).text())
+        fileName = os.path.basename(self.playlistTable.item(index, self.playlistTable.columnCount()-1).text())
         logger.debug(u"Play now called, playing #%s song from playlist named '%s'.", index, fileName)
 
         self.mediaPlayer.play(index)
@@ -651,15 +751,15 @@ class MainApp(QMainWindow, MainForm):
         Removes song from playlist table and from player (media_list).
         @param row: row number in playlist table
         """
-        index = self.playlist.currentRow() if row is None else row
+        index = self.playlistTable.currentRow() if row is None else row
         if index == -1:
             return
 
-        fileName = os.path.basename(self.playlist.item(index, self.playlist.columnCount()-1).text())
+        fileName = os.path.basename(self.playlistTable.item(index, self.playlistTable.columnCount()-1).text())
         logger.debug(u"Removing from playlist #%s song named '%s'", index, fileName)
 
         self.mediaPlayer.removeItem(index)
-        self.playlist.removeRow(index)
+        self.playlistTable.removeRow(index)
 
     @Slot()
     def remFromDisk(self, row=None):
@@ -667,11 +767,11 @@ class MainApp(QMainWindow, MainForm):
         Removes song from playlist table, from player (media_list) and from disk if possible.
         @param row: row number in playlist table
         """
-        index = self.playlist.currentRow() if row is None else row
+        index = self.playlistTable.currentRow() if row is None else row
         if index == -1:
             return
 
-        filePath = self.playlist.item(index, self.playlist.columnCount()-1).text()
+        filePath = self.playlistTable.item(index, self.playlistTable.columnCount()-1).text()
         fileName = os.path.basename(filePath)
         self.remFromPlaylist(index)
 

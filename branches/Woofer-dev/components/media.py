@@ -89,35 +89,54 @@ class MediaPlayer(QObject):
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
 
-    @Slot()
-    def addMedia(self, mList):
+    @Slot(list)
+    def addMedia(self, mList, restoring_session=False):
         """
         Adds list of media objects to player media_list.
-        Usually called as slot from parser thread.
-        @param mList: list of (unicode_path, media_object)
-        @type mList: list of (unicode, vlc.Media)
+        Usually called as slot from parser thread, but could be called manually
+        when last session is restored on application start.
+        @param restoring_session: flag when method is called manually to restore playlist from saved session
+        @param mList: list of (unicode_path, media_object) or list of (unicode_path)
+        @type mList: list of (unicode, vlc.Media) or list of (unicode)
         """
-        export = []
 
-        self._media_list.lock()
-        for path, media in mList:
-            self._media_list.add_media(media)
-            media.release()
+        # when restoring session, no parsed media files are available, but vlc takes both vlc.Media and mrl
+        if restoring_session:
+            logger.debug(u"Adding media paths to media_list...")
+            self._media_list.lock()
+            for path in mList:
+                self._media_list.add_media(path)        # vlc will parse media automatically if needed (before playing)
 
-            self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
-            self.playlist_len += 1
-            export.append((path, media.get_duration()))
-        self._media_list.unlock()
+            # set previous current media now as current
+            media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
+            self._media_list.unlock()
 
-        self.mediaAdded.emit(export, self.append_media)
-
-        # set set_mode, set media and switch to append mode for next iteration
-        if not self.append_media:
-            path, media = mList[0]
-            logger.debug(u"Setting current media %s", path)
             self._media_player.set_media(media)
-            self.append_media = True
-            self.play()         # in set_mode, Play or Play All has been chosen => play()
+            media.release()
+            logger.debug(u"Media added successfully")
+
+        else:
+            export = []
+
+            self._media_list.lock()
+            for path, media in mList:
+                self._media_list.add_media(media)
+                media.release()
+
+                self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
+                self.playlist_len += 1
+                export.append((path, media.get_duration()))
+            self._media_list.unlock()
+
+            self.mediaAdded.emit(export, self.append_media)
+
+            # set set_mode, set media and switch to append mode for next iteration
+            if not self.append_media:
+                path, media = mList[0]
+                logger.debug(u"Setting current media %s", path)
+                self._media_player.set_media(media)
+                self.append_media = True
+                self.play()         # in set_mode, Play or Play All has been chosen => play()
 
     def removeItem(self, index):
         """
