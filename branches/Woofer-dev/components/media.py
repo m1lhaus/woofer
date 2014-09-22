@@ -105,7 +105,8 @@ class MediaPlayer(QObject):
             logger.debug(u"Adding media paths to media_list...")
             self._media_list.lock()
             for path in mList:
-                self._media_list.add_media(path)        # vlc will parse media automatically if needed (before playing)
+                unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
+                self._media_list.add_media(byte_path)               # vlc will parse media automatically if needed (before playing)
 
             # set previous current media now as current
             media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
