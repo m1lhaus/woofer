@@ -44,6 +44,10 @@ class MediaPlayer(QObject):
     mediaChanged = Signal(int)          # TODO: add metadata
     endReached = Signal(bool)
 
+    # this signals are used as helper, because callback are called from vlc directly (from another thread),
+    # so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
+    mediaChangedCallbackSignal = Signal()
+
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
 
@@ -67,10 +71,14 @@ class MediaPlayer(QObject):
         self.shuffle_mode = False
         self.repeat_mode = False
 
-        self.__setupEvents()
-
-        # self.endReached.connect(self.stop)
         self.endReached.connect(self.next)
+        self.playing.connect(self.__playingSlot)
+        self.paused.connect(self.__pausedSlot)
+        self.stopped.connect(self.__stoppedSlot)
+        self.endReached.connect(self.__stoppedSlot)
+        self.mediaChangedCallbackSignal.connect(self.__mediaChangedSlot)
+
+        self.__setupEvents()
 
         logger.debug(u"Created Woofer player instance")
 
@@ -476,37 +484,84 @@ class MediaPlayer(QObject):
             logger.debug(u"Newly added media which has not been appended are not shuffled. Shuffling...")
             self.setShuffle(True)
 
-    # ----
-    # WARNING: CALLBACKS CALLED FROM ANOTHER THREAD !!!!  todo: fix
-    # ----
-
-    def __timeChangedCallback(self, event):
-        self.timeChanged.emit(event.u.new_time)
-
-    def __positionChangedCallback(self, event):
-        newPos = event.u.new_position
-        newPos = 0 if newPos > 1 else newPos
-        self.positionChanged.emit(newPos)
-
-    def __playingCallback(self, event):
-        logger.debug(u"Media player is playing")
+    @Slot()
+    def __playingSlot(self):
+        """
+        Slot is used as helper, because callback are called from vlc directly (from another thread),
+        so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
+        """
         self.is_playing = True
         self.is_paused = False
         self.is_stopped = False
+
+    @Slot()
+    def __pausedSlot(self):
+        """
+        Slot is used as helper, because callback are called from vlc directly (from another thread),
+        so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
+        """
+        self.is_playing = False
+        self.is_paused = True
+        self.is_stopped = False
+
+    @Slot()
+    def __stoppedSlot(self):
+        """
+        Slot is used as helper, because callback are called from vlc directly (from another thread),
+        so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
+        Called when stopped and end-reached
+        """
+        self.is_playing = False
+        self.is_paused = False
+        self.is_stopped = True
+
+    @Slot()
+    def __mediaChangedSlot(self):
+        """
+        Slot is used as helper, because callback are called from vlc directly (from another thread),
+        so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
+        """
+        currentMedia = self._media_player.get_media()
+        self._media_list.lock()
+        index = self._media_list.index_of_item(currentMedia)
+        self._media_list.unlock()
+        currentMedia.release()
+
+        self.mediaChanged.emit(index)
+
+    # ----
+    # WARNING: CALLBACKS CALLED FROM ANOTHER THREAD (VLC THREAD) !!!!
+    # ----
+
+    def __timeChangedCallback(self, event):
+        try:
+            new_time = event.u.new_time
+        except RuntimeError:
+            logger.warning("Media player callback called, but C++ object does not exist. "
+                           "If program is being closed, this is a possible behaviour.")
+        else:
+            self.timeChanged.emit(new_time)
+
+    def __positionChangedCallback(self, event):
+        try:
+            newPos = event.u.new_position
+        except RuntimeError:
+            logger.warning("Media player callback called, but C++ object does not exist. "
+                           "If program is being closed, this is a possible behaviour.")
+        else:
+            newPos = 0 if newPos > 1 else newPos
+            self.positionChanged.emit(newPos)
+
+    def __playingCallback(self, event):
+        logger.debug(u"Media player is playing")
         self.playing.emit()
 
     def __pausedCallback(self, event):
         logger.debug(u"Media player paused")
-        self.is_playing = False
-        self.is_paused = True
-        self.is_stopped = False
         self.paused.emit()
 
     def __stoppedCallback(self, event):
         logger.debug(u"Media player is stopped")
-        self.is_playing = False
-        self.is_paused = False
-        self.is_stopped = True
         self.stopped.emit()
 
     def __forwardCallback(self, event):
@@ -517,18 +572,11 @@ class MediaPlayer(QObject):
 
     def __endReachedCallback(self, event):
         logger.debug(u"Media reached end")
-        self.is_playing = False
-        self.is_paused = False
-        self.is_stopped = True
-
         self.endReached.emit(self.repeat_mode)          # if repeat_mode then do not switch to next song
 
     def __mediaChangedCallback(self, event):
         logger.debug(u"Media changed")
-        currentMedia = self._media_player.get_media()
-        index = self._media_list.index_of_item(currentMedia)
-        currentMedia.release()
-        self.mediaChanged.emit(index)
+        self.mediaChangedCallbackSignal.emit()
 
     def __errorCallback(self, event):
         logger.warning(u"Media encountered error")
