@@ -262,6 +262,17 @@ class MainApp(QMainWindow, MainForm):
         else:
             self.loadPlaylist(session_data)
 
+            # load shuffle, repeat and volume
+            self.mediaPlayer.shuffle_mode = session_data['shuffle']
+            self.mediaPlayer.repeat_mode = session_data['repeat']
+            self.volumeSlider.setValue(session_data['volume'])
+            self.shuffleBtn.blockSignals(True)
+            self.shuffleBtn.setChecked(self.mediaPlayer.shuffle_mode)
+            self.shuffleBtn.blockSignals(False)
+            self.repeatBtn.blockSignals(True)
+            self.repeatBtn.setChecked(self.mediaPlayer.repeat_mode)
+            self.repeatBtn.blockSignals(False)
+
             logger.debug(u"Session restored successfully")
 
     def loadPlaylist(self, session_data):
@@ -315,6 +326,10 @@ class MainApp(QMainWindow, MainForm):
         session_data = {}
 
         self.savePlaylist(session_data)
+
+        session_data['shuffle'] = self.mediaPlayer.shuffle_mode
+        session_data['repeat'] = self.mediaPlayer.repeat_mode
+        session_data['volume'] = self.mediaPlayer.volume()
 
         logger.debug(u"Dumping session file to disk...")
         with open(self.session_file, 'wb') as f:
