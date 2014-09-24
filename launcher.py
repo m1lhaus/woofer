@@ -8,6 +8,8 @@ PRODUCTION mode is set as default if started from console.
 __version__ = "$Id$"
 
 import sys
+import imp
+import os
 import logging
 import components.log
 
@@ -17,36 +19,54 @@ logger = logging.getLogger(__name__)
 
 def versiontuple(v):
     """
-        converts string like "0.8.1" to tuple (0, 8, 1)
+    Converts string like "0.8.1" to tuple (0, 8, 1)
     """
     return tuple(map(int, (v.split("."))))
 
 
 def check_requirements():
+    """
+    Looks for required packages.
+    """
+    logger.debug(u"Checking requirements")
+
     if sys.version_info < (2, 7) or sys.version_info >= (3, 0):
-        raise Exception("must use python 2.7")
+        raise Exception(u"Application requires Python 2.7!")
 
     try:
-        import send2trash
-    except:
-        raise Exception('send2trash library is missing')
+        imp.find_module('send2trash')
+    except ImportError:
+        raise Exception(u"Send2Trash package is required!")
 
-    # try:
-    #     import PySide
-    # except:
-    #     raise Exception('PySide library is missing')
-    #
-    # if versiontuple(PySide.__version__) < versiontuple('1.2.0'):
-    #     raise Exception('PySide 1.2 or higher is required, current version is %s' % (PySide.__version__))
+    try:
+        imp.find_module('PyQt4')
+    except ImportError:
+        raise Exception(u"PyQt4 library is missing")
+
+    # requirements for system-wide hooks
+    if os.name == 'nt':
+        try:
+            imp.find_module('pythoncom')
+            imp.find_module('pywintypes')
+        except ImportError:
+            raise Exception(u"PyWin32 libraries (package) is required on Windows platform!")
+
+        try:
+            imp.find_module('pyHook')
+        except ImportError:
+            raise Exception(u"pyHook package is required on Windows platform!")
+
+    elif os.name == 'posix':
+        # todo
+        pass
 
 
-# APPLICATION LAUNCHER
-def application_start(environment):
+def set_pyqt_api2():
     """
-    :param environment: DEBUG or PRODUCTION string is expected
+    PyQt4 uses API v1 as default (QStrings, etc. ... deprecated).
+    But PyQt4 can use newer v2 API (native python objects conversion).
     """
-    check_requirements()
-
+    logger.debug(u"Setting PyQt API tu v2")
     import sip
     try:
         sip.setapi('QDate', 2)
@@ -57,28 +77,41 @@ def application_start(environment):
         sip.setapi('QUrl', 2)
         sip.setapi('QVariant', 2)
     except ValueError, e:
-        raise RuntimeError('Could not set API version (%s): did you import PyQt4 directly?' % e)
+        raise RuntimeError(u'Could not set API version (%s): did you import PyQt4 directly?' % e)
 
 
+# *******************************************
+# *******************************************
+# *******************************************
+# APPLICATION LAUNCHER
+# *******************************************
+# *******************************************
+# *******************************************
+# *******************************************
 
+
+def application_start(environment):
+    """
+    Initializes Qt libraries and Woofer application.
+    @param environment: DEBUG or PRODUCTION string is expected
+    """
+    logger.debug(u"Setting logger to mode '%s'" % environment)
+    components.log.setup_logging(environment)
+
+    check_requirements()
+    set_pyqt_api2()
+
+    logger.debug(u"All ready to go. Import PyQt libs and initializing main application loop.")
     from PyQt4 import QtCore
     from PyQt4 import QtGui
-
-    from dialogs.main_dialog import MainApp
-
-    # QtCore.Signal = QtCore.pyqtSignal
-    # QtCore.Slot = QtCore.pyqtSlot
-
-    components.log.setup_logging(environment)
-    logger.debug(u"Initializing application launcher in %s mode" % environment)
+    from dialogs import main_dialog
 
     app = QtGui.QApplication(sys.argv)
     app.setOrganizationName(u"WooferPlayer")
     app.setOrganizationDomain(u"wooferplayer.com")
     app.setApplicationName(u"Woofer")
-    main = MainApp()
+    main = main_dialog.MainApp()
     main.show()
-
     app.exec_()
 
 
