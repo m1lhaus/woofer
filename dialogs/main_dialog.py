@@ -101,6 +101,10 @@ class MainApp(QMainWindow, MainForm):
 
     def setupActions(self):
         pass
+    #     self.mediaPlayPauseAction.triggered.connect(self.aaa)
+    #
+    # def aaa(self):
+    #     print "play trigerred"
 
     def setupPlayer(self):
         self.mediaPlayer = media.MediaPlayer()

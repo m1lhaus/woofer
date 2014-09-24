@@ -223,7 +223,7 @@ class MainTreeBrowserTreeView(QTreeView):
             pass
 
         # RADIOS mode
-        elif self._mode == MainTreeBrowserTreeView.RADIO:
+        elif self._mode == MainTreeBrowserTreeView.RADIOS:
             pass
 
     def setMode(self, mode):
@@ -423,16 +423,44 @@ class MainForm(object):
         # MAIN MENU
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setGeometry(QRect(0, 0, 973, 21))
-        self.menuFile = QMenu(self.menubar)
-        self.menuPlayback = QMenu(self.menubar)
-        self.menuEdit = QMenu(self.menubar)
+        self.menuMedia = QMenu(self.menubar)
+        self.menuPlaylist = QMenu(self.menubar)
+        self.menuTools = QMenu(self.menubar)
         self.menuHelp = QMenu(self.menubar)
-        self.actionAbout = QAction(MainWindow)
-        self.menuHelp.addAction(self.actionAbout)
-        self.menubar.addAction(self.menuFile.menuAction())
-        self.menubar.addAction(self.menuPlayback.menuAction())
-        self.menubar.addAction(self.menuEdit.menuAction())
+
+        self.mediaPlayPauseAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play", MainWindow)
+        # self.mediaPlayPauseAction.setShortcut(QKeySequence(Qt.Key_MediaPlay))
+        # self.mediaPlayPauseAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.mediaStopAction = QAction(QIcon(u":/icons/media-stop.png"), u"&Stop", MainWindow)
+        self.mediaNextAction = QAction(QIcon(u":/icons/media-next.png"), u"&Next", MainWindow)
+        self.mediaPreviousAction = QAction(QIcon(u":/icons/media-previous.png"), u"Pre&vious", MainWindow)
+        self.mediaShuffleAction = QAction(QIcon(u":/icons/media-shuffle.png"), u"Shu&ffle", MainWindow)
+        self.mediaRepeatAction = QAction(QIcon(u":/icons/media-repeat.png"), u"&Repeat", MainWindow)
+        self.mediaMuteAction = QAction(u"&Mute", MainWindow)
+        self.mediaQuitAction = QAction(u"&Quit", MainWindow)
+        self.playlistPlayAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play files...", MainWindow)
+        self.playlistAddAction = QAction(QIcon(u":/icons/media-next.png"), u"&Add files...", MainWindow)
+        self.playlistSaveAction = QAction(u"&Save playlist", MainWindow)
+        self.playlistLoadAction = QAction(u"&Load playlist", MainWindow)
+        self.playlistClearAction = QAction(QIcon(u":/icons/delete.png"), u"&Clear playlist", MainWindow)
+        self.toolsSettingsAction = QAction(QIcon(u":/icons/settings.png"), u"&Settings", MainWindow)
+        self.helpHelpAction = QAction(u"&Help", MainWindow)
+        self.helpAboutAction = QAction(u"&About", MainWindow)
+
+        self.menubar.addAction(self.menuMedia.menuAction())
+        self.menubar.addAction(self.menuPlaylist.menuAction())
+        self.menubar.addAction(self.menuTools.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
+        self.menuMedia.addActions([self.mediaPlayPauseAction, self.mediaStopAction, self.mediaNextAction, self.mediaPreviousAction])
+        self.menuMedia.addSeparator()
+        self.menuMedia.addActions([self.mediaShuffleAction, self.mediaRepeatAction, self.mediaMuteAction])
+        self.menuMedia.addSeparator()
+        self.menuMedia.addAction(self.mediaQuitAction)
+        self.menuPlaylist.addActions([self.playlistPlayAction, self.playlistAddAction])
+        self.menuPlaylist.addSeparator()
+        self.menuPlaylist.addActions([self.playlistSaveAction, self.playlistLoadAction, self.playlistClearAction])
+        self.menuTools.addAction(self.toolsSettingsAction)
+        self.menuHelp.addActions([self.helpHelpAction, self.helpAboutAction])
 
         # STATUSBAR
         MainWindow.setMenuBar(self.menubar)
@@ -484,8 +512,8 @@ class MainForm(object):
         self.playlistTable.horizontalHeaderItem(3).setText(QApplication.translate("MainWindow", "Path", None, QApplication.UnicodeUTF8))
         self.timeLbl.setText(QApplication.translate("MainWindow", "00:00:00", None, QApplication.UnicodeUTF8))
         self.playPauseBtn.setShortcut(QApplication.translate("MainWindow", "Ctrl+Alt+P", None, QApplication.UnicodeUTF8))
-        self.menuFile.setTitle(QApplication.translate("MainWindow", "Media", None, QApplication.UnicodeUTF8))
-        self.menuPlayback.setTitle(QApplication.translate("MainWindow", "Playback", None, QApplication.UnicodeUTF8))
-        self.menuEdit.setTitle(QApplication.translate("MainWindow", "Edit", None, QApplication.UnicodeUTF8))
-        self.menuHelp.setTitle(QApplication.translate("MainWindow", "Help", None, QApplication.UnicodeUTF8))
-        self.actionAbout.setText(QApplication.translate("MainWindow", "About", None, QApplication.UnicodeUTF8))
+        self.menuMedia.setTitle(QApplication.translate("MainWindow", "&Media", None, QApplication.UnicodeUTF8))
+        self.menuPlaylist.setTitle(QApplication.translate("MainWindow", "&Playlist", None, QApplication.UnicodeUTF8))
+        self.menuTools.setTitle(QApplication.translate("MainWindow", "&Tools", None, QApplication.UnicodeUTF8))
+        self.menuHelp.setTitle(QApplication.translate("MainWindow", "&Help", None, QApplication.UnicodeUTF8))
+        # self.helpAboutAction.setText(QApplication.translate("MainWindow", "About", None, QApplication.UnicodeUTF8))
