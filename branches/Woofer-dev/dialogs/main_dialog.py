@@ -14,13 +14,14 @@ import errno
 import json
 import time
 
-from PySide.QtGui import *
-from PySide.QtCore import *
+from PyQt4.QtGui import *
+from PyQt4.QtCore import *
 
 from forms.main_form import MainForm
 from dialogs.library_dialog import LibraryDialog
 from components import disk
 from components import media
+from components import global_hotkey_hook
 from tools import misc
 
 logger = logging.getLogger(__name__)
@@ -42,8 +43,8 @@ class MainApp(QMainWindow, MainForm):
     - connects signals from dialogs widgets
     """
 
-    errorEncountered = Signal(int, unicode, unicode)        # (Message.CRITICAL, main_text, description)
-    scanFiles = Signal(unicode)
+    errorEncountered = pyqtSignal(int, unicode, unicode)        # (Message.CRITICAL, main_text, description)
+    scanFiles = pyqtSignal(unicode)
 
     myComputerPathIndex = None
 
@@ -64,6 +65,7 @@ class MainApp(QMainWindow, MainForm):
         self.setupScanner()
         self.setupActions()
         self.setupGUISignals()
+        self.setupSystemHook()
 
         self.loadSettings()
 
@@ -100,11 +102,38 @@ class MainApp(QMainWindow, MainForm):
         self.playlistTable.shiftDelShortcut.activated.connect(self.remFromDisk)
 
     def setupActions(self):
-        pass
-    #     self.mediaPlayPauseAction.triggered.connect(self.aaa)
-    #
-    # def aaa(self):
-    #     print "play trigerred"
+        self.mediaPlayPauseAction.triggered.connect(self.mediaPlayer.playPause)
+        self.mediaStopAction.triggered.connect(self.mediaPlayer.stop)
+        self.mediaNextAction.triggered.connect(self.mediaPlayer.next)
+        self.mediaPreviousAction.triggered.connect(self.mediaPlayer.prev)
+
+    def setupSystemHook(self):
+        """
+        Initializes system-wide keyboard hook, which listens for media control keys (Media_Play_Pause,
+        Media_Stop, Media_Next_Track, Media_Prev_Track).
+        Listener is executed in separated thread (thread clocking method).
+        Caught keys are mapped to signal and then forwarded to menubar actions.
+        """
+        self.hkHookThread = QThread(self)
+
+        if os.name == 'nt':
+            self.hkHook = global_hotkey_hook.WindowsHook()
+        elif os.name == 'posix':
+            # todo: ckeck platform - linux only
+            return
+        else:
+            logger.warning("System-wide keyboard hook is not available for '%s' platform" % os.name)
+            return
+
+        self.hkHook.moveToThread(self.hkHookThread)
+
+        self.hkHook.mediaPlayKeyPressed.connect(self.mediaPlayPauseAction.trigger)
+        self.hkHook.mediaStopKeyPressed.connect(self.mediaStopAction.trigger)
+        self.hkHook.mediaNextTrackKeyPressed.connect(self.mediaNextAction.trigger)
+        self.hkHook.mediaPrevTrackKeyPressed.connect(self.mediaPreviousAction.trigger)
+
+        self.hkHookThread.started.connect(self.hkHook.startHook)
+        self.hkHookThread.start()
 
     def setupPlayer(self):
         self.mediaPlayer = media.MediaPlayer()
@@ -181,7 +210,7 @@ class MainApp(QMainWindow, MainForm):
                                                              u"%s" % (exception.errno, exception.strerror))
                 raise
 
-    @Slot(int)
+    @pyqtSlot(int)
     def setupFileBrowser(self, rcode=None, initModel=False):
         """
         Re-initialize file model for file browser treeView and setup mediaLib folder combobox .
@@ -373,7 +402,7 @@ class MainApp(QMainWindow, MainForm):
         # TODO future: implement
         pass
 
-    @Slot(QPointF)
+    @pyqtSlot('QPointF')
     def sourceItemsBrowserContextMenu(self, pos):
         """
         SourceItemsBrowser treeView context menu method.
@@ -457,7 +486,7 @@ class MainApp(QMainWindow, MainForm):
                 self.errorEncountered.emit(Message.ERROR, u"Unable to move path to Trash path '%s'!" % path,
                                                           u"Details: %s" % exception.message)
 
-    @Slot(QPointF)
+    @pyqtSlot('QPointF')
     def playlistContextMenu(self, pos):
         item = self.playlistTable.itemAt(pos)
         if not item:
@@ -487,7 +516,7 @@ class MainApp(QMainWindow, MainForm):
         elif choice is remFromDiskAction:
             self.remFromDisk(index)
 
-    @Slot()
+    @pyqtSlot()
     def changeSource(self, source_id=None):
         """
         When item in sourceBrowser is clicked, source is changed.
@@ -539,7 +568,7 @@ class MainApp(QMainWindow, MainForm):
             logger.warning(u"RADIOS NOT IMPLEMENTED!")
             # TODO future: implement radios
 
-    @Slot(int)
+    @pyqtSlot(int)
     def changeFileBrowserRoot(self, index):
         """
         When new folder from folderCombo is selected, update folder browser (sourceItemsBrowser)
@@ -570,7 +599,7 @@ class MainApp(QMainWindow, MainForm):
                 self.errorEncountered.emit(Message.ERROR, u"Media folder '%s' could not be found!" % newMediaFolder, u"")
                 self.folderCombo.removeItem(self.folderCombo.currentIndex())
 
-    @Slot()
+    @pyqtSlot()
     def openLibraryDialog(self):
         """
         When library button is clicked, open library editor dialog.
@@ -580,7 +609,7 @@ class MainApp(QMainWindow, MainForm):
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
 
-    @Slot(list)
+    @pyqtSlot(list, bool)
     def addToPlaylist(self, sources, append):
         """
         Sets and adds media files to playlist.
@@ -603,13 +632,13 @@ class MainApp(QMainWindow, MainForm):
             self.playlistTable.setItem(i + lastItemIndex, 3, pathItem)
             i += 1
 
-    @Slot()
+    @pyqtSlot()
     def cancelAdding(self):
         logger.debug(u"Canceling adding new files to playlist (parsing).")
         self.parser.stop(True)
 
 
-    @Slot(int, unicode, unicode)
+    @pyqtSlot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u""):
         """
         Called to display warnings and errors.
@@ -640,7 +669,7 @@ class MainApp(QMainWindow, MainForm):
             msgBox.setInformativeText(details)
             msgBox.exec_()
 
-    @Slot()
+    @pyqtSlot()
     def clearErrorMsg(self):
         """
         Called to clear statusbar after displaying error message (widgets).
@@ -681,7 +710,7 @@ class MainApp(QMainWindow, MainForm):
         if description is not None:
             self.progressLabel.setText(description)
 
-    @Slot()
+    @pyqtSlot()
     def clearProgress(self):
         """
         Hides progress bar and label from statusbar when showing progress
@@ -690,21 +719,21 @@ class MainApp(QMainWindow, MainForm):
         self.progressBar.hide()
         self.progressCancelBtn.hide()
 
-    @Slot()
+    @pyqtSlot()
     def playing(self):
         logger.debug(u"Media player playing.")
         icon = QIcon()
         icon.addPixmap(QPixmap(u":/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
 
-    @Slot()
+    @pyqtSlot()
     def paused(self):
         logger.debug(u"Media player paused.")
         icon = QIcon()
         icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
 
-    @Slot()
+    @pyqtSlot()
     def stopped(self):
         logger.debug(u"Media player stopped.")
         self.paused()
@@ -713,7 +742,7 @@ class MainApp(QMainWindow, MainForm):
         self.seekerSlider.setValue(0)
         self.seekerSlider.blockSignals(False)
 
-    @Slot(int)
+    @pyqtSlot(int)
     def syncPlayTime(self, value):
         """
         @param value: time in milliseconds
@@ -721,7 +750,7 @@ class MainApp(QMainWindow, MainForm):
         """
         self.timeLbl.setText(QTime().addMSecs(value).toString("hh:mm:ss"))
 
-    @Slot(float)
+    @pyqtSlot(float)
     def syncSeeker(self, value):
         """
         When media time is changed, sync seeker position.
@@ -739,7 +768,7 @@ class MainApp(QMainWindow, MainForm):
     #     # FIXME debug only
     #     print (time.time() - self.t0) * 1000
 
-    @Slot(int)
+    @pyqtSlot(int)
     def displayCurrentMedia(self, index):
         """
         When media is changed, select row corresponding with media.
@@ -748,7 +777,7 @@ class MainApp(QMainWindow, MainForm):
         """
         self.playlistTable.setCurrentCell(index, 0)          # select the entire row due to table selection behaviour
 
-    @Slot()
+    @pyqtSlot()
     def playNow(self, row=None, col=None):
         """
         Play song from playlist table immediately.
@@ -764,7 +793,7 @@ class MainApp(QMainWindow, MainForm):
 
         self.mediaPlayer.play(index)
 
-    @Slot()
+    @pyqtSlot()
     def remFromPlaylist(self, row=None):
         """
         Removes song from playlist table and from player (media_list).
@@ -780,7 +809,7 @@ class MainApp(QMainWindow, MainForm):
         self.mediaPlayer.removeItem(index)
         self.playlistTable.removeRow(index)
 
-    @Slot()
+    @pyqtSlot()
     def remFromDisk(self, row=None):
         """
         Removes song from playlist table, from player (media_list) and from disk if possible.
@@ -802,18 +831,24 @@ class MainApp(QMainWindow, MainForm):
             self.errorEncountered.emit(Message.ERROR, u"Unable to move path to Trash path '%s'!" % filePath,
                                        u"Details: %s" % exception.message)
 
-    @Slot(bool)
+    @pyqtSlot(bool)
     def toggleShuffle(self, checked):
         self.mediaPlayer.setShuffle(checked)
 
-    @Slot(bool)
+    @pyqtSlot(bool)
     def toggleRepeat(self, checked):
         self.mediaPlayer.setRepeat(checked)
 
     def closeEvent(self, event):
+        """
+        Method called when close event caught.
+        Quits all threads, saves settings, etc. before application exit.
+        :type event: QCloseEvent
+        """
         # self.mediaPlayerThread.quit()
         self.scannerThread.quit()
         self.parserThread.quit()
+        self.hkHookThread.quit()
 
         self.saveSettings()
 

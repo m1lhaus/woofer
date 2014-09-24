@@ -4,13 +4,14 @@
 Disk components
 - Recursive disk browser for searching media files on folder tree.
 """
+from PyQt4.QtCore import pyqtSignal
 
 __version__ = "$Id$"
 
 import logging
 
-from PySide.QtGui import *
-from PySide.QtCore import *
+from PyQt4.QtGui import *
+from PyQt4.QtCore import *
 
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
@@ -22,7 +23,7 @@ class RecursiveBrowser(QObject):
     Runs in separated thread!
     Data are transfered via Signal/Slot mechanism.
     """
-    parseData = Signal(list)
+    parseData = pyqtSignal(list)
 
     SEND_LIMIT = 10     # cca 100ms blocks for parsing
 
@@ -39,7 +40,7 @@ class RecursiveBrowser(QObject):
 
         logger.debug(u"Recursive browser initialized.")
 
-    @Slot(unicode)
+    @pyqtSlot(unicode)
     def scanFiles(self, targetDir):
         """
         Thread worker! Called asynchronously from main thread.
@@ -76,7 +77,7 @@ class RecursiveBrowser(QObject):
         logger.debug(u"Recursive search finished, sending finish_parser flag.")
         self.parseData.emit([])
 
-    @Slot()
+    @pyqtSlot()
     def finish(self):
         """
         Called to to job after all work is finished (media files are all parsed).
