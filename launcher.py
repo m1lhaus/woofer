@@ -31,13 +31,13 @@ def check_requirements():
     except:
         raise Exception('send2trash library is missing')
 
-    try:
-        import PySide
-    except:
-        raise Exception('PySide library is missing')
-
-    if versiontuple(PySide.__version__) < versiontuple('1.2.0'):
-        raise Exception('PySide 1.2 or higher is required, current version is %s' % (PySide.__version__))
+    # try:
+    #     import PySide
+    # except:
+    #     raise Exception('PySide library is missing')
+    #
+    # if versiontuple(PySide.__version__) < versiontuple('1.2.0'):
+    #     raise Exception('PySide 1.2 or higher is required, current version is %s' % (PySide.__version__))
 
 
 # APPLICATION LAUNCHER
@@ -47,13 +47,32 @@ def application_start(environment):
     """
     check_requirements()
 
-    from PySide.QtGui import QApplication
+    import sip
+    try:
+        sip.setapi('QDate', 2)
+        sip.setapi('QDateTime', 2)
+        sip.setapi('QString', 2)
+        sip.setapi('QTextStream', 2)
+        sip.setapi('QTime', 2)
+        sip.setapi('QUrl', 2)
+        sip.setapi('QVariant', 2)
+    except ValueError, e:
+        raise RuntimeError('Could not set API version (%s): did you import PyQt4 directly?' % e)
+
+
+
+    from PyQt4 import QtCore
+    from PyQt4 import QtGui
+
     from dialogs.main_dialog import MainApp
+
+    # QtCore.Signal = QtCore.pyqtSignal
+    # QtCore.Slot = QtCore.pyqtSlot
 
     components.log.setup_logging(environment)
     logger.debug(u"Initializing application launcher in %s mode" % environment)
 
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     app.setOrganizationName(u"WooferPlayer")
     app.setOrganizationDomain(u"wooferplayer.com")
     app.setApplicationName(u"Woofer")

@@ -6,8 +6,8 @@ import logging
 import json
 import os
 
-from PySide.QtGui import *
-from PySide.QtCore import *
+from PyQt4.QtGui import *
+from PyQt4.QtCore import *
 
 from forms.library_form import Ui_libraryDialog
 
@@ -58,14 +58,14 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         self.addBtn.clicked.connect(self.addFolder)
         self.removeBtn.clicked.connect(self.removeFolder)
 
-    @Slot()
+    @pyqtSlot()
     def addFolder(self):
         """
         When 'Add' button clicked, system folder dialog is opened and new directory is added
         """
         logger.debug(u"Opening system file dialog.")
         homeFolder = QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
-        newFolder = QFileDialog.getExistingDirectory(self, dir=homeFolder)
+        newFolder = QFileDialog.getExistingDirectory(self, directory=homeFolder)
 
         if newFolder:
             logger.debug(u"Selected directory: %s", newFolder)
@@ -74,7 +74,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
             self.folderList.addItem(newFolder)
             self.anyChanges = True
 
-    @Slot()
+    @pyqtSlot()
     def removeFolder(self):
         """
         When 'Remove' button is clicked, folder record from folderList and media library is removed.

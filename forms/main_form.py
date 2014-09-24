@@ -8,11 +8,9 @@ __version__ = "$Id$"
 
 import icons_rc
 import logging
-import time
 
-from PySide.QtGui import *
-from PySide.QtCore import *
-from tools import misc
+from PyQt4.QtGui import *
+from PyQt4.QtCore import *
 
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
@@ -248,14 +246,14 @@ class MainTreeBrowserTreeView(QTreeView):
         """
         return self._mode
 
-    @Slot(QModelIndex)
+    @pyqtSlot('QModelIndex')
     def itemExpanded(self, index):
         fileInfo = self.model().fileInfo(index)
         filePath = fileInfo.absoluteFilePath()
         if filePath not in self._expandedItems:
             self._expandedItems.append(filePath)
 
-    @Slot(QModelIndex)
+    @pyqtSlot('QModelIndex')
     def itemCollapsed(self, index):
         fileInfo = self.model().fileInfo(index)
         filePath = fileInfo.absoluteFilePath()
@@ -429,11 +427,17 @@ class MainForm(object):
         self.menuHelp = QMenu(self.menubar)
 
         self.mediaPlayPauseAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play", MainWindow)
-        # self.mediaPlayPauseAction.setShortcut(QKeySequence(Qt.Key_MediaPlay))
-        # self.mediaPlayPauseAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.mediaPlayPauseAction.setShortcut(QKeySequence(Qt.Key_MediaPlay))
+        self.mediaPlayPauseAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaStopAction = QAction(QIcon(u":/icons/media-stop.png"), u"&Stop", MainWindow)
+        self.mediaStopAction.setShortcut(QKeySequence(Qt.Key_MediaStop))
+        self.mediaStopAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaNextAction = QAction(QIcon(u":/icons/media-next.png"), u"&Next", MainWindow)
+        self.mediaNextAction.setShortcut(QKeySequence(Qt.Key_MediaNext))
+        self.mediaNextAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaPreviousAction = QAction(QIcon(u":/icons/media-previous.png"), u"Pre&vious", MainWindow)
+        self.mediaPreviousAction.setShortcut(QKeySequence(Qt.Key_MediaPrevious))
+        self.mediaPreviousAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaShuffleAction = QAction(QIcon(u":/icons/media-shuffle.png"), u"Shu&ffle", MainWindow)
         self.mediaRepeatAction = QAction(QIcon(u":/icons/media-repeat.png"), u"&Repeat", MainWindow)
         self.mediaMuteAction = QAction(u"&Mute", MainWindow)

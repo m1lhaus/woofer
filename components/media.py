@@ -14,8 +14,8 @@ import os
 import random
 
 
-from PySide.QtGui import *
-from PySide.QtCore import *
+from PyQt4.QtGui import *
+from PyQt4.QtCore import *
 
 from components import vlc
 from tools import misc
@@ -32,21 +32,21 @@ class MediaPlayer(QObject):
 
     TICK_INTERVAL = 1000        # in ms
 
-    error = Signal(str)
-    tick = Signal(int)
+    error = pyqtSignal(str)
+    tick = pyqtSignal(int)
 
-    mediaAdded = Signal(list, bool)
-    playing = Signal()
-    stopped = Signal()
-    paused = Signal()
-    timeChanged = Signal(int)
-    positionChanged = Signal(float)
-    mediaChanged = Signal(int)          # TODO: add metadata
-    endReached = Signal(bool)
+    mediaAdded = pyqtSignal(list, bool)
+    playing = pyqtSignal()
+    stopped = pyqtSignal()
+    paused = pyqtSignal()
+    timeChanged = pyqtSignal(int)
+    positionChanged = pyqtSignal(float)
+    mediaChanged = pyqtSignal(int)          # TODO: add metadata
+    endReached = pyqtSignal(bool)
 
     # this signals are used as helper, because callback are called from vlc directly (from another thread),
     # so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
-    mediaChangedCallbackSignal = Signal()
+    mediaChangedCallbackSignal = pyqtSignal()
 
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
@@ -97,7 +97,7 @@ class MediaPlayer(QObject):
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
         self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
 
-    @Slot(list)
+    @pyqtSlot(list)
     def addMedia(self, mList, restoring_session=False):
         """
         Adds list of media objects to player media_list.
@@ -231,6 +231,7 @@ class MediaPlayer(QObject):
 
         return count
 
+    @pyqtSlot()
     def playPause(self):
         if self._media_player.is_playing():
             self.pause()
@@ -256,6 +257,7 @@ class MediaPlayer(QObject):
             logger.debug(u"Play method called")
             self._media_player.play()
 
+    @pyqtSlot()
     def pause(self):
         """
         Pause media_player (no effect if there is no media).
@@ -263,6 +265,7 @@ class MediaPlayer(QObject):
         logger.debug(u"Pause method called")
         self._media_player.pause()
 
+    @pyqtSlot()
     def stop(self):
         """
         Stop (no effect if there is no media)
@@ -270,6 +273,7 @@ class MediaPlayer(QObject):
         logger.debug(u"Stop method called, stopping playback...")
         self._media_player.stop()
 
+    @pyqtSlot()
     def next(self, repeat=False):
         """
         Switches to next media in media_list if any.
@@ -297,6 +301,7 @@ class MediaPlayer(QObject):
                 logger.debug(u"There is no next media (song) to play!")
                 self._media_player.stop()
 
+    @pyqtSlot()
     def prev(self):
         """
         Switches to next media in media_list if any.
@@ -465,7 +470,7 @@ class MediaPlayer(QObject):
         self.appending_mode = append
         self.append_media = append
 
-    @Slot()
+    @pyqtSlot()
     def mediaAddingFinished(self):
         """
         Called when media adding ends.
@@ -484,7 +489,7 @@ class MediaPlayer(QObject):
             logger.debug(u"Newly added media which has not been appended are not shuffled. Shuffling...")
             self.setShuffle(True)
 
-    @Slot()
+    @pyqtSlot()
     def __playingSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
@@ -494,7 +499,7 @@ class MediaPlayer(QObject):
         self.is_paused = False
         self.is_stopped = False
 
-    @Slot()
+    @pyqtSlot()
     def __pausedSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
@@ -504,7 +509,7 @@ class MediaPlayer(QObject):
         self.is_paused = True
         self.is_stopped = False
 
-    @Slot()
+    @pyqtSlot()
     def __stoppedSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
@@ -515,7 +520,7 @@ class MediaPlayer(QObject):
         self.is_paused = False
         self.is_stopped = True
 
-    @Slot()
+    @pyqtSlot()
     def __mediaChangedSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
@@ -589,8 +594,8 @@ class MediaParser(QObject):
     Data are transfered via Signal/Slot mechanism.
     """
 
-    finished = Signal()
-    parsed = Signal(list)
+    finished = pyqtSignal()
+    parsed = pyqtSignal(list)
 
     def __init__(self):
         super(MediaParser, self).__init__()
@@ -614,7 +619,7 @@ class MediaParser(QObject):
 
         return self._cancel
 
-    @Slot(list)
+    @pyqtSlot(list)
     def parseMedia(self, sources):
         """
         Parses media files. Result is send to media player in separated thread.
