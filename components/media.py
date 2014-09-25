@@ -8,17 +8,13 @@ Media components
 
 __version__ = "$Id$"
 
-import time
 import logging
-import os
 import random
-
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 from components import vlc
-from tools import misc
 from tools.misc import unicode2bytes
 
 logger = logging.getLogger(__name__)
@@ -84,18 +80,30 @@ class MediaPlayer(QObject):
 
     def __setupEvents(self):
         self.media_player_event_manager = self._media_player.event_manager()
-        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerOpening, self.playerStateChanged)
-        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPlaying, self.__playingCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPaused, self.__pausedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerForward, self.__forwardCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBackward, self.__backwardCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
+        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerOpening,
+        #                                              self.playerStateChanged)
+        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBuffering,
+        #                                              self.playerStateChanged)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPlaying,
+                                                     self.__playingCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPaused,
+                                                     self.__pausedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerStopped,
+                                                     self.__stoppedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerForward,
+                                                     self.__forwardCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBackward,
+                                                     self.__backwardCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached,
+                                                     self.__endReachedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEncounteredError,
+                                                     self.__errorCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged,
+                                                     self.__timeChangedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPositionChanged,
+                                                     self.__positionChangedCallback)
+        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerMediaChanged,
+                                                     self.__mediaChangedCallback)
 
     @pyqtSlot(list)
     def addMedia(self, mList, restoring_session=False):
@@ -109,12 +117,13 @@ class MediaPlayer(QObject):
         """
 
         # when restoring session, no parsed media files are available, but vlc takes both vlc.Media and mrl
-        if restoring_session:
+        if restoring_session and mList:
             logger.debug(u"Adding media paths to media_list...")
+
             self._media_list.lock()
             for path in mList:
                 unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
-                self._media_list.add_media(byte_path)               # vlc will parse media automatically if needed (before playing)
+                self._media_list.add_media(byte_path)    # vlc will parse media automatically if needed (before playing)
 
             # set previous current media now as current
             media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
@@ -178,7 +187,7 @@ class MediaPlayer(QObject):
         for i in xrange(len(self.id_playlist)):
             if self.id_playlist[i] == index:
                 del self.id_playlist[i]
-                self.id_playlist[i:] = [x-1 for x in self.id_playlist[i:]]     # faster way than iterate over whole array
+                self.id_playlist[i:] = [x-1 for x in self.id_playlist[i:]]    # faster way than iterate over whole array
                 break
         self.playlist_len -= 1
 
