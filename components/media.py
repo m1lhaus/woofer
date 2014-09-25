@@ -11,7 +11,6 @@ __version__ = "$Id$"
 import logging
 import random
 
-from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 from components import vlc
@@ -124,7 +123,8 @@ class MediaPlayer(QObject):
                 self._media_list.lock()
                 for path in mList:
                     unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
-                    self._media_list.add_media(byte_path)    # vlc will parse media automatically if needed (before playing)
+                    # vlc will parse media automatically if needed (before playing)
+                    self._media_list.add_media(byte_path)
 
                 # set previous current media now as current
                 media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
