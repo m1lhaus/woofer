@@ -63,7 +63,7 @@ class MainApp(QMainWindow, MainForm):
         self.setupGUISignals()
 
         self.setupScanner()
-        self.setupActions()
+        self.setupActionsSignals()
         self.setupSystemHook()
 
         self.checkPaths()
@@ -71,10 +71,14 @@ class MainApp(QMainWindow, MainForm):
 
         self.loadSettings()
 
-        QTimer.singleShot(0, self.loadSettingsQueued)           # run method after dialog is opened
+        QTimer.singleShot(25, self.loadSettingsQueued)
         logger.debug(u"Main application dialog initialized")
 
     def setupGUISignals(self):
+        """
+        Connects GUI components with desired slots.
+        Only for GUI components!
+        """
         self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
         self.folderCombo.currentIndexChanged.connect(self.changeFileBrowserRoot)
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
@@ -98,7 +102,7 @@ class MainApp(QMainWindow, MainForm):
         self.playlistTable.delShortcut.activated.connect(self.remFromPlaylist)
         self.playlistTable.shiftDelShortcut.activated.connect(self.remFromDisk)
 
-    def setupActions(self):
+    def setupActionsSignals(self):
         self.mediaPlayPauseAction.triggered.connect(self.mediaPlayer.playPause)
         self.mediaStopAction.triggered.connect(self.mediaPlayer.stop)
         self.mediaNextAction.triggered.connect(self.mediaPlayer.next)
@@ -133,6 +137,11 @@ class MainApp(QMainWindow, MainForm):
         self.hkHookThread.start()
 
     def setupPlayer(self):
+        """
+        Initializes VLC based media player.
+        Player class (basically it is only the interface) lives in main thread.
+        VlC player itself lives in separated threads!
+        """
         self.mediaPlayer = media.MediaPlayer()
 
         self.mediaPlayer.mediaAdded.connect(self.addToPlaylist)
@@ -144,6 +153,10 @@ class MainApp(QMainWindow, MainForm):
         self.mediaPlayer.mediaChanged.connect(self.displayCurrentMedia)
 
     def setupScanner(self):
+        """
+        Setup classes for disk digging (media searching) and asynchronous parsing.
+        Scanner and parser live in separated threads.
+        """
         # asynchronous scanner
         self.scanner = disk.RecursiveBrowser(nameFilter=FileExt_, followSym=False)
         self.scannerThread = QThread(self)
@@ -205,13 +218,21 @@ class MainApp(QMainWindow, MainForm):
                                                              u"%s" % (exception.errno, exception.strerror))
                 raise
 
-
-
     def loadSettings(self):
+        """
+        Method called on start to load and set stuff.
+        Method is called directly, so no heavy operation is expected. (see loadSettingsQueued() for more info)
+        """
         logger.debug(u"Global load settings called. Loading settings...")
-        # self.changeSource(Sources.FILES)                    # display file browser as default
 
+    @pyqtSlot()
     def loadSettingsQueued(self):
+        """
+        This method is called as slot directly from main thread, but few milliseconds queued,
+        so Qt engine can render application.
+        Method is delayed for 25ms. On average computer is this delay enough to fully render whole application,
+        but almost unnoticeable.
+        """
         self.loadSession()
         self.changeSource(Sources.FILES)
 
