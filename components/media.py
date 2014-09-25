@@ -225,6 +225,7 @@ class MediaPlayer(QObject):
     def getMedia(self):
         """
         Get the media used by the media_player.
+        Media reference counter will +1 => media should be released after usage!
         @return: the media associated with p_mi, or None if no media is associated.
         @rtype: vlc.Media or None
         """
@@ -544,9 +545,9 @@ class MediaPlayer(QObject):
 
         self.mediaChanged.emit(index)
 
-    # ----
-    # WARNING: CALLBACKS CALLED FROM ANOTHER THREAD (VLC THREAD) !!!!
-    # ----
+    # ------------------------------------------------------------------------
+    # WARNING: CALLBACKS CALLED DIRECTLY FROM ANOTHER THREAD (VLC THREAD) !!!!
+    # ------------------------------------------------------------------------
 
     def __timeChangedCallback(self, event):
         try:
