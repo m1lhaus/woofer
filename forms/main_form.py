@@ -494,6 +494,9 @@ class MainForm(object):
 
         self.retranslateUi(MainWindow)
 
+        self.sourceBrowser.expandAll()
+        self.timeLbl.setFixedSize(self.timeLbl.minimumSizeHint())       # prevent 1px oscillation
+
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QApplication.translate("MainWindow", "Woofer", None, QApplication.UnicodeUTF8))
         self.sourceBrowser.headerItem().setText(0, QApplication.translate("MainWindow", "Playback source", None, QApplication.UnicodeUTF8))
