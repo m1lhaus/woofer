@@ -11,4 +11,4 @@ import launcher
 
 
 if __name__ == "__main__":
-    launcher.application_start(u'DEBUG')
+    launcher.application_start('DEBUG')
