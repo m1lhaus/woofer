@@ -117,21 +117,22 @@ class MediaPlayer(QObject):
         """
 
         # when restoring session, no parsed media files are available, but vlc takes both vlc.Media and mrl
-        if restoring_session and mList:
-            logger.debug(u"Adding media paths to media_list...")
+        if restoring_session:
+            if mList:
+                logger.debug(u"Adding media paths to media_list...")
 
-            self._media_list.lock()
-            for path in mList:
-                unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
-                self._media_list.add_media(byte_path)    # vlc will parse media automatically if needed (before playing)
+                self._media_list.lock()
+                for path in mList:
+                    unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
+                    self._media_list.add_media(byte_path)    # vlc will parse media automatically if needed (before playing)
 
-            # set previous current media now as current
-            media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
-            self._media_list.unlock()
+                # set previous current media now as current
+                media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
+                self._media_list.unlock()
 
-            self._media_player.set_media(media)
-            media.release()
-            logger.debug(u"Media added successfully")
+                self._media_player.set_media(media)
+                media.release()
+                logger.debug(u"Media added successfully")
 
         else:
             export = []
