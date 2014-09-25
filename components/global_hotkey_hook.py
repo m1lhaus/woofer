@@ -9,7 +9,6 @@ __version__ = "$Id$"
 import logging
 import os
 
-from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 # WINDOWS ONLY

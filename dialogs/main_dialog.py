@@ -54,9 +54,9 @@ class MainApp(QMainWindow, MainForm):
     def __init__(self):
         super(MainApp, self).__init__()
         self.appRootPath = os.path.dirname(sys.argv[0])
-        self.appDataPath = os.path.join(self.appRootPath, u'data')
-        self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.json')
-        self.session_file = os.path.join(self.appDataPath, u'session.pkl')
+        self.appDataPath = os.path.join(self.appRootPath, 'data')
+        self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
+        self.session_file = os.path.join(self.appDataPath, 'session.dat')
 
         self.setupUi(self)
         self.checkPaths()
@@ -159,7 +159,7 @@ class MainApp(QMainWindow, MainForm):
         self.scanFiles.connect(self.scanner.scanFiles)
         # self.parser.finished.connect(self.printTime)    # FIXME debug only
         self.parser.finished.connect(self.clearProgress)
-        self.parser.finished.connect(self.scanner.finish)
+        # self.parser.finished.connect(self.scanner.finish)
         self.parser.finished.connect(self.mediaPlayer.mediaAddingFinished)
         self.parser.parsed.connect(self.mediaPlayer.addMedia)
         self.scanner.parseData.connect(self.parser.parseMedia)

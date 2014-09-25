@@ -27,7 +27,7 @@ class InfoFilter(logging.Filter):
 def setup_logging(mode):
 
     root_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-    log_dir = os.path.join(root_dir, u'log')
+    log_dir = os.path.join(root_dir, 'log')
     date = datetime.datetime.now()
 
     if not os.path.isdir(log_dir):
@@ -37,12 +37,12 @@ def setup_logging(mode):
     console_formatter = logging.Formatter(msg_format)
 
     # --- BASIC CONFIGURATION ---
-    if mode == u"DEBUG":
-        log_path = os.path.join(log_dir, u"debug_woofer_%s.log" % date.strftime("%Y-%m-%d"))
+    if mode == "DEBUG":
+        log_path = os.path.join(log_dir, "debug_woofer_%s.log" % date.strftime("%Y-%m-%d"))
         level = logging.DEBUG
-    elif mode == u"PRODUCTION":
+    elif mode == "PRODUCTION":
         level = logging.WARNING
-        log_path = os.path.join(log_dir, u"production_woofer_%s.log" % date.strftime("%Y-%m-%d"))
+        log_path = os.path.join(log_dir, "production_woofer_%s.log" % date.strftime("%Y-%m-%d"))
     else:
         raise NotImplementedError(u"Logging mode is not implemented!")
 

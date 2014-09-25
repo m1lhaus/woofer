@@ -116,4 +116,4 @@ def application_start(environment):
 
 
 if __name__ == "__main__":
-    application_start(u'PRODUCTION')
+    application_start('PRODUCTION')
