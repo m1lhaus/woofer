@@ -725,6 +725,8 @@ class MainApp(QMainWindow, MainForm):
         icon = QIcon()
         icon.addPixmap(QPixmap(u":/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
+        self.mediaPlayPauseAction.setIcon(icon)
+        self.mediaPlayPauseAction.setText(u"Pause")
 
     @pyqtSlot()
     def paused(self):
@@ -732,6 +734,8 @@ class MainApp(QMainWindow, MainForm):
         icon = QIcon()
         icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
+        self.mediaPlayPauseAction.setIcon(icon)
+        self.mediaPlayPauseAction.setText(u"Play")
 
     @pyqtSlot()
     def stopped(self):
@@ -741,6 +745,12 @@ class MainApp(QMainWindow, MainForm):
         self.seekerSlider.blockSignals(True)        # prevent syncing
         self.seekerSlider.setValue(0)
         self.seekerSlider.blockSignals(False)
+
+        icon = QIcon()
+        icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
+        self.playPauseBtn.setIcon(icon)
+        self.mediaPlayPauseAction.setIcon(icon)
+        self.mediaPlayPauseAction.setText(u"Play")
 
     @pyqtSlot(int)
     def syncPlayTime(self, value):
