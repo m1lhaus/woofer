@@ -310,11 +310,13 @@ class MainApp(QMainWindow, MainForm):
         self.mediaPlayer.id_playlist = session_data['id_playlist']
         self.mediaPlayer.playlist_pointer = session_data['playlist_pointer']
         self.mediaPlayer.playlist_len = session_data['playlist_len']
-        self.mediaPlayer.addMedia(paths_list, restoring_session=True)
 
-        # set current media in table as current item and scroll to the item
-        self.playlistTable.setCurrentCell(self.mediaPlayer.id_playlist[self.mediaPlayer.playlist_pointer], 0)
-        self.playlistTable.scrollToItem(self.playlistTable.currentItem(), QAbstractItemView.PositionAtCenter)
+        if paths_list:
+            self.mediaPlayer.addMedia(paths_list, restoring_session=True)
+
+            # set current media in table as current item and scroll to the item
+            self.playlistTable.setCurrentCell(self.mediaPlayer.id_playlist[self.mediaPlayer.playlist_pointer], 0)
+            self.playlistTable.scrollToItem(self.playlistTable.currentItem(), QAbstractItemView.PositionAtCenter)
 
     def saveSettings(self):
         """
