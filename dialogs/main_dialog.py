@@ -225,6 +225,16 @@ class MainApp(QMainWindow, MainForm):
         """
         logger.debug(u"Global load settings called. Loading settings...")
 
+        # restore window position
+        settings = QSettings()
+        windowGeometry = settings.value(u"gui/MainApp/geometry")
+        if windowGeometry:
+            self.restoreGeometry(windowGeometry)
+
+        # windowState = settings.value(u"gui/MainApp/state")
+        # if windowState:
+        #     self.restoreState(windowState)
+
     @pyqtSlot()
     def loadSettingsQueued(self):
         """
@@ -310,6 +320,11 @@ class MainApp(QMainWindow, MainForm):
         logger.debug(u"Global save settings called. Saving settings...")
         self.saveSession()
         self.mainTreeBrowser.saveSettings()
+
+        # save window position
+        settings = QSettings()
+        settings.setValue(u"gui/MainApp/geometry", self.saveGeometry())
+        settings.setValue(u"gui/MainApp/state", self.saveState())
 
     def saveSession(self):
         """
