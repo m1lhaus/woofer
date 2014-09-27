@@ -218,6 +218,72 @@ class MainApp(QMainWindow, MainForm):
                                                              u"%s" % (exception.errno, exception.strerror))
                 raise
 
+    @pyqtSlot(int)
+    def setupFileBrowser(self, rcode=None, initModel=False):
+        """
+        Re-initialize file model for file browser treeView and setup mediaLib folder combobox .
+        @param rcode: return code from library dialog (ignore it)
+        @param initModel: if true, fileSystemModel is re-initialized
+        """
+        logger.debug(u"Opening media folder and reading data.")
+        try:
+            with open(self.mediaLibFile, 'r') as mediaFile:
+                mediaFolders = json.load(mediaFile)
+        except IOError, exception:
+            logger.exception(u"Error when reading medialib file.")
+            self.errorEncountered.emit(Message.CRITICAL, u"Unable to open and read medialib file.",
+                                                         u"Error number: %s\n"
+                                                         u"%s" % (exception.errno, exception.strerror))
+            raise
+        except ValueError, exception:
+            logger.exception(u"Unable to load and parse data from JSON file.")
+            self.errorEncountered.emit(Message.CRITICAL, u"Unable to load and parse data from medialib file.",
+                                                         u"Description: %s" % exception.message)
+            raise
+
+        if initModel:
+            # init fileSystem model
+            self.fileBrowserModel = QFileSystemModel(self)
+            self.fileBrowserModel.setRootPath(QDir.rootPath())
+            self.fileBrowserModel.setResolveSymlinks(True)
+            # display only supported files (media files) and hide rest
+            self.fileBrowserModel.setNameFilterDisables(False)
+            self.fileBrowserModel.setNameFilters(FileExt)
+
+        # remember selected folder in combobox to set it back lately
+        # signals must be blocked because currentIndexChanged() signal is emitted after clear()
+        current_folder_text = self.folderCombo.currentText()
+        self.folderCombo.blockSignals(True)
+        self.folderCombo.clear()
+
+        self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))      # get default name
+        folders_to_display = [self.fileBrowserModel.myComputer(Qt.DisplayRole), ]         # save table of contents
+
+        # add only valid folders from medialib to folderCombobox
+        for folder in mediaFolders:
+            folder = QDir.cleanPath(folder)       # normalize => remove redundant slashes, etc.
+            if os.path.isdir(folder):
+                self.folderCombo.addItem(folder)
+                folders_to_display.append(folder)
+            else:
+                self.errorEncountered.emit(Message.WARNING, u"Some folders in media library don't exist.", u"")
+
+        # set back previously selected (current) item in folderCombo if exists (may be deleted => set root folder)
+        if current_folder_text in folders_to_display:
+            self.folderCombo.setCurrentIndex(folders_to_display.index(current_folder_text))
+            self.folderCombo.blockSignals(False)
+        else:
+            self.folderCombo.blockSignals(False)
+            self.folderCombo.currentIndexChanged.emit(0)
+
+    def setupPlaylistBrowser(self):
+        # TODO future: implement
+        pass
+
+    def setupRadioBrowser(self):
+        # TODO future: implement
+        pass
+
     def loadSettings(self):
         """
         Method called on start to load and set stuff.
@@ -374,73 +440,6 @@ class MainApp(QMainWindow, MainForm):
         session_data['id_playlist'] = self.mediaPlayer.id_playlist
         session_data['playlist_pointer'] = self.mediaPlayer.playlist_pointer
         session_data['playlist_len'] = self.mediaPlayer.playlist_len
-
-    @pyqtSlot(int)
-    def setupFileBrowser(self, rcode=None, initModel=False):
-        """
-        Re-initialize file model for file browser treeView and setup mediaLib folder combobox .
-        @param rcode: return code from library dialog (ignore it)
-        @param initModel: if true, fileSystemModel is re-initialized
-        """
-        logger.debug(u"Opening media folder and reading data.")
-        try:
-            with open(self.mediaLibFile, 'r') as mediaFile:
-                mediaFolders = json.load(mediaFile)
-        except IOError, exception:
-            logger.exception(u"Error when reading medialib file.")
-            self.errorEncountered.emit(Message.CRITICAL, u"Unable to open and read medialib file.",
-                                                         u"Error number: %s\n"
-                                                         u"%s" % (exception.errno, exception.strerror))
-            raise
-        except ValueError, exception:
-            logger.exception(u"Unable to load and parse data from JSON file.")
-            self.errorEncountered.emit(Message.CRITICAL, u"Unable to load and parse data from medialib file.",
-                                                         u"Description: %s" % exception.message)
-            raise
-
-        if initModel:
-            # init fileSystem model
-            self.fileBrowserModel = QFileSystemModel(self)
-            self.fileBrowserModel.setRootPath(QDir.rootPath())
-            self.fileBrowserModel.setResolveSymlinks(True)
-            # display only supported files (media files) and hide rest
-            self.fileBrowserModel.setNameFilterDisables(False)
-            self.fileBrowserModel.setNameFilters(FileExt)
-
-        # remember selected folder in combobox to set it back lately
-        # signals must be blocked because currentIndexChanged() signal is emitted after clear()
-        current_folder_text = self.folderCombo.currentText()
-        self.folderCombo.blockSignals(True)
-        self.folderCombo.clear()
-
-        self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))      # get default name
-        folders_to_display = [self.fileBrowserModel.myComputer(Qt.DisplayRole), ]         # save table of contents
-
-        # add only valid folders from medialib to folderCombobox
-        for folder in mediaFolders:
-            folder = QDir.cleanPath(folder)       # normalize => remove redundant slashes, etc.
-            if os.path.isdir(folder):
-                self.folderCombo.addItem(folder)
-                folders_to_display.append(folder)
-            else:
-                print "aaaaa"
-                self.errorEncountered.emit(Message.WARNING, u"Some folders in media library don't exist.", u"")
-
-        # set back previously selected (current) item in folderCombo if exists (may be deleted => set root folder)
-        if current_folder_text in folders_to_display:
-            self.folderCombo.setCurrentIndex(folders_to_display.index(current_folder_text))
-            self.folderCombo.blockSignals(False)
-        else:
-            self.folderCombo.blockSignals(False)
-            self.folderCombo.currentIndexChanged.emit(0)
-
-    def setupPlaylistBrowser(self):
-        # TODO future: implement
-        pass
-
-    def setupRadioBrowser(self):
-        # TODO future: implement
-        pass
 
     @pyqtSlot('QPointF')
     def sourceItemsBrowserContextMenu(self, pos):
@@ -686,9 +685,6 @@ class MainApp(QMainWindow, MainForm):
         @param text: main text
         @param details: description
         """
-
-        print "display error"
-
         if er_type == Message.WARNING:
             icon = QPixmap(u":/icons/warning.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
@@ -816,10 +812,6 @@ class MainApp(QMainWindow, MainForm):
             self.seekerSlider.blockSignals(True)
             self.seekerSlider.setValue(value)
             self.seekerSlider.blockSignals(False)
-
-    # def printTime(self):
-    #     # FIXME debug only
-    #     print (time.time() - self.t0) * 1000
 
     @pyqtSlot(int)
     def displayCurrentMedia(self, index):
