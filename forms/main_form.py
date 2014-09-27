@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-All GUI components stored here.
+All GUI components from main dialog initialized here.
 """
 
 __version__ = "$Id$"
@@ -523,4 +523,3 @@ class MainForm(object):
         self.menuPlaylist.setTitle(QApplication.translate("MainWindow", "&Playlist", None, QApplication.UnicodeUTF8))
         self.menuTools.setTitle(QApplication.translate("MainWindow", "&Tools", None, QApplication.UnicodeUTF8))
         self.menuHelp.setTitle(QApplication.translate("MainWindow", "&Help", None, QApplication.UnicodeUTF8))
-        # self.helpAboutAction.setText(QApplication.translate("MainWindow", "About", None, QApplication.UnicodeUTF8))
