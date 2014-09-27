@@ -12,13 +12,12 @@ import sys
 import os
 import errno
 import json
-import time
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
-from forms.main_form import MainForm
-from dialogs.library_dialog import LibraryDialog
+from forms import main_form
+from dialogs import library_dialog
 from components import disk
 from components import media
 from components import global_hotkey_hook
@@ -36,7 +35,7 @@ FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
 # StdErrRedirector.redirect_C_stderr_null()
 
 
-class MainApp(QMainWindow, MainForm):
+class MainApp(QMainWindow, main_form.MainForm):
     """
     Main application GUI form.
     - setup main window dialog
@@ -644,7 +643,7 @@ class MainApp(QMainWindow, MainForm):
         When library button is clicked, open library editor dialog.
         When dialog is closed, refresh media folders combobox.
         """
-        libraryDialog = LibraryDialog(self.mediaLibFile, self)
+        libraryDialog = library_dialog.LibraryDialog(self.mediaLibFile, self)
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
 
@@ -675,7 +674,6 @@ class MainApp(QMainWindow, MainForm):
     def cancelAdding(self):
         logger.debug(u"Canceling adding new files to playlist (parsing).")
         self.parser.stop(True)
-
 
     @pyqtSlot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u""):
