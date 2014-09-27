@@ -29,10 +29,11 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         self.mediaLibFile = mediaLibFile
         self.mediaFolders = []
         self.anyChanges = False
+
         self.setupUi(self)
         self.setupSignals()
-        self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
 
+        # loads folders from medialib
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
                 self.mediaFolders = json.load(mediaFile)
@@ -55,6 +56,8 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
             self.folderList.addItem(folder_item)
 
     def setupSignals(self):
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
         self.addBtn.clicked.connect(self.addFolder)
         self.removeBtn.clicked.connect(self.removeFolder)
 
