@@ -15,6 +15,7 @@ import json
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+from pygs import QxtGlobalShortcut
 
 from forms import main_form
 from dialogs import library_dialog
@@ -63,7 +64,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.setupScanner()
         self.setupActionsSignals()
-        self.setupSystemHook()
+        self.setupGlobalShortcuts()
 
         self.checkPaths()
         self.setupFileBrowser(initModel=True)       # todo: future: set dynamically (from last session)
@@ -107,33 +108,44 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaNextAction.triggered.connect(self.mediaPlayer.next)
         self.mediaPreviousAction.triggered.connect(self.mediaPlayer.prev)
 
-    def setupSystemHook(self):
-        """
-        Initializes system-wide keyboard hook, which listens for media control keys (Media_Play_Pause,
-        Media_Stop, Media_Next_Track, Media_Prev_Track).
-        Listener is executed in separated thread (thread clocking method).
-        Caught keys are mapped to signal and then forwarded to menubar actions.
-        """
-        self.hkHookThread = QThread(self)
+    # def setupSystemHook(self):
+    #     """
+    #     Initializes system-wide keyboard hook, which listens for media control keys (Media_Play_Pause,
+    #     Media_Stop, Media_Next_Track, Media_Prev_Track).
+    #     Listener is executed in separated thread (thread clocking method).
+    #     Caught keys are mapped to signal and then forwarded to menubar actions.
+    #     """
+    #     self.hkHookThread = QThread(self)
+    #
+    #     if os.name == 'nt':
+    #         self.hkHook = global_hotkey_hook.WindowsHook()
+    #     elif os.name == 'posix':
+    #         # todo: ckeck platform - linux only
+    #         return
+    #     else:
+    #         logger.warning("System-wide keyboard hook is not available for '%s' platform" % os.name)
+    #         return
+    #
+    #     self.hkHook.moveToThread(self.hkHookThread)
+    #
+    #     self.hkHook.mediaPlayKeyPressed.connect(self.mediaPlayPauseAction.trigger)
+    #     self.hkHook.mediaStopKeyPressed.connect(self.mediaStopAction.trigger)
+    #     self.hkHook.mediaNextTrackKeyPressed.connect(self.mediaNextAction.trigger)
+    #     self.hkHook.mediaPrevTrackKeyPressed.connect(self.mediaPreviousAction.trigger)
+    #
+    #     self.hkHookThread.started.connect(self.hkHook.startHook)
+    #     self.hkHookThread.start()
 
-        if os.name == 'nt':
-            self.hkHook = global_hotkey_hook.WindowsHook()
-        elif os.name == 'posix':
-            # todo: ckeck platform - linux only
-            return
-        else:
-            logger.warning("System-wide keyboard hook is not available for '%s' platform" % os.name)
-            return
+    def setupGlobalShortcuts(self):
+        self.globalPlayPauseShortcut = QxtGlobalShortcut(QKeySequence(Qt.Key_MediaPlay))
+        self.globalStopShortcut = QxtGlobalShortcut(QKeySequence(Qt.Key_MediaStop))
+        self.globalNextShortcut = QxtGlobalShortcut(QKeySequence(Qt.Key_MediaNext))
+        self.globalPreviousShortcut = QxtGlobalShortcut(QKeySequence(Qt.Key_MediaPrevious))
 
-        self.hkHook.moveToThread(self.hkHookThread)
-
-        self.hkHook.mediaPlayKeyPressed.connect(self.mediaPlayPauseAction.trigger)
-        self.hkHook.mediaStopKeyPressed.connect(self.mediaStopAction.trigger)
-        self.hkHook.mediaNextTrackKeyPressed.connect(self.mediaNextAction.trigger)
-        self.hkHook.mediaPrevTrackKeyPressed.connect(self.mediaPreviousAction.trigger)
-
-        self.hkHookThread.started.connect(self.hkHook.startHook)
-        self.hkHookThread.start()
+        self.globalPlayPauseShortcut.activated.connect(self.mediaPlayPauseAction.trigger)
+        self.globalStopShortcut.activated.connect(self.mediaStopAction.trigger)
+        self.globalNextShortcut.activated.connect(self.mediaNextAction.trigger)
+        self.globalPreviousShortcut.activated.connect(self.mediaPreviousAction.trigger)
 
     def setupPlayer(self):
         """
@@ -891,7 +903,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         # self.mediaPlayerThread.quit()
         self.scannerThread.quit()
         self.parserThread.quit()
-        self.hkHookThread.quit()
+        # self.hkHookThread.quit()
 
         self.saveSettings()
 
