@@ -106,6 +106,7 @@ def application_start(environment):
     from PyQt4 import QtGui
     from dialogs import main_dialog
 
+    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_CaptureMultimediaKeys)
     app = QtGui.QApplication(sys.argv)
     app.setOrganizationName(u"WooferPlayer")
     app.setOrganizationDomain(u"wooferplayer.com")
