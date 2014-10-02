@@ -15,14 +15,17 @@ import json
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-# from pygs import QxtGlobalShortcut
 
 from forms import main_form
 from dialogs import library_dialog
 from components import disk
 from components import media
-from components import global_hotkey_hook
 from tools import misc
+
+if os.name == "nt":
+    from components import winkeyhook as keyhook
+elif os.name == "posix":
+    from components import xkeyhook as keyhook
 
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
@@ -116,16 +119,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Caught keys are mapped to signal and then forwarded to menubar actions.
         """
         self.hkHookThread = QThread(self)
-
-        if os.name == 'nt':
-            self.hkHook = global_hotkey_hook.WindowsHook()
-        elif os.name == 'posix':
-            # todo: ckeck platform - linux only
-            return
-        else:
-            logger.warning("System-wide keyboard hook is not available for '%s' platform" % os.name)
-            return
-
+        self.hkHook = keyhook.KeyHook()
         self.hkHook.moveToThread(self.hkHookThread)
 
         self.hkHook.mediaPlayKeyPressed.connect(self.mediaPlayPauseAction.trigger)
@@ -133,21 +127,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.hkHook.mediaNextTrackKeyPressed.connect(self.mediaNextAction.trigger)
         self.hkHook.mediaPrevTrackKeyPressed.connect(self.mediaPreviousAction.trigger)
 
-        self.hkHookThread.started.connect(self.hkHook.startHook)
+        self.hkHookThread.started.connect(self.hkHook.start_listening)
         self.hkHookThread.start()
-
-    # def setupGlobalShortcuts(self):
-    #     # self.globalPlayPauseShortcut = QxtGlobalShortcut(QKeySequence(Qt.CTRL + Qt.ALT + Qt.SHIFT + Qt.Key_Play))
-    #     # self.globalStopShortcut = QxtGlobalShortcut(QKeySequence(Qt.Key_MediaStop))
-    #     self.globalNextShortcut = QxtGlobalShortcut(QKeySequence(Qt.Key_MediaNext))
-    #     # self.globalPreviousShortcut = QxtGlobalShortcut(QKeySequence(Qt.Key_MediaPrevious))
-    #
-    #     # self.globalPlayPauseShortcut.activated.connect(self.mediaPlayPauseAction.trigger)
-    #     # self.globalStopShortcut.activated.connect(self.mediaStopAction.trigger)
-    #     self.globalNextShortcut.activated.connect(self.mediaNextAction.trigger)
-    #     # self.globalPreviousShortcut.activated.connect(self.mediaPreviousAction.trigger)
-    #
-    #     print "sem"
 
     def setupPlayer(self):
         """
@@ -902,7 +883,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         Quits all threads, saves settings, etc. before application exit.
         :type event: QCloseEvent
         """
-        # self.mediaPlayerThread.quit()
+        self.hkHook.stop_listening()
+
         self.scannerThread.quit()
         self.parserThread.quit()
         self.hkHookThread.quit()
