@@ -7,12 +7,10 @@ Platform dependent classes for catching global (system-wide) shortcuts.
 __version__ = "$Id$"
 
 import logging
-import os
-
-from PyQt4.QtCore import *
-
 import pythoncom
 import pyHook
+
+from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot
 
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
