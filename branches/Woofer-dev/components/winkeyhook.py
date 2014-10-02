@@ -11,20 +11,14 @@ import os
 
 from PyQt4.QtCore import *
 
-# WINDOWS ONLY
-if os.name == 'nt':
-    import pythoncom
-    import pyHook
-
-# LINUX ONLY
-elif os.name == 'posix':
-    pass
+import pythoncom
+import pyHook
 
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
 
 
-class WindowsHook(QObject):
+class KeyHook(QObject):
 
     mediaPlayKeyPressed = pyqtSignal()
     mediaStopKeyPressed = pyqtSignal()
@@ -32,7 +26,7 @@ class WindowsHook(QObject):
     mediaPrevTrackKeyPressed = pyqtSignal()
 
     def __init__(self):
-        super(WindowsHook, self).__init__()
+        super(KeyHook, self).__init__()
 
         # create a hook manager
         self.hm = pyHook.HookManager()
@@ -94,7 +88,7 @@ class WindowsHook(QObject):
         return ignore_event
 
     @pyqtSlot()
-    def startHook(self):
+    def start_listening(self):
         """
         Thread worker. Called when thread is executed.
         Listens for all system-wide messages. Method makes thread busy, unresponsive!
@@ -103,3 +97,10 @@ class WindowsHook(QObject):
         """
         logger.debug(u"Starting windows key-down hook (listener)")
         pythoncom.PumpMessages()        # endless loop
+
+    def stop_listening(self):
+        """
+        Listening is stopped automatically when QThread.quit() is invoked => quit message is caught
+        @return:
+        """
+        pass
