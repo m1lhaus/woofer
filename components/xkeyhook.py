@@ -306,7 +306,7 @@ class KeyHook(QObject):
             self.mediaStopKeyPressed.emit()
         elif key == MEDIA_PREV_KEY:
             logger.debug(u"Global key Media_Play_Pause caught")
-            self.mediaNextTrackKeyPressed.emit()
+            self.mediaPrevTrackKeyPressed.emit()
         elif key == MEDIA_NEXT_KEY:
             logger.debug(u"Global key Media_Play_Pause caught")
-            self.mediaPrevTrackKeyPressed.emit()
+            self.mediaNextTrackKeyPressed.emit()
