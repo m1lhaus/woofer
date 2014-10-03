@@ -53,30 +53,66 @@ class MediaSeeker(QSlider):
             self.mouseLBPressed = False
 
 
-class VolumeSeeker(QSlider):
-    """
-    Custom QSlider with implemented direct jumping.
-    """
+# class VolumeSeeker(QSlider):
+#     """
+#     Custom QSlider with implemented direct jumping.
+#     """
+#
+#     def __init__(self, parent=None):
+#         super(VolumeSeeker, self).__init__(parent)
+#
+#
+#     # def mousePressEvent(self, event):
+#     #     """
+#     #     @type event: QMouseEvent
+#     #     """
+#     #     if event.button() == Qt.LeftButton:
+#     #         # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
+#     #         newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
+#     #         self.setValue(newValue)
+#     #         event.accept()
+#     #
+#     #     super(VolumeSeeker, self).mousePressEvent(event)
+
+
+class VolumePopup(QWidget):
 
     def __init__(self, parent=None):
-        super(VolumeSeeker, self).__init__(parent)
-        self.setMinimum(0)
-        self.setMaximum(100)
-        self.setValue(100)
-        self.setMaximumWidth(80)
-        self.setOrientation(Qt.Horizontal)
+        super(VolumePopup, self).__init__(parent)
 
-    def mousePressEvent(self, event):
-        """
-        @type event: QMouseEvent
-        """
-        if event.button() == Qt.LeftButton:
-            # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
-            newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
-            self.setValue(newValue)
-            event.accept()
+        # setup Ui
+        self.volumeSlider = QSlider(Qt.Vertical, self)
+        self.volumeSlider.setMinimum(0)
+        self.volumeSlider.setMaximum(100)
+        self.volumeSlider.setValue(self.volumeSlider.maximum())
 
-        super(VolumeSeeker, self).mousePressEvent(event)
+        self.muteBtn = QPushButton(self)
+        self.muteBtn.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
+        self.muteBtn.setIconSize(QSize(16, 16))
+        self.muteBtn.setCheckable(True)
+        self.muteBtn.setFlat(True)
+
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.volumeSlider)
+        self.layout.addWidget(self.muteBtn)
+        self.setLayout(self.layout)
+
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Popup)
+        self.setFixedSize(self.sizeHint().width(), 200)
+
+        # self.volumeSlider.valueChanged.connect(self.volumeChanged)
+
+    def changeEvent(self, event):
+        """
+        @type event: QEvent
+        """
+        super(VolumePopup, self).changeEvent(event)
+
+        # on window activation change, hide widget if not active (has focus) anymore
+        if event.type() == QEvent.ActivationChange:
+            if not self.isActiveWindow():
+                self.close()
+
 
 
 class PlaylistTable(QTableWidget):
@@ -401,7 +437,6 @@ class MainForm(object):
         self.nextBtn.setIcon(icon10)
         self.nextBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.nextBtn)
-
         self.shuffleBtn = QPushButton(self.controlsFrame)
         self.shuffleBtn.setMinimumSize(QSize(30, 30))
         icon11 = QIcon(QPixmap(u":/icons/media-shuffle.png"))
@@ -410,28 +445,22 @@ class MainForm(object):
         self.shuffleBtn.setFlat(True)
         self.shuffleBtn.setCheckable(True)
         self.controlsHLayout.addWidget(self.shuffleBtn)
-
         spacerItem = QSpacerItem(10, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
         self.controlsHLayout.addItem(spacerItem)
+        self.volumePopup = VolumePopup(self)
         self.seekerSlider = MediaSeeker(self)
-        self.volumeSlider = VolumeSeeker(self)
-
-        self.muteBtn = QPushButton(self.controlsFrame)
-        self.muteBtn.setMinimumSize(QSize(10, 30))
+        self.volumeSlider = self.volumePopup.volumeSlider
+        self.muteBtn = self.volumePopup.muteBtn
+        self.volumeBtn = QPushButton(self.controlsFrame)
+        self.volumeBtn.setMinimumSize(QSize(10, 30))
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.muteBtn.setSizePolicy(sizePolicy)
-
-        icon12 = QIcon(QPixmap(u":/icons/mute.png"))
-        self.muteBtn.setIcon(icon12)
-        self.muteBtn.setIconSize(QSize(16, 16))
-        self.muteBtn.setFlat(True)
-        # self.muteBtn.setCheckable(True)
-
-
-
+        self.volumeBtn.setSizePolicy(sizePolicy)
+        icon12 = QIcon(QPixmap(u":/icons/volume-max.png"))
+        self.volumeBtn.setIcon(icon12)
+        self.volumeBtn.setIconSize(QSize(16, 16))
+        self.volumeBtn.setFlat(True)
         self.controlsHLayout.addWidget(self.seekerSlider)
-        self.controlsHLayout.addWidget(self.muteBtn)
-        self.controlsHLayout.addWidget(self.volumeSlider)
+        self.controlsHLayout.addWidget(self.volumeBtn)
         self.verticalLayout.addLayout(self.controlsHLayout)
         self.mainRightVLayout.addWidget(self.controlsFrame)
         self.gridLayout.addWidget(self.splitter, 0, 0, 1, 1)

@@ -3,6 +3,7 @@
 """
 Main application GUI module.
 """
+from components.vlc import _Cstruct
 
 __version__ = "$Id$"
 
@@ -39,6 +40,12 @@ FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
 # StdErrRedirector.redirect_C_stderr_null()
 
 
+
+
+
+
+
+
 class MainApp(QMainWindow, main_form.MainForm):
     """
     Main application GUI form.
@@ -60,6 +67,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.appDataPath = os.path.join(self.appRootPath, 'data')
         self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
         self.session_file = os.path.join(self.appDataPath, 'session.dat')
+        self.oldVolumeValue = 0
 
         self.setupUi(self)          # setups all GUI components from form (design part)
         self.setupPlayer()
@@ -74,39 +82,24 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.loadSettings()
 
-
-
-        self.sliderPop = QSlider(Qt.Vertical, self)
-        self.sliderPop.hide()
-        self.sliderPop.setFixedHeight(200)
-
-        self.sliderPop.setWindowFlags(Qt.Popup)
-
-        self.muteBtn.clicked.connect(self.displayVolume)
-
-
-
-
-
-
-
         QTimer.singleShot(25, self.loadSettingsQueued)
         logger.debug(u"Main application dialog initialized")
 
     @pyqtSlot()
-    def displayVolume(self):
+    def displayVolumePopup(self):
+        """
+        Called when user clicks on volume button.
+        Opens popup with mute button and volume slider
+        """
+        newPos = self.volumeBtn.pos()
+        newPos = self.controlsFrame.mapToGlobal(newPos)
+        newPos = newPos - QPoint(self.volumePopup.width()/2, self.volumePopup.height())
 
-        print "called"
+        self.volumePopup.move(newPos)
+        self.volumePopup.show()
 
-        cursorPos = QCursor.pos()
-        cursorPos = self.mapFromGlobal(cursorPos)
-
-        print cursorPos
-
-        # self.sliderPop.move(cursorPos)
-        self.sliderPop.show()
-
-        # self.sliderPop.setVisible(not self.sliderPop.isVisible())
+        self.volumePopup.activateWindow()
+        self.volumePopup.setFocus()
 
     def setupGUISignals(self):
         """
@@ -129,8 +122,11 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.previousBtn.clicked.connect(self.mediaPlayer.prev)
         self.seekerSlider.valueChanged.connect(self.mediaPlayer.setPosition)
         self.volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
+        self.volumeSlider.valueChanged.connect(self.volumeChanged)
         self.shuffleBtn.toggled.connect(self.toggleShuffle)
         self.repeatBtn.toggled.connect(self.toggleRepeat)
+        self.volumeBtn.clicked.connect(self.displayVolumePopup)
+        self.muteBtn.toggled.connect(self.muteStatusChanged)
 
         self.playlistTable.enterShortcut.activated.connect(self.playNow)
         self.playlistTable.delShortcut.activated.connect(self.remFromPlaylist)
@@ -143,6 +139,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaPreviousAction.triggered.connect(self.mediaPlayer.prev)
         self.mediaShuffleAction.triggered.connect(self.shuffleBtn.toggle)
         self.mediaRepeatAction.triggered.connect(self.repeatBtn.toggle)
+        self.mediaMuteAction.triggered.connect(self.muteBtn.toggle)
         self.mediaQuitAction.triggered.connect(self.close)
 
     def setupSystemHook(self):
@@ -362,7 +359,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             # load shuffle, repeat and volume
             self.mediaPlayer.shuffle_mode = session_data['shuffle']
             self.mediaPlayer.repeat_mode = session_data['repeat']
-            self.volumeSlider.setValue(session_data['volume'])
+            # self.volumeSlider.setValue(session_data['volume'])
             self.shuffleBtn.blockSignals(True)
             self.shuffleBtn.setChecked(self.mediaPlayer.shuffle_mode)
             self.shuffleBtn.blockSignals(False)
@@ -437,7 +434,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         session_data['shuffle'] = self.mediaPlayer.shuffle_mode
         session_data['repeat'] = self.mediaPlayer.repeat_mode
-        session_data['volume'] = self.mediaPlayer.volume()
+        # session_data['volume'] = self.mediaPlayer._volume()
 
         logger.debug(u"Dumping session file to disk...")
         with open(self.session_file, 'wb') as f:
@@ -910,6 +907,60 @@ class MainApp(QMainWindow, main_form.MainForm):
     @pyqtSlot(bool)
     def toggleRepeat(self, checked):
         self.mediaPlayer.setRepeat(checked)
+
+    @pyqtSlot(int)
+    def volumeChanged(self, volume):
+        """
+        Called when volume has been changed to update volume button icon depending on volume value.
+        @type volume: int
+        """
+        if volume == 0:
+            self.volumePopup.muteBtn.setChecked(True)
+        else:
+            self.volumePopup.muteBtn.setChecked(False)
+
+            if volume < 20:
+                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-min.png")))
+            elif volume < 40:
+                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-low.png")))
+            elif volume < 80:
+                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-medium.png")))
+            else:
+                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-max.png")))
+
+    @pyqtSlot(bool)
+    def muteStatusChanged(self, status):
+        """
+        Method called when mute button has been toggled to new value.
+        Mute or un-mute audio playback.
+        @type status: bool
+        """
+        self.mediaPlayer.setMute(status)
+
+        if status:
+            logger.debug(u"Mute button checked, MUTING audio...")
+            self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
+            self.oldVolumeValue = self.volumeSlider.value()
+            self.volumeSlider.blockSignals(True)
+            self.volumeSlider.setValue(0)
+            self.volumeSlider.blockSignals(False)
+
+            self.mediaMuteAction.setText(u"Unmute")
+            self.mediaMuteAction.setIcon(QIcon(QPixmap(u":/icons/volume-max.png")))
+        else:
+            logger.debug(u"Mute button checked, UN-MUTING audio...")
+
+            if not self.oldVolumeValue:
+                self.oldVolumeValue = 20
+                self.volumeSlider.setValue(self.oldVolumeValue)
+            else:
+                self.volumeSlider.blockSignals(True)
+                self.volumeSlider.setValue(self.oldVolumeValue)
+                self.volumeSlider.blockSignals(False)
+                self.volumeChanged(self.oldVolumeValue)
+
+            self.mediaMuteAction.setText(u"Mute")
+            self.mediaMuteAction.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
 
     def closeEvent(self, event):
         """

@@ -23,5 +23,9 @@
     <file>icons/music-icon.png</file>
     <file>icons/mute.png</file>
     <file>icons/quit.png</file>
+    <file>icons/volume-max.png</file>
+    <file>icons/volume-medium.png</file>
+    <file>icons/volume-low.png</file>
+    <file>icons/volume-min.png</file>
   </qresource>
 </RCC>
