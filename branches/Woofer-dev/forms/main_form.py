@@ -377,6 +377,7 @@ class MainForm(object):
         self.previousBtn.setIcon(icon7)
         self.previousBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.previousBtn)
+
         self.playPauseBtn = QPushButton(self.controlsFrame)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.playPauseBtn.sizePolicy().hasHeightForWidth())
@@ -385,6 +386,7 @@ class MainForm(object):
         self.playPauseBtn.setIcon(icon8)
         self.playPauseBtn.setIconSize(QSize(32, 32))
         self.controlsHLayout.addWidget(self.playPauseBtn)
+
         self.stopBtn = QPushButton(self.controlsFrame)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.stopBtn.sizePolicy().hasHeightForWidth())
@@ -399,6 +401,7 @@ class MainForm(object):
         self.nextBtn.setIcon(icon10)
         self.nextBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.nextBtn)
+
         self.shuffleBtn = QPushButton(self.controlsFrame)
         self.shuffleBtn.setMinimumSize(QSize(30, 30))
         icon11 = QIcon(QPixmap(u":/icons/media-shuffle.png"))
@@ -407,11 +410,27 @@ class MainForm(object):
         self.shuffleBtn.setFlat(True)
         self.shuffleBtn.setCheckable(True)
         self.controlsHLayout.addWidget(self.shuffleBtn)
+
         spacerItem = QSpacerItem(10, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
         self.controlsHLayout.addItem(spacerItem)
         self.seekerSlider = MediaSeeker(self)
         self.volumeSlider = VolumeSeeker(self)
+
+        self.muteBtn = QPushButton(self.controlsFrame)
+        self.muteBtn.setMinimumSize(QSize(10, 30))
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.muteBtn.setSizePolicy(sizePolicy)
+
+        icon12 = QIcon(QPixmap(u":/icons/mute.png"))
+        self.muteBtn.setIcon(icon12)
+        self.muteBtn.setIconSize(QSize(16, 16))
+        self.muteBtn.setFlat(True)
+        # self.muteBtn.setCheckable(True)
+
+
+
         self.controlsHLayout.addWidget(self.seekerSlider)
+        self.controlsHLayout.addWidget(self.muteBtn)
         self.controlsHLayout.addWidget(self.volumeSlider)
         self.verticalLayout.addLayout(self.controlsHLayout)
         self.mainRightVLayout.addWidget(self.controlsFrame)
@@ -439,11 +458,7 @@ class MainForm(object):
         self.mediaPreviousAction.setShortcut(QKeySequence(Qt.Key_F5))
         self.mediaPreviousAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaShuffleAction = QAction(QIcon(u":/icons/media-shuffle.png"), u"Shu&ffle", MainWindow)
-        # self.mediaShuffleAction.setShortcut(QKeySequence(Qt.CTRL + Qt.ALT + Qt.Key_S))
-        # self.mediaShuffleAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaRepeatAction = QAction(QIcon(u":/icons/media-repeat.png"), u"&Repeat", MainWindow)
-        # self.mediaRepeatAction.setShortcut(QKeySequence(Qt.CTRL + Qt.ALT + Qt.Key_R))
-        # self.mediaRepeatAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaMuteAction = QAction(QIcon(u":/icons/mute.png"), u"&Mute", MainWindow)
         self.mediaMuteAction.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_M))
         self.mediaMuteAction.setShortcutContext(Qt.ApplicationShortcut)
