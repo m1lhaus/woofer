@@ -427,21 +427,29 @@ class MainForm(object):
         self.menuHelp = QMenu(self.menubar)
 
         self.mediaPlayPauseAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play", MainWindow)
-        # self.mediaPlayPauseAction.setShortcut(QKeySequence(Qt.Key_MediaPlay))
-        # self.mediaPlayPauseAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.mediaPlayPauseAction.setShortcut(QKeySequence(Qt.Key_F6))
+        self.mediaPlayPauseAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaStopAction = QAction(QIcon(u":/icons/media-stop.png"), u"&Stop", MainWindow)
-        # self.mediaStopAction.setShortcut(QKeySequence(Qt.Key_MediaStop))
-        # self.mediaStopAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.mediaStopAction.setShortcut(QKeySequence(Qt.Key_F7))
+        self.mediaStopAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaNextAction = QAction(QIcon(u":/icons/media-next.png"), u"&Next", MainWindow)
-        # self.mediaNextAction.setShortcut(QKeySequence(Qt.Key_MediaNext))
-        # self.mediaNextAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.mediaNextAction.setShortcut(QKeySequence(Qt.Key_F8))
+        self.mediaNextAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaPreviousAction = QAction(QIcon(u":/icons/media-previous.png"), u"Pre&vious", MainWindow)
-        # self.mediaPreviousAction.setShortcut(QKeySequence(Qt.Key_MediaPrevious))
-        # self.mediaPreviousAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.mediaPreviousAction.setShortcut(QKeySequence(Qt.Key_F5))
+        self.mediaPreviousAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaShuffleAction = QAction(QIcon(u":/icons/media-shuffle.png"), u"Shu&ffle", MainWindow)
+        # self.mediaShuffleAction.setShortcut(QKeySequence(Qt.CTRL + Qt.ALT + Qt.Key_S))
+        # self.mediaShuffleAction.setShortcutContext(Qt.ApplicationShortcut)
         self.mediaRepeatAction = QAction(QIcon(u":/icons/media-repeat.png"), u"&Repeat", MainWindow)
-        self.mediaMuteAction = QAction(u"&Mute", MainWindow)
-        self.mediaQuitAction = QAction(u"&Quit", MainWindow)
+        # self.mediaRepeatAction.setShortcut(QKeySequence(Qt.CTRL + Qt.ALT + Qt.Key_R))
+        # self.mediaRepeatAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.mediaMuteAction = QAction(QIcon(u":/icons/mute.png"), u"&Mute", MainWindow)
+        self.mediaMuteAction.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_M))
+        self.mediaMuteAction.setShortcutContext(Qt.ApplicationShortcut)
+        self.mediaQuitAction = QAction(QIcon(u":/icons/quit.png"), u"&Quit", MainWindow)
+        self.mediaQuitAction.setShortcut(QKeySequence(QKeySequence.Quit))
+        self.mediaQuitAction.setShortcutContext(Qt.ApplicationShortcut)
         self.playlistPlayAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play files...", MainWindow)
         self.playlistAddAction = QAction(QIcon(u":/icons/media-next.png"), u"&Add files...", MainWindow)
         self.playlistSaveAction = QAction(u"&Save playlist", MainWindow)
@@ -493,9 +501,12 @@ class MainForm(object):
         self.stBarMsgText.hide()
 
         self.retranslateUi(MainWindow)
-
         self.sourceBrowser.expandAll()
         self.timeLbl.setFixedSize(self.timeLbl.minimumSizeHint())       # prevent 1px oscillation
+
+        # disable Playlist and Radios - not implemented yet
+        self.sourceBrowser.topLevelItem(0).child(1).setDisabled(True)
+        self.sourceBrowser.topLevelItem(1).setDisabled(True)
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QApplication.translate("MainWindow", "Woofer", None, QApplication.UnicodeUTF8))

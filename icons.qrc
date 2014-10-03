@@ -21,5 +21,7 @@
     <file>icons/folder.png</file>
     <file>icons/playlist.png</file>
     <file>icons/music-icon.png</file>
+    <file>icons/mute.png</file>
+    <file>icons/quit.png</file>
   </qresource>
 </RCC>

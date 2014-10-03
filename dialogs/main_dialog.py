@@ -110,6 +110,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaStopAction.triggered.connect(self.mediaPlayer.stop)
         self.mediaNextAction.triggered.connect(self.mediaPlayer.next)
         self.mediaPreviousAction.triggered.connect(self.mediaPlayer.prev)
+        self.mediaShuffleAction.triggered.connect(self.shuffleBtn.toggle)
+        self.mediaRepeatAction.triggered.connect(self.repeatBtn.toggle)
+        self.mediaQuitAction.triggered.connect(self.close)
 
     def setupSystemHook(self):
         """
