@@ -260,12 +260,11 @@ class MediaPlayer(QObject):
             play_media = self._media_list.item_at_index(item_playlist_id)
             self._media_player.set_media(play_media)
             play_media.release()
-            self._media_player.play()
-
             self.playlist_pointer = self.id_playlist.index(item_playlist_id)    # find item in playlist
         else:
             logger.debug(u"Play method called")
-            self._media_player.play()
+
+        self._media_player.play()
 
     @pyqtSlot()
     def pause(self):
@@ -346,15 +345,22 @@ class MediaPlayer(QObject):
             raise ValueError(u"Volume must be in range <0, 100>")
 
         logger.debug(u"Setting volume to value %s", value)
-        return self._media_player.audio_set_volume(int(value)) == -1
+        self._media_player.audio_set_volume(int(value))
 
-    def volume(self):
+    def getVolume(self):
         """
         Get current software audio volume in range [0, 100].
         @return: the software volume in percents (0 = mute, 100 = nominal / 0dB).
         @rtype: int
         """
         return self._media_player.audio_get_volume()
+
+    def setMute(self, status):
+        logger.debug(u"Setting audio MUTE to %s", status)
+        self._media_player.audio_set_mute(status)
+
+    def isMuted(self):
+        return self._media_player.audio_get_mute()
 
     def setTime(self, new_time):
         """
