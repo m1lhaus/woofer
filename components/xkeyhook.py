@@ -18,7 +18,7 @@ from Xlib import X, XK, display
 from Xlib.ext import record
 from Xlib.protocol import rq
 
-from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt4.QtCore import *
 
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
@@ -132,7 +132,7 @@ class KeyHook(QObject):
                 'ext_requests': (0, 0, 0, 0),
                 'ext_replies': (0, 0, 0, 0),
                 'delivered_events': (0, 0),
-                'device_events': (X.KeyPress, X.KeyPress),  # change to X.KeyPress if you want also KeyPress
+                'device_events': (X.KeyPress, X.KeyPress),  # change to X.KeyRelease if you want also KeyRelease
                 'errors': (0, 0),
                 'client_started': False,
                 'client_died': False,
@@ -306,7 +306,7 @@ class KeyHook(QObject):
             self.mediaStopKeyPressed.emit()
         elif key == MEDIA_PREV_KEY:
             logger.debug(u"Global key Media_Play_Pause caught")
-            self.mediaPrevTrackKeyPressed.emit()
+            self.mediaNextTrackKeyPressed.emit()
         elif key == MEDIA_NEXT_KEY:
             logger.debug(u"Global key Media_Play_Pause caught")
-            self.mediaNextTrackKeyPressed.emit()
+            self.mediaPrevTrackKeyPressed.emit()
