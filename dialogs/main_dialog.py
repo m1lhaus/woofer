@@ -74,8 +74,39 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.loadSettings()
 
+
+
+        self.sliderPop = QSlider(Qt.Vertical, self)
+        self.sliderPop.hide()
+        self.sliderPop.setFixedHeight(200)
+
+        self.sliderPop.setWindowFlags(Qt.Popup)
+
+        self.muteBtn.clicked.connect(self.displayVolume)
+
+
+
+
+
+
+
         QTimer.singleShot(25, self.loadSettingsQueued)
         logger.debug(u"Main application dialog initialized")
+
+    @pyqtSlot()
+    def displayVolume(self):
+
+        print "called"
+
+        cursorPos = QCursor.pos()
+        cursorPos = self.mapFromGlobal(cursorPos)
+
+        print cursorPos
+
+        # self.sliderPop.move(cursorPos)
+        self.sliderPop.show()
+
+        # self.sliderPop.setVisible(not self.sliderPop.isVisible())
 
     def setupGUISignals(self):
         """
