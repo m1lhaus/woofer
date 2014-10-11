@@ -47,32 +47,10 @@ class MediaSeeker(QSlider):
         """
         @type event: QMouseEvent
         """
-        super(MediaSeeker, self).mouseReleaseEvent(event)
-
         if event.button() == Qt.LeftButton:
             self.mouseLBPressed = False
 
-
-# class VolumeSeeker(QSlider):
-#     """
-#     Custom QSlider with implemented direct jumping.
-#     """
-#
-#     def __init__(self, parent=None):
-#         super(VolumeSeeker, self).__init__(parent)
-#
-#
-#     # def mousePressEvent(self, event):
-#     #     """
-#     #     @type event: QMouseEvent
-#     #     """
-#     #     if event.button() == Qt.LeftButton:
-#     #         # when direct jumping, do this first and then call parent method or slider will not respond to mouse move
-#     #         newValue = self.minimum() + ((self.maximum()-self.minimum()) * event.x()) / self.width()
-#     #         self.setValue(newValue)
-#     #         event.accept()
-#     #
-#     #     super(VolumeSeeker, self).mousePressEvent(event)
+        super(MediaSeeker, self).mouseReleaseEvent(event)
 
 
 class VolumePopup(QWidget):
