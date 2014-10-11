@@ -3,7 +3,6 @@
 """
 Main application GUI module.
 """
-from components.vlc import _Cstruct
 
 __version__ = "$Id$"
 
@@ -38,12 +37,6 @@ FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
 
 # StdErrRedirector = misc.RedirectDescriptor()
 # StdErrRedirector.redirect_C_stderr_null()
-
-
-
-
-
-
 
 
 class MainApp(QMainWindow, main_form.MainForm):
@@ -903,14 +896,11 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot(bool)
     def toggleShuffle(self, checked):
-        print "called toggle shuffle", checked
-
         self.mediaPlayer.setShuffle(checked)
         self.mediaShuffleAction.setChecked(checked)
 
     @pyqtSlot(bool)
     def toggleRepeat(self, checked):
-        print "called toggle repeat", checked
         self.mediaPlayer.setRepeat(checked)
         self.mediaRepeatAction.setChecked(checked)
 

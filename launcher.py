@@ -67,7 +67,7 @@ def set_pyqt_api2():
     PyQt4 uses API v1 as default (QStrings, etc. ... deprecated).
     But PyQt4 can use newer v2 API (native python objects conversion).
     """
-    logger.debug(u"Setting PyQt API tu v2")
+    logger.debug(u"Setting PyQt API to v2")
     import sip
     try:
         sip.setapi('QDate', 2)
@@ -107,15 +107,51 @@ def application_start(environment):
     from PyQt4 import QtGui
     from dialogs import main_dialog
 
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_CaptureMultimediaKeys)
     app = QtGui.QApplication(sys.argv)
     app.setOrganizationName(u"WooferPlayer")
     app.setOrganizationDomain(u"wooferplayer.com")
     app.setApplicationName(u"Woofer")
+
+    # tries to connect to existing shared memory (another WooferPlayer instance)
+    logger.debug(u"Checking if another instance is running...")
+    sharedMemory = QtCore.QSharedMemory()
+    sharedMemory.setKey(u"wooferplayer.com")
+    if sharedMemory.attach(QtCore.QSharedMemory.ReadOnly):
+        logger.debug(u"Another instance of Woofer Player is running! Closing application.")
+        msgBox = QtGui.QMessageBox()
+        msgBox.setIcon(QtGui.QMessageBox.Warning)
+        msgBox.setWindowTitle(u"Another instance is running")
+        msgBox.setText(u"Another instance of Woofer player is running.")
+        msgBox.setInformativeText(u"If no instance of Woofer player is running, "
+                                  u"please contact us on www.wooferplayer.com")
+        msgBox.exec_()
+        return
+
+    logger.debug(u"Trying to create shared memory segment for id 'wooferplayer.com'")
+    if not sharedMemory.create(1, QtCore.QSharedMemory.ReadOnly):
+        logger.error(u"Unable to create shared memory segment, reason: %s", sharedMemory.errorString())
+
+        msgBox = QtGui.QMessageBox()
+        msgBox.setIcon(QtGui.QMessageBox.Critical)
+        msgBox.setWindowTitle(u"Initialization error")
+        msgBox.setText(u"Unable to create shared memory segment.\nReason: %s" % sharedMemory.errorString())
+        msgBox.setInformativeText(u"Please contact us on www.wooferplayer.com for further information.")
+        msgBox.exec_()
+        return
+
+    logger.debug(u"No other instance is running. Initializing Qt application.")
+
     main = main_dialog.MainApp()
     main.show()
+
+    logger.debug(u"Starting MainThread loop...")
+
     app.exec_()
+
+    logger.debug(u"MainThread loop stopped. Application has been closed successfully.")
 
 
 if __name__ == "__main__":
     application_start('PRODUCTION')
+
+    logger.debug(u"Application has been closed successfully.")
