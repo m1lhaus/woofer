@@ -42,6 +42,7 @@ class MediaPlayer(QObject):
     # this signals are used as helper, because callback are called from vlc directly (from another thread),
     # so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
     mediaChangedCallbackSignal = pyqtSignal()
+    endReachedCallbackSignal = pyqtSignal()
 
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
@@ -72,6 +73,7 @@ class MediaPlayer(QObject):
         self.stopped.connect(self.__stoppedSlot)
         self.endReached.connect(self.__stoppedSlot)
         self.mediaChangedCallbackSignal.connect(self.__mediaChangedSlot)
+        self.endReachedCallbackSignal.connect(self.__endReachedSlot)
 
         self.__setupEvents()
 
@@ -282,7 +284,7 @@ class MediaPlayer(QObject):
         logger.debug(u"Stop method called, stopping playback...")
         self._media_player.stop()
 
-    @pyqtSlot()
+    @pyqtSlot(bool)
     def next(self, repeat=False):
         """
         Switches to next media in media_list if any.
@@ -550,6 +552,14 @@ class MediaPlayer(QObject):
 
         self.mediaChanged.emit(index)
 
+    @pyqtSlot()
+    def __endReachedSlot(self):
+        """
+        Slot is used as helper, because callback are called from vlc directly (from another thread),
+        so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
+        """
+        self.endReached.emit(self.repeat_mode)          # if repeat_mode then do not switch to next song
+
     # ------------------------------------------------------------------------
     # WARNING: CALLBACKS CALLED DIRECTLY FROM ANOTHER THREAD (VLC THREAD) !!!!
     # ------------------------------------------------------------------------
@@ -593,7 +603,7 @@ class MediaPlayer(QObject):
 
     def __endReachedCallback(self, event):
         logger.debug(u"Media reached end")
-        self.endReached.emit(self.repeat_mode)          # if repeat_mode then do not switch to next song
+        self.endReachedCallbackSignal.emit()
 
     def __mediaChangedCallback(self, event):
         logger.debug(u"Media changed")
