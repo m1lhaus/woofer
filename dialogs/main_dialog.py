@@ -359,13 +359,14 @@ class MainApp(QMainWindow, main_form.MainForm):
             # load shuffle, repeat and volume
             self.mediaPlayer.shuffle_mode = session_data['shuffle']
             self.mediaPlayer.repeat_mode = session_data['repeat']
-            # self.volumeSlider.setValue(session_data['volume'])
             self.shuffleBtn.blockSignals(True)
             self.shuffleBtn.setChecked(self.mediaPlayer.shuffle_mode)
             self.shuffleBtn.blockSignals(False)
+            self.mediaShuffleAction.setChecked(self.mediaPlayer.shuffle_mode)
             self.repeatBtn.blockSignals(True)
             self.repeatBtn.setChecked(self.mediaPlayer.repeat_mode)
             self.repeatBtn.blockSignals(False)
+            self.mediaRepeatAction.setChecked(self.mediaPlayer.repeat_mode)
 
             logger.debug(u"Session restored successfully")
 
@@ -902,11 +903,16 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot(bool)
     def toggleShuffle(self, checked):
+        print "called toggle shuffle", checked
+
         self.mediaPlayer.setShuffle(checked)
+        self.mediaShuffleAction.setChecked(checked)
 
     @pyqtSlot(bool)
     def toggleRepeat(self, checked):
+        print "called toggle repeat", checked
         self.mediaPlayer.setRepeat(checked)
+        self.mediaRepeatAction.setChecked(checked)
 
     @pyqtSlot(int)
     def volumeChanged(self, volume):
