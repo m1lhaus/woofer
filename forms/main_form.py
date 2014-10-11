@@ -71,6 +71,7 @@ class VolumePopup(QWidget):
         self.muteBtn.setFlat(True)
 
         self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(5, 5, 5, 5)
         self.layout.addWidget(self.volumeSlider)
         self.layout.addWidget(self.muteBtn)
         self.setLayout(self.layout)
