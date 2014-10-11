@@ -340,8 +340,12 @@ class MainForm(object):
         self.folderCombo.setSizePolicy(sizePolicy)
         self.filterHLayout.addWidget(self.folderCombo)
         self.libraryBtn = QPushButton(self.layoutWidget)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy.setHeightForWidth(self.libraryBtn.sizePolicy().hasHeightForWidth())
+        self.libraryBtn.setSizePolicy(sizePolicy)
         icon5 = QIcon(QPixmap(u":/icons/settings.png"))
         self.libraryBtn.setIcon(icon5)
+        self.libraryBtn.setIconSize(QSize(16, 16))
         self.filterHLayout.addWidget(self.libraryBtn)
         self.mainLeftVLayout.addLayout(self.filterHLayout)
         # SOURCE ITEM BROWSER
