@@ -333,7 +333,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     def loadSession(self):
         """
         Loads last session information
-        e.g. last playlist, volume settings, etc.
+        e.g. last playlist, etc.
         """
         if not os.path.isfile(self.session_file):
             logger.debug(u"No session file found, skipping")
@@ -420,7 +420,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     def saveSession(self):
         """
         Save current session information
-        e.g. current playlist, volume settings, etc.
+        e.g. current playlist, etc.
         """
         session_data = {}
 
@@ -428,7 +428,6 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         session_data['shuffle'] = self.mediaPlayer.shuffle_mode
         session_data['repeat'] = self.mediaPlayer.repeat_mode
-        # session_data['volume'] = self.mediaPlayer._volume()
 
         logger.debug(u"Dumping session file to disk...")
         with open(self.session_file, 'wb') as f:
@@ -617,14 +616,12 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.mainTreeBrowser.setMode(Sources.FILES)
             logger.debug(u"Browser source has been selected to PLAYLISTS.")
             logger.warning(u"PLAYLISTS NOT IMPLEMENTED!")
-            # TODO future: implement playlists
 
         elif source_id == Sources.RADIO:
             self.sourceType = Sources.RADIO
             self.mainTreeBrowser.setMode(Sources.FILES)
             logger.debug(u"Browser source has been selected to RADIOS.")
             logger.warning(u"RADIOS NOT IMPLEMENTED!")
-            # TODO future: implement radios
 
     @pyqtSlot(int)
     def changeFileBrowserRoot(self, index):
