@@ -7,7 +7,7 @@ __version__ = "$Id$"
 
 import os
 import sys
-from contextlib import contextmanager
+
 
 def enum(*sequential, **named):
     """
@@ -50,70 +50,49 @@ def unicode2bytes(string):
 
 class RedirectDescriptor(object):
 
-    desc_backup = None
+    def __init__(self):
+        self.original_stderr_descriptor = None
 
     def redirect_C_stderr_null(self):
         """
-        Redirects stderr to new descriptor. For stdout is code identical.
+        Redirects all stderr ouput to new descriptor. So original stderr ouput will be thrown away.
+        Only new sys.stderr output since this method call will be printed out.
+
+        ##program init##
+            1 -> something points to the stderr
+            2 -> other library points to the stderr
+            * redirect_C_stderr_null() called
+            3 -> next thing points to the stderr
+            4 -> error log points to the stderr
+            * redirect_C_stderr_back() called
+
+        ##later program goes like this ###
+            called * redirect_C_stderr_null() *
+            1 prints something ---> will be ignored (old stderr points nowhere)
+            2 prints something ---> will be ignored (old stderr points nowhere)
+            3 prints something ---> will be printed on stderr pipe
+            4 prints something ---> will be printed on stderr pipe
+            called * redirect_C_stderr_back() *
+            1 prints something ---> will be printed on stderr pipe
+            2 prints something ---> will be printed on stderr pipe
+            3 prints something ---> will be ignored (old stderr points nowhere)
+            4 prints something ---> will be ignored (old stderr points nowhere)
         """
         sys.stderr.flush()                                  # flush all data
-        new_desc = os.dup(sys.stderr.fileno())              # create new descriptor from original stderr (copy)
-        self.desc_backup = new_desc                         # save descriptor number
-        devnull = os.open(os.devnull, os.O_WRONLY)
-        os.dup2(devnull, sys.stderr.fileno())               # redirect C layer descriptor to null
-        os.close(devnull)
-        sys.stderr = os.fdopen(new_desc, 'w')               # but revert Python stderr to normal
+        stderr_duplicate = os.dup(sys.stderr.fileno())      # creates copy of stderr
+        self.original_stderr_descriptor = stderr_duplicate  # save descriptor number
+        devnull = os.open(os.devnull, os.O_WRONLY)          # creates 'black hole'
+        os.dup2(devnull, sys.stderr.fileno())               # redirects orig. low-level stderr descriptor to 'back hole'
+        os.close(devnull)                                   # close the 'black hole', so no data will sent there anymore
+        sys.stderr = os.fdopen(stderr_duplicate, 'w')       # python needs some stderr, so open new one
 
     def redirect_C_stderr_back(self):
         """
-        Redirects backuped stderr to original pipe.
-        @raise AssertionError: No backup present.
+        Redirects backed up stderr to original pipe.
+        @raise AssertionError: Descriptor is not redirected.
         """
-        assert self.desc_backup is not None
-        sys.stderr.flush()
-        os.dup2(self.desc_backup, 2)
-        sys.stderr = os.fdopen(2, 'w')                      # backuped descriptor is closed automatically
-
-
-@contextmanager
-def stderr_redirected(to=os.devnull):
-    """
-    Redirects stderr to new device (nulldev is default).
-    """
-
-    fd = sys.stderr.fileno()
-
-    def _redirect_stderr(to, py_to=None):
-        print "fd", fd
-        # sys.stderr.close()                          # + implicit flush()
-        os.dup2(to.fileno(), fd)             # fd writes to 'to' file
-        sys.stderr = os.fdopen(py_to.fileno(), 'w')         # Python writes to fd
-        print "fd", fd
-        # sys.stderr = os.fdopen(fd, 'w')         # Python writes to fd
-        print sys.stderr.fileno()
-
-    def get_back(old_stderr):
-        print sys.stderr.fileno()
-        os.dup2(3, fd)             # fd writes to 'to' file
-        # sys.stderr.close()
-        sys.stderr = os.fdopen(fd, 'w')         # Python writes to fd
-        print sys.stderr.writable()
-        print sys.stderr.fileno()
-
-    with os.fdopen(os.dup(fd), 'w') as old_stderr:      # zavře 3
-        with open(to, 'w') as f:                        # zavře 4ku
-            _redirect_stderr(to=f, py_to=old_stderr)
-        try:
-            yield                                   # allow code to be run with the redirected stdout
-        finally:
-            pass
-            # _redirect_stderr(to=old_stderr)         # restore stdout.
-            get_back(old_stderr)                                        # buffering and flags such as
-                                                    # CLOEXEC may be different
-
-
-    # os.close(3)
-
-
-
+        assert self.original_stderr_descriptor is not None
+        sys.stderr.flush()                               #
+        os.dup2(self.original_stderr_descriptor, 2)         # recover original orig. low-level stderr descriptor
+        sys.stderr = os.fdopen(2, 'w')                      # reopen; backed up descriptor is closed automatically
 
