@@ -13,9 +13,11 @@ import imp
 import os
 import logging
 import components.log
+from tools.misc import RedirectDescriptor
 
 
 logger = logging.getLogger(__name__)
+StdErrRedirector = RedirectDescriptor()
 
 
 def versiontuple(v):
@@ -96,8 +98,8 @@ def application_start(environment):
     Initializes Qt libraries and Woofer application.
     @param environment: DEBUG or PRODUCTION string is expected
     """
-    logger.debug(u"Setting logger to mode '%s'" % environment)
     components.log.setup_logging(environment)
+    logger.debug(u"Set logger to mode '%s'" % environment)
 
     check_requirements()
     set_pyqt_api2()
@@ -152,6 +154,6 @@ def application_start(environment):
 
 
 if __name__ == "__main__":
+    StdErrRedirector.redirect_C_stderr_null()
     application_start('PRODUCTION')
-
-    logger.debug(u"Application has been closed successfully.")
+    StdErrRedirector.redirect_C_stderr_back()

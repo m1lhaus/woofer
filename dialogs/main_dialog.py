@@ -35,9 +35,6 @@ Message = misc.enum('WARNING', 'ERROR', 'CRITICAL')
 FileExt = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
 FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
 
-# StdErrRedirector = misc.RedirectDescriptor()
-# StdErrRedirector.redirect_C_stderr_null()
-
 
 class MainApp(QMainWindow, main_form.MainForm):
     """
@@ -969,9 +966,6 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.saveSettings()
 
-        # print >> sys.stderr, "neco"
-        # logger.error("neco log")
-        # StdErrRedirector.redirect_C_stderr_back()
         event.accept()
 
 
