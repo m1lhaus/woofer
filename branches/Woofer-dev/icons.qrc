@@ -27,5 +27,7 @@
     <file>icons/volume-medium.png</file>
     <file>icons/volume-low.png</file>
     <file>icons/volume-min.png</file>
+	<file>icons/save.png</file>
+	<file>icons/open.png</file>
   </qresource>
 </RCC>
