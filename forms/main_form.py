@@ -93,7 +93,6 @@ class VolumePopup(QWidget):
                 self.close()
 
 
-
 class PlaylistTable(QTableWidget):
 
     def __init__(self, parent):
@@ -473,10 +472,12 @@ class MainForm(object):
         self.mediaQuitAction = QAction(QIcon(u":/icons/quit.png"), u"&Quit", MainWindow)
         self.mediaQuitAction.setShortcut(QKeySequence(QKeySequence.Quit))
         self.mediaQuitAction.setShortcutContext(Qt.ApplicationShortcut)
-        self.playlistPlayAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play files...", MainWindow)
-        self.playlistAddAction = QAction(QIcon(u":/icons/media-next.png"), u"&Add files...", MainWindow)
+        # self.playlistPlayAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play files...", MainWindow)
+        # self.playlistAddAction = QAction(QIcon(u":/icons/media-next.png"), u"&Add files...", MainWindow)
         self.playlistSaveAction = QAction(u"&Save playlist", MainWindow)
+        self.playlistSaveAction.setEnabled(False)
         self.playlistLoadAction = QAction(u"&Load playlist", MainWindow)
+        self.playlistLoadAction.setEnabled(False)
         self.playlistClearAction = QAction(QIcon(u":/icons/delete.png"), u"&Clear playlist", MainWindow)
         self.toolsSettingsAction = QAction(QIcon(u":/icons/settings.png"), u"&Settings", MainWindow)
         self.helpHelpAction = QAction(u"&Help", MainWindow)
@@ -491,8 +492,8 @@ class MainForm(object):
         self.menuMedia.addActions([self.mediaShuffleAction, self.mediaRepeatAction, self.mediaMuteAction])
         self.menuMedia.addSeparator()
         self.menuMedia.addAction(self.mediaQuitAction)
-        self.menuPlaylist.addActions([self.playlistPlayAction, self.playlistAddAction])
-        self.menuPlaylist.addSeparator()
+        # self.menuPlaylist.addActions([self.playlistPlayAction, self.playlistAddAction])
+        # self.menuPlaylist.addSeparator()
         self.menuPlaylist.addActions([self.playlistSaveAction, self.playlistLoadAction, self.playlistClearAction])
         self.menuTools.addAction(self.toolsSettingsAction)
         self.menuHelp.addActions([self.helpHelpAction, self.helpAboutAction])
