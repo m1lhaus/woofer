@@ -9,78 +9,62 @@ PRODUCTION mode is set as default if started from console.
 __version__ = "$Id$"
 
 import sys
-import imp
 import os
 import logging
 import components.log
 from tools.misc import RedirectDescriptor
 
 
+if sys.version_info < (2, 7) or sys.version_info >= (3, 0):
+    raise Exception(u"Application requires Python 2.7!")
+
+try:
+    import sip
+except ImportError, e:
+    raise Exception(u"%s! Sip package (PyQt4) is required!" % e.message)
+else:
+    # set PyQt API to v2
+    sip.setapi('QDate', 2)
+    sip.setapi('QDateTime', 2)
+    sip.setapi('QString', 2)
+    sip.setapi('QTextStream', 2)
+    sip.setapi('QTime', 2)
+    sip.setapi('QUrl', 2)
+    sip.setapi('QVariant', 2)
+
+try:
+    import send2trash
+except ImportError, e:
+    raise Exception(u"%s! Send2Trash package is required!" % e.message)
+
+try:
+    from PyQt4.QtCore import *
+    from PyQt4.QtGui import *
+except ImportError, e:
+    raise Exception(u"%s! PyQt4 library is required!" % e.message)
+
+# requirements for system-wide hooks
+if os.name == 'nt':
+    try:
+        import pythoncom
+        import pywintypes
+    except ImportError, e:
+        raise Exception(u"%s! PyWin32 libraries (package) are required on Windows platform!" % e.message)
+
+    try:
+        import pyHook
+    except ImportError, e:
+        raise Exception(u"%s! pyHook package is required on Windows platform!" % e.message)
+
+elif os.name == 'posix':
+    try:
+        import Xlib
+    except ImportError, e:
+        raise Exception(u"%s! Python-Xlib libraries are required on Linux platform!" % e.message)
+
+
 logger = logging.getLogger(__name__)
 StdErrRedirector = RedirectDescriptor()
-
-
-def versiontuple(v):
-    """
-    Converts string like "0.8.1" to tuple (0, 8, 1)
-    """
-    return tuple(map(int, (v.split("."))))
-
-
-def check_requirements():
-    """
-    Looks for required packages.
-    """
-    logger.debug(u"Checking requirements")
-
-    if sys.version_info < (2, 7) or sys.version_info >= (3, 0):
-        raise Exception(u"Application requires Python 2.7!")
-
-    try:
-        imp.find_module('send2trash')
-    except ImportError:
-        raise Exception(u"Send2Trash package is required!")
-
-    try:
-        imp.find_module('PyQt4')
-    except ImportError:
-        raise Exception(u"PyQt4 library is missing")
-
-    # requirements for system-wide hooks
-    if os.name == 'nt':
-        try:
-            imp.find_module('pythoncom')
-            imp.find_module('pywintypes')
-        except ImportError:
-            raise Exception(u"PyWin32 libraries (package) is required on Windows platform!")
-
-        try:
-            imp.find_module('pyHook')
-        except ImportError:
-            raise Exception(u"pyHook package is required on Windows platform!")
-
-    elif os.name == 'posix':
-        # todo
-        pass
-
-
-def set_pyqt_api2():
-    """
-    PyQt4 uses API v1 as default (QStrings, etc. ... deprecated).
-    But PyQt4 can use newer v2 API (native python objects conversion).
-    """
-    logger.debug(u"Setting PyQt API to v2")
-    import sip
-    try:
-        sip.setapi('QDate', 2)
-        sip.setapi('QDateTime', 2)
-        sip.setapi('QString', 2)
-        sip.setapi('QTextStream', 2)
-        sip.setapi('QTime', 2)
-        sip.setapi('QUrl', 2)
-        sip.setapi('QVariant', 2)
-    except ValueError, e:
-        raise RuntimeError(u'Could not set API version (%s): did you import PyQt4 directly?' % e)
 
 
 # *******************************************
@@ -99,29 +83,23 @@ def application_start(environment):
     @param environment: DEBUG or PRODUCTION string is expected
     """
     components.log.setup_logging(environment)
-    logger.debug(u"Set logger to mode '%s'" % environment)
+    logger.debug(u"Logger mode set to %s, now initializing main application loop.", environment)
 
-    check_requirements()
-    set_pyqt_api2()
-
-    logger.debug(u"All ready to go. Import PyQt libs and initializing main application loop.")
-    from PyQt4 import QtCore
-    from PyQt4 import QtGui
     from dialogs import main_dialog
 
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     app.setOrganizationName(u"WooferPlayer")
     app.setOrganizationDomain(u"wooferplayer.com")
     app.setApplicationName(u"Woofer")
 
     # tries to connect to existing shared memory (another WooferPlayer instance)
     logger.debug(u"Checking if another instance is running...")
-    sharedMemory = QtCore.QSharedMemory()
+    sharedMemory = QSharedMemory()
     sharedMemory.setKey(u"wooferplayer.com")
-    if sharedMemory.attach(QtCore.QSharedMemory.ReadOnly):
+    if sharedMemory.attach(QSharedMemory.ReadOnly):
         logger.debug(u"Another instance of Woofer Player is running! Closing application.")
-        msgBox = QtGui.QMessageBox()
-        msgBox.setIcon(QtGui.QMessageBox.Warning)
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Warning)
         msgBox.setWindowTitle(u"Another instance is running")
         msgBox.setText(u"Another instance of Woofer player is running.")
         msgBox.setInformativeText(u"If no instance of Woofer player is running, "
@@ -130,11 +108,11 @@ def application_start(environment):
         return
 
     logger.debug(u"Trying to create shared memory segment for id 'wooferplayer.com'")
-    if not sharedMemory.create(1, QtCore.QSharedMemory.ReadOnly):
+    if not sharedMemory.create(1, QSharedMemory.ReadOnly):
         logger.error(u"Unable to create shared memory segment, reason: %s", sharedMemory.errorString())
 
-        msgBox = QtGui.QMessageBox()
-        msgBox.setIcon(QtGui.QMessageBox.Critical)
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Critical)
         msgBox.setWindowTitle(u"Initialization error")
         msgBox.setText(u"Unable to create shared memory segment.\nReason: %s" % sharedMemory.errorString())
         msgBox.setInformativeText(u"Please contact us on www.wooferplayer.com for further information.")

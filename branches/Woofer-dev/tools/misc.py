@@ -7,6 +7,7 @@ __version__ = "$Id$"
 
 import os
 import sys
+import send2trash
 
 
 def enum(*sequential, **named):
@@ -26,8 +27,7 @@ def moveToTrash(file_path):
     @type file_path: str
     @raise OSError: Error with message and number.
     """
-    from send2trash import send2trash
-    send2trash(file_path)
+    send2trash.send2trash(file_path)
 
 
 def unicode2bytes(string):
