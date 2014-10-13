@@ -158,11 +158,7 @@ class MainTreeBrowserTreeView(QTreeView):
         Restores previously expanded items in mainTreeBrowser for each mode (FILES, PLAYLISTS, RADIOS)
         """
         logger.debug(u"Restoring mainTreeBrowser state for mode enum %s ...", self._mode)
-
         settings = QSettings()
-        # settings.clear()          # clears all entries
-
-        # t0 = time.time()
 
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
@@ -199,8 +195,6 @@ class MainTreeBrowserTreeView(QTreeView):
         # RADIOS mode
         elif self._mode == MainTreeBrowserTreeView.RADIOS:
             pass
-
-        # print (time.time() - t0) * 1000     # FIXME debug only
 
     def saveSettings(self):
         """
