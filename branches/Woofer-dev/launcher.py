@@ -64,7 +64,7 @@ elif os.name == 'posix':
 
 
 logger = logging.getLogger(__name__)
-StdErrRedirector = RedirectDescriptor()
+# StdErrRedirector = RedirectDescriptor()
 
 
 # *******************************************
@@ -132,6 +132,6 @@ def application_start(environment):
 
 
 if __name__ == "__main__":
-    StdErrRedirector.redirect_C_stderr_null()
+    # StdErrRedirector.redirect_C_stderr_null()
     application_start('PRODUCTION')
-    StdErrRedirector.redirect_C_stderr_back()
+    # StdErrRedirector.redirect_C_stderr_back()
