@@ -62,6 +62,8 @@ elif os.name == 'posix':
     except ImportError, e:
         raise Exception(u"%s! Python-Xlib libraries are required on Linux platform!" % e.message)
 
+from dialogs import main_dialog
+
 
 logger = logging.getLogger(__name__)
 # StdErrRedirector = RedirectDescriptor()
@@ -84,8 +86,6 @@ def application_start(environment):
     """
     components.log.setup_logging(environment)
     logger.debug(u"Logger mode set to %s, now initializing main application loop.", environment)
-
-    from dialogs import main_dialog
 
     app = QApplication(sys.argv)
     app.setOrganizationName(u"WooferPlayer")
