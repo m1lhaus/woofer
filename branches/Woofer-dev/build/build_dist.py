@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+The script is used as automated platform independent dist builder.
+Uses pyinstaller python module to build dependency independent binaries.
+Optionally built dist could be zipped.
+"""
+
+import sys
+import os
+import subprocess
+import zipfile
+import platform
+import shutil
+
+
+PRJ_SPEC_FILE = "woofer.spec"
+
+
+def which(program):
+
+    # apped .exe extension on Windows
+    if os.name == 'nt' and not program.endswith('.exe'):
+        program += ".exe"
+
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return ""
+
+
+def find_svn(start_dir):
+    current_dir = start_dir
+    depth = 0
+    while depth < 5:
+        if '.svn' in os.listdir(current_dir):
+            return current_dir
+
+        depth += 1
+        current_dir = os.path.dirname(current_dir)
+
+
+def zip_dist(dist_folder):
+    zip_name = dist_folder + ".zip"
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        for root, dirs, files in os.walk(dist_folder):
+            for file in files:
+                zipf.write(os.path.join(root, file))
+    print "Dist zipped successfully to:", zip_name
+
+
+def get_svn_revision(folder='.'):
+    p = subprocess.Popen(["svnversion", folder, '-n'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    return stdout if stdout[0].isdigit() else ""
+
+
+if __name__ == "__main__":
+    print "Finding subversion working copy root dir to retrieve revision number."
+    svn_dir = find_svn(os.getcwd())
+    svn_rev = get_svn_revision(svn_dir)
+
+    if not svn_rev:
+        print "Unable to get svn revision number of working copy in tree from:", os.getcwd()
+        decision = raw_input("Are you want to continue anyway? (y/n) ")
+        if decision != 'y':
+            sys.exit(0)
+
+    print "Subversion working copy found, revision:", svn_rev
+
+    try:
+        int(svn_rev)
+    except ValueError:
+        print "Subversion revision number isn't pure integer."
+        print "You should first commit all changes and update working copy to get nice and clean working copy."
+        decision = raw_input("Are you want to continue anyway? (y/n) ")
+
+        if decision != 'y':
+            sys.exit(0)
+
+    print "Trying to find PyInstaller executable in system PATH..."
+
+    pyinstaller_exe = which('pyinstaller')
+    if not pyinstaller_exe:
+        raise Exception("PyInstaller executable not found in system PATH!")
+    else:
+        print "PyInstaller executable found at:", pyinstaller_exe
+
+    spec_file = os.path.join(os.getcwd(), PRJ_SPEC_FILE)
+    dist_folder = os.path.join(os.getcwd(), "dist", "woofer")
+    if not os.path.isfile(spec_file):
+        raise Exception("Unable to locate spec file at: %s" % spec_file)
+    else:
+        print "Pyinstaller spec file found at:", spec_file
+
+    print "Building dist..."
+    print "=" * 100
+    process = subprocess.Popen([pyinstaller_exe, spec_file, '-y', '--clean'], stdout=sys.stdout, stderr=sys.stderr)
+    retcode = process.wait()
+
+    print "=" * 100
+    if retcode != 0:
+        raise Exception("Building finished with error code: %s!!!" % retcode)
+
+    new_dist_name = os.path.join(os.getcwd(), "dist", "woofer_%s_rev%s" % (platform.architecture()[0], svn_rev))
+    if os.path.isdir(new_dist_name):
+        shutil.rmtree(new_dist_name)
+    os.rename(dist_folder, new_dist_name)
+    dist_folder = new_dist_name
+
+    print "Dist package successfully built to:", dist_folder
+
+    decision = raw_input("Are you want to ZIP built dist folder? (y/n) ")
+    if decision != 'y':
+        sys.exit(0)
+
+    zip_dist(dist_folder)
+
+    print "Removing dist folder..."
+    shutil.rmtree(dist_folder)
+    print "Finished!"
