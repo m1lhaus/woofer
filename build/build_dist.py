@@ -58,7 +58,7 @@ def get_svn_revision(folder='.'):
     return stdout if stdout[0].isdigit() else ""
 
 
-if __name__ == "__main__":
+def main():
     print "Finding subversion working copy root dir to retrieve revision number."
     svn_dir = find_svn(os.getcwd())
     svn_rev = get_svn_revision(svn_dir)
@@ -67,8 +67,8 @@ if __name__ == "__main__":
         print "Unable to get svn revision number of working copy in tree from:", os.getcwd()
         decision = raw_input("Are you want to continue anyway? (y/n) ")
         if decision != 'y':
-            sys.exit(0)
-
+            return False
+    svn_rev = svn_rev.replace(':', '-')
     print "Subversion working copy found, revision:", svn_rev
 
     try:
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         decision = raw_input("Are you want to continue anyway? (y/n) ")
 
         if decision != 'y':
-            sys.exit(0)
+            return
 
     print "Trying to find PyInstaller executable in system PATH..."
 
@@ -115,11 +115,16 @@ if __name__ == "__main__":
 
     decision = raw_input("Are you want to ZIP built dist folder? (y/n) ")
     if decision != 'y':
-        sys.exit(0)
+        return
 
     zip_folder = shutil.make_archive(dist_folder, "zip", dist_folder)
     print "Dist zipped successfully to:", zip_folder
 
     print "Removing dist folder..."
     shutil.rmtree(dist_folder)
+
+
+if __name__ == "__main__":
+    main()
     print "Finished!"
+    raw_input("\nPress Enter key to exit...")
