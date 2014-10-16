@@ -52,15 +52,6 @@ def find_svn(start_dir):
         current_dir = os.path.dirname(current_dir)
 
 
-def zip_dist(dist_folder):
-    zip_name = dist_folder + ".zip"
-    with zipfile.ZipFile(zip_name, 'w') as zipf:
-        for root, dirs, files in os.walk(dist_folder):
-            for file in files:
-                zipf.write(os.path.join(root, file))
-    print "Dist zipped successfully to:", zip_name
-
-
 def get_svn_revision(folder='.'):
     p = subprocess.Popen(["svnversion", folder, '-n'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
@@ -126,7 +117,8 @@ if __name__ == "__main__":
     if decision != 'y':
         sys.exit(0)
 
-    zip_dist(dist_folder)
+    zip_folder = shutil.make_archive(dist_folder, "zip", dist_folder)
+    print "Dist zipped successfully to:", zip_folder
 
     print "Removing dist folder..."
     shutil.rmtree(dist_folder)
