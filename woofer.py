@@ -124,15 +124,17 @@ def application_start(environment):
 
     if components.vlc.dll is None:
         if os.name == 'nt':
-            logger.error(u"LibVLC dll not found, dll instance is None!")
+            logger.error(u"LibVLC dll not found, dll instance is None! Working path: %s" % os.getcwd())
             msgBox = QMessageBox()
+            msgBox.setTextFormat(Qt.RichText)
             msgBox.setIcon(QMessageBox.Critical)
             msgBox.setWindowTitle(u"Critical error")
             msgBox.setText(u"Woofer player was unable to find core playback DLL libraries!")
             msgBox.setInformativeText(u"If you are using distributed binary package, "
                                       u"please report this issue on www.wooferplayer.com immediately. "
-                                      u"You can try to install VLC media player as temporary workaround. "
-                                      u"Woofer player can use their libraries.")
+                                      u"You can try to install "
+                                      u"<a href='http://www.videolan.org/vlc/#download'>VLC media player</a> "
+                                      u"as temporary workaround. Woofer player can use their libraries.")
             msgBox.exec_()
         elif os.name == 'posix':
             logger.warning(u"Libvlc background not found!")
