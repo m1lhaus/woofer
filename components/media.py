@@ -14,6 +14,10 @@ import random
 from PyQt4.QtCore import *
 
 from components import vlc
+
+# print vlc.dll
+# print vlc.dll
+
 from tools.misc import unicode2bytes
 
 logger = logging.getLogger(__name__)

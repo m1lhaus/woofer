@@ -12,7 +12,6 @@ import sys
 import os
 import logging
 import components.log
-from tools.misc import RedirectDescriptor
 
 
 if sys.version_info < (2, 7) or sys.version_info >= (3, 0):
@@ -62,6 +61,8 @@ elif os.name == 'posix':
     except ImportError, e:
         raise Exception(u"%s! Python-Xlib libraries are required on Linux platform!" % e.message)
 
+
+import components.vlc               # import for libvlc check
 from dialogs import main_dialog
 
 
@@ -121,17 +122,37 @@ def application_start(environment):
 
     logger.debug(u"No other instance is running. Initializing Qt application.")
 
-    main = main_dialog.MainApp()
-    main.show()
+    if components.vlc.dll is None:
+        if os.name == 'nt':
+            logger.error(u"LibVLC dll not found, dll instance is None!")
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Critical)
+            msgBox.setWindowTitle(u"Critical error")
+            msgBox.setText(u"Woofer player was unable to find core playback DLL libraries!")
+            msgBox.setInformativeText(u"If you are using distributed binary package, "
+                                      u"please report this issue on www.wooferplayer.com immediately. "
+                                      u"You can try to install VLC media player as temporary workaround. "
+                                      u"Woofer player can use their libraries.")
+            msgBox.exec_()
+        elif os.name == 'posix':
+            logger.warning(u"Libvlc background not found!")
+            msgBox = QMessageBox()
+            msgBox.setTextFormat(Qt.RichText)
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setWindowTitle(u"Dependency not found")
+            msgBox.setText(u"Woofer player was unable to find core LibVLC libraries!")
+            msgBox.setInformativeText(u"Please install appropriate VLC media player 2.x from your repository "
+                                      u"or you can download last version directly from "
+                                      u"<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
+            msgBox.exec_()
+    else:
 
-    logger.debug(u"Starting MainThread loop...")
-
-    app.exec_()
-
-    logger.debug(u"MainThread loop stopped. Application has been closed successfully.")
+        main = main_dialog.MainApp()
+        main.show()
+        logger.debug(u"Starting MainThread loop...")
+        app.exec_()
+        logger.debug(u"MainThread loop stopped. Application has been closed successfully.")
 
 
 if __name__ == "__main__":
-    # StdErrRedirector.redirect_C_stderr_null()
     application_start('PRODUCTION')
-    # StdErrRedirector.redirect_C_stderr_back()
