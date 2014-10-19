@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-The script is used as automated platform independent dist builder.
+The script is used as automated  dist builder for Windows only .
 Uses pyinstaller python module to build dependency independent binaries.
 Optionally built dist could be zipped.
 """
@@ -14,8 +14,12 @@ import zipfile
 import platform
 import shutil
 
+os.chdir("..")
+print "Working directory set to: ", os.getcwd()
+
 
 PRJ_SPEC_FILE = "woofer.spec"
+PYINSTALLER_EXE_NAME = "pyinstaller"
 
 
 def which(program):
@@ -83,14 +87,14 @@ def main():
 
     print "Trying to find PyInstaller executable in system PATH..."
 
-    pyinstaller_exe = which('pyinstaller')
+    pyinstaller_exe = which(PYINSTALLER_EXE_NAME)
     if not pyinstaller_exe:
         raise Exception("PyInstaller executable not found in system PATH!")
     else:
         print "PyInstaller executable found at:", pyinstaller_exe
 
-    spec_file = os.path.join(os.getcwd(), PRJ_SPEC_FILE)
-    dist_folder = os.path.join(os.getcwd(), "dist", "woofer")
+    spec_file = os.path.join(os.getcwd(), "build", PRJ_SPEC_FILE)
+    dist_path = os.path.join(os.getcwd(), "dist", "woofer")
     if not os.path.isfile(spec_file):
         raise Exception("Unable to locate spec file at: %s" % spec_file)
     else:
@@ -98,6 +102,7 @@ def main():
 
     print "Building dist..."
     print "=" * 100
+
     process = subprocess.Popen([pyinstaller_exe, spec_file, '-y', '--clean'], stdout=sys.stdout, stderr=sys.stderr)
     retcode = process.wait()
 
@@ -105,23 +110,26 @@ def main():
     if retcode != 0:
         raise Exception("Building finished with error code: %s!!!" % retcode)
 
-    new_dist_name = os.path.join(os.getcwd(), "dist", "woofer_%s_rev%s" % (platform.architecture()[0], svn_rev))
-    if os.path.isdir(new_dist_name):
-        shutil.rmtree(new_dist_name)
-    os.rename(dist_folder, new_dist_name)
-    dist_folder = new_dist_name
+    new_dist_path = os.path.join(os.getcwd(), "build", "release", "woofer_%s_rev%s"
+                                 % (platform.architecture()[0], svn_rev))
+    if os.path.isdir(new_dist_path):
+        shutil.rmtree(new_dist_path)
+    shutil.move(dist_path, new_dist_path)
 
-    print "Dist package successfully built to:", dist_folder
+    dist_path = new_dist_path
+
+    print "Dist package successfully built to:", dist_path
 
     decision = raw_input("Are you want to ZIP built dist folder? (y/n) ")
     if decision != 'y':
         return
 
-    zip_folder = shutil.make_archive(dist_folder, "zip", dist_folder)
+    zip_folder = shutil.make_archive(dist_path, "zip", dist_path)
     print "Dist zipped successfully to:", zip_folder
 
     print "Removing dist folder..."
-    shutil.rmtree(dist_folder)
+    shutil.rmtree(dist_path)
+    shutil.rmtree(os.path.join(os.getcwd(), "dist"))
 
 
 if __name__ == "__main__":
