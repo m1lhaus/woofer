@@ -144,10 +144,11 @@ def find_lib():
                 os.chdir(p)
             else:  # may fail
                 cwd = os.getcwd()
-                plugin_path = os.path.join(os.getcwd(), 'vlc', 'win')
-                os.chdir(plugin_path)
-                dll = ctypes.CDLL('libvlc.dll')
-                os.chdir(cwd)
+                plugin_path = os.path.join(os.getcwd(), 'libvlc', 'win')
+                if os.path.isdir(plugin_path):
+                    os.chdir(plugin_path)
+                    dll = ctypes.CDLL('libvlc.dll')
+                    os.chdir(cwd)
         else:
             plugin_path = os.path.dirname(p)
             dll = ctypes.CDLL(p)
