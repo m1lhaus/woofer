@@ -14,11 +14,8 @@ import random
 from PyQt4.QtCore import *
 
 from components import vlc
+import tools
 
-# print vlc.dll
-# print vlc.dll
-
-from tools.misc import unicode2bytes
 
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
@@ -31,7 +28,8 @@ class MediaPlayer(QObject):
 
     TICK_INTERVAL = 1000        # in ms
 
-    error = pyqtSignal(str)
+    # error = pyqtSignal(str)
+    errorEncountered = pyqtSignal(int, unicode, unicode)        # (Message.CRITICAL, main_text, description)
     tick = pyqtSignal(int)
 
     mediaAdded = pyqtSignal(list, bool)
@@ -59,9 +57,9 @@ class MediaPlayer(QObject):
         """@type: vlc.MediaList"""
         logger.debug(u"Core instances of VLC player created")
 
-        self.id_playlist = []
-        self.playlist_pointer = 0        # points which media in idPlaylist is being played
-        self.playlist_len = 0
+        self.shuffled_playlist = []
+        self.shuffled_playlist_current_index = 0        # points which media in idPlaylist is being played
+        # self.playlist_len = 0
 
         self.is_playing = False
         self.is_paused = False
@@ -70,6 +68,7 @@ class MediaPlayer(QObject):
         self.appending_mode = True      # flag that says if newly added media has been appended
         self.shuffle_mode = False
         self.repeat_mode = False
+        self.player_is_empty = True
 
         self.endReached.connect(self.next)
         self.playing.connect(self.__playingSlot)
@@ -127,15 +126,16 @@ class MediaPlayer(QObject):
 
             self._media_list.lock()
             for path in mList:
-                unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
+                unicode_path, byte_path = tools.unicode2bytes(path)       # fix Windows encoding issues
                 # vlc will parse media automatically if needed (before playing)
                 self._media_list.add_media(byte_path)
 
             # set previous current media now as current
-            media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
+            media = self._media_list.item_at_index(self.shuffled_playlist[self.shuffled_playlist_current_index])
             self._media_list.unlock()
 
             self._media_player.set_media(media)
+            self.player_is_empty = False
             media.release()
             logger.debug(u"Media added successfully")
 
@@ -147,73 +147,96 @@ class MediaPlayer(QObject):
                 self._media_list.add_media(media)
                 media.release()
 
-                self.id_playlist.append(self.playlist_len)        # new media is on the end of the list
-                self.playlist_len += 1
+                self.shuffled_playlist.append(len(self.shuffled_playlist))        # new media is on the end of the list
+                # self.playlist_len += 1
                 export.append((path, media.get_duration()))
             self._media_list.unlock()
 
             self.mediaAdded.emit(export, self.append_media)
 
             # set set_mode, set media and switch to append mode for next iteration
-            if not self.append_media:
+            if not self.append_media or self.player_is_empty:
                 path, media = mList[0]
                 logger.debug(u"Setting current media %s", path)
                 self._media_player.set_media(media)
+                self.player_is_empty = False
                 self.append_media = True
                 self.play()         # in set_mode, Play or Play All has been chosen => play()
 
-    def removeItem(self, index):
+    def removeItem(self, remove_index):
         """
         Removes item from media list by index.
         If media is currently being played, next media is played.
         If there is no next media, playing is stopped.
-        @param index: index of removed item in media_list
-        @type index: int
+        @param remove_index: index of removed item in media_list
+        @type remove_index: int
         """
-        logger.debug(u"Removing media item in index: %s", index)
+        logger.debug(u"Removing media item in index: %s", remove_index)
 
-        # get removed and current mrl for comparison
-        playedMedia = self._media_player.get_media()
+        mustChangeSong = False
+        restore_playing = self.is_playing
+        current_index = self.shuffled_playlist[self.shuffled_playlist_current_index]
+
+        # remove media from player if media is currently being played
+        if remove_index == current_index:
+            mustChangeSong = True
+            self._media_player.stop()
+            self._media_player.set_media(None)
+            self.player_is_empty = True
+
+        # remove media from _media_list
         self._media_list.lock()
-        removedMedia = self._media_list.item_at_index(index)
+        remove_error = self._media_list.remove_index(remove_index) == -1
         self._media_list.unlock()
-        playedMrl = playedMedia.get_mrl()
-        removedMrl = removedMedia.get_mrl()
-        playedMedia.release()
-        removedMedia.release()
 
-        mustChangeSong = True if playedMrl == removedMrl else False
+        if remove_error:
+            logger.error(u"Unable remove item from _media_list. "
+                         u"Item is not in the list or _media_list is read only! "
+                         u"Playlist len: %s, index: %s" % (len(self.shuffled_playlist), remove_index))
+            self.errorEncountered.emit(tools.Message.CRITICAL,
+                                       u"Unable remove item from _media_list. "
+                                       u"Item is not in the list or _media_list is read only!",
+                                       u"playlist len: %s, removed index: %s" % (len(self.shuffled_playlist), remove_index))
 
         self._media_list.lock()
-        self._media_list.remove_index(index)
-        count = self._media_list.count()
+        new_playlist_len = self._media_list.count()
         self._media_list.unlock()
 
-        # remove id from id_playlist
-        for i in xrange(len(self.id_playlist)):
-            if self.id_playlist[i] == index:
-                del self.id_playlist[i]
-                self.id_playlist[i:] = [x-1 for x in self.id_playlist[i:]]    # faster way than iterate over whole array
+        # remove media reference from shuffled_playlist[]
+        for i in xrange(len(self.shuffled_playlist)):
+            if self.shuffled_playlist[i] == remove_index:
+                del self.shuffled_playlist[i]
+                # faster way than iterate over whole array
+                self.shuffled_playlist[i:] = [x-1 for x in self.shuffled_playlist[i:]]
                 break
-        self.playlist_len -= 1
+        # self.playlist_len -= 1
 
         # change song if removed == played, but stop if there is no next song
         if mustChangeSong:
-            self.play(index) if index < count else self.stop()
+            if remove_index < new_playlist_len:
+                logger.debug(u"Currently playlist media has been removed from playlist, selecting next one.")
+                if restore_playing:
+                    self.play(item_playlist_id=remove_index)
+                else:
+                    self.next(playlist_index=remove_index)
+            else:
+                self.shuffled_playlist_current_index = 0
+                logger.debug(u"Last item from playlist has been removed. Playing remains stopped.")
 
     def clearMediaList(self):
         """
         Clears all existing items in media_list
         """
-        logger.debug(u"Clearing media_list")
+        logger.debug(u"Clearing _media_list")
         self.stop()
         self._media_list.release()                              # delete old media list
         self._media_list = self.instance.media_list_new()       # create new and empty list
         self._media_player.set_media(None)
+        self.player_is_empty = True
 
-        self.id_playlist = []
-        self.playlist_len = 0
-        self.playlist_pointer = 0
+        self.shuffled_playlist = []
+        # self.playlist_len = 0
+        self.shuffled_playlist_current_index = 0
 
     def getMrl(self):
         """
@@ -265,8 +288,9 @@ class MediaPlayer(QObject):
             self._media_player.stop()
             play_media = self._media_list.item_at_index(item_playlist_id)
             self._media_player.set_media(play_media)
+            self.player_is_empty = False
             play_media.release()
-            self.playlist_pointer = self.id_playlist.index(item_playlist_id)    # find item in playlist
+            self.shuffled_playlist_current_index = self.shuffled_playlist.index(item_playlist_id)    # find item in playlist
         else:
             logger.debug(u"Play method called")
 
@@ -289,13 +313,22 @@ class MediaPlayer(QObject):
         self._media_player.stop()
 
     @pyqtSlot(bool)
-    def next(self, repeat=False):
+    def next(self, repeat=False, playlist_index=None):
         """
         Switches to next media in media_list if any.
         @param repeat: if set, current media is played again
         @type repeat: bool
         """
-        if repeat:
+        if playlist_index is not None:
+            logger.debug(u"Setting next media to play by playlist_id: %s" % playlist_index)
+            self._media_player.stop()
+            play_media = self._media_list.item_at_index(playlist_index)
+            self._media_player.set_media(play_media)
+            self.player_is_empty = False
+            play_media.release()
+            self.shuffled_playlist_current_index = self.shuffled_playlist.index(playlist_index)  # find item in playlist
+
+        elif repeat:
             logger.debug(u"Next media method called, repeating current song")
             self._media_player.stop()
             self._media_player.play()
@@ -306,10 +339,11 @@ class MediaPlayer(QObject):
             if self._media_player.is_playing():
                 self._media_player.stop()
 
-            if self.playlist_pointer + 1 < len(self.id_playlist):
-                self.playlist_pointer += 1
-                media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
+            if self.shuffled_playlist_current_index + 1 < len(self.shuffled_playlist):
+                self.shuffled_playlist_current_index += 1
+                media = self._media_list.item_at_index(self.shuffled_playlist[self.shuffled_playlist_current_index])
                 self._media_player.set_media(media)
+                self.player_is_empty = False
                 media.release()
                 self._media_player.play()
             else:
@@ -328,10 +362,11 @@ class MediaPlayer(QObject):
         if self._media_player.is_playing():
             self._media_player.stop()
 
-        if self.playlist_pointer - 1 >= 0:
-            self.playlist_pointer -= 1
-            media = self._media_list.item_at_index(self.id_playlist[self.playlist_pointer])
+        if self.shuffled_playlist_current_index - 1 >= 0:
+            self.shuffled_playlist_current_index -= 1
+            media = self._media_list.item_at_index(self.shuffled_playlist[self.shuffled_playlist_current_index])
             self._media_player.set_media(media)
+            self.player_is_empty = False
             media.release()
         else:
             logger.debug(u"There is no previous media (song) to play!")
@@ -458,17 +493,17 @@ class MediaPlayer(QObject):
         self.shuffle_mode = state
 
         # playlist is not empty
-        if self.id_playlist:
-            current_id = self.id_playlist[self.playlist_pointer]
+        if self.shuffled_playlist:
+            current_id = self.shuffled_playlist[self.shuffled_playlist_current_index]
 
             if state:
-                random.shuffle(self.id_playlist)
-                self.id_playlist.remove(current_id)
-                self.id_playlist.insert(0, current_id)
+                random.shuffle(self.shuffled_playlist)
+                self.shuffled_playlist.remove(current_id)
+                self.shuffled_playlist.insert(0, current_id)
                 logger.debug(u"SHUFFLE playback mode turned ON")
             else:
-                self.id_playlist = sorted(self.id_playlist)
-                self.playlist_pointer = current_id                          # id_playlist is range-type (sorted) array
+                self.shuffled_playlist = sorted(self.shuffled_playlist)
+                self.shuffled_playlist_current_index = current_id                          # id_playlist is range-type (sorted) array
                 logger.debug(u"SHUFFLE playback mode turned OFF")
 
     def setRepeat(self, state):
@@ -502,10 +537,10 @@ class MediaPlayer(QObject):
         # shuffle newly added media with the rest, which have not been played yet
         if self.appending_mode and self.shuffle_mode:
             logger.debug(u"Shuffling newly added media")
-            index = self.playlist_pointer+1
-            tmp_list = self.id_playlist[index:]
+            index = self.shuffled_playlist_current_index+1
+            tmp_list = self.shuffled_playlist[index:]
             random.shuffle(tmp_list)
-            self.id_playlist[index:] = tmp_list
+            self.shuffled_playlist[index:] = tmp_list
 
         elif not self.appending_mode and self.shuffle_mode:
             logger.debug(u"Newly added media which has not been appended are not shuffled. Shuffling...")
