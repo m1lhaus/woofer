@@ -10,6 +10,18 @@ import sys
 import send2trash
 
 
+class Message(object):
+    WARNING = 0
+    ERROR = 1
+    CRITICAL = 2
+
+
+class Sources(object):
+    FILES = 0
+    PLAYLISTS = 1
+    RADIO = 2
+
+
 def enum(*sequential, **named):
     """
     Automatically or manually numbered enums. Enums are numbered from zero.

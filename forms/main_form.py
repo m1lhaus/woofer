@@ -478,8 +478,9 @@ class MainForm(object):
         self.playlistSaveAction.setEnabled(False)
         self.playlistLoadAction = QAction(QIcon(u":/icons/open.png"), u"&Load playlist", MainWindow)
         self.playlistLoadAction.setEnabled(False)
-        self.playlistClearAction = QAction(QIcon(u":/icons/delete.png"), u"&Clear playlist", MainWindow)
+        self.playlistClearAction = QAction(QIcon(u":/icons/delete.png"), u"&Clear current playlist", MainWindow)
         self.toolsSettingsAction = QAction(QIcon(u":/icons/settings.png"), u"&Settings", MainWindow)
+        self.toolsSettingsAction.setEnabled(False)
         self.helpHelpAction = QAction(u"&Help", MainWindow)
         self.helpAboutAction = QAction(u"&About", MainWindow)
 
@@ -494,7 +495,9 @@ class MainForm(object):
         self.menuMedia.addAction(self.mediaQuitAction)
         # self.menuPlaylist.addActions([self.playlistPlayAction, self.playlistAddAction])
         # self.menuPlaylist.addSeparator()
-        self.menuPlaylist.addActions([self.playlistSaveAction, self.playlistLoadAction, self.playlistClearAction])
+        self.menuPlaylist.addActions([self.playlistSaveAction, self.playlistLoadAction])
+        self.menuPlaylist.addSeparator()
+        self.menuPlaylist.addAction(self.playlistClearAction)
         self.menuTools.addAction(self.toolsSettingsAction)
         self.menuHelp.addActions([self.helpHelpAction, self.helpAboutAction])
 
