@@ -10,29 +10,6 @@ import sys
 import send2trash
 
 
-class Message(object):
-    WARNING = 0
-    ERROR = 1
-    CRITICAL = 2
-
-
-class Sources(object):
-    FILES = 0
-    PLAYLISTS = 1
-    RADIO = 2
-
-
-def enum(*sequential, **named):
-    """
-    Automatically or manually numbered enums. Enums are numbered from zero.
-    Watch for number conflicts (auto + manual)!
-    @param sequential: (i.e. 'WARNING', 'ERROR', 'CRITICAL')
-    @param named: (i.e. DOG=100, CAT=101, MOUSE=102)
-    """
-    enums = dict(zip(sequential, range(len(sequential))), **named)
-    return type('Enum', (), enums)
-
-
 def moveToTrash(file_path):
     """
     Moves file/folder to Trash.
@@ -58,6 +35,24 @@ def unicode2bytes(string):
         unicode_str = unicode(string, "utf-8")
 
     return unicode_str, byte_str
+
+
+class ErrorMessages(object):
+    """
+    Error messages enums.
+    """
+    WARNING = 0
+    ERROR = 1
+    CRITICAL = 2
+
+
+class PlaybackSources(object):
+    """
+    Playback sources enums.
+    """
+    FILES = 0
+    PLAYLISTS = 1
+    RADIO = 2
 
 
 class RedirectDescriptor(object):
