@@ -148,6 +148,7 @@ def application_start(environment):
                                       u"<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
             msgBox.exec_()
     else:
+        logger.debug(u"Using libvlc dll found at: %s", components.vlc.plugin_path)
 
         main = main_dialog.MainApp()
         main.show()

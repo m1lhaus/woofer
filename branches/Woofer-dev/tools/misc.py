@@ -10,6 +10,47 @@ import sys
 import send2trash
 
 
+def check_binary_type(path):
+    """
+    Method reads PE header and get binary type (x32 vs x64)
+    @param path:
+    @return:
+    """
+    if not os.path.isfile(path):
+        return None
+
+    import struct
+
+    bin_type = None
+    IMAGE_FILE_MACHINE_I386 = 332
+    IMAGE_FILE_MACHINE_IA64 = 512
+    IMAGE_FILE_MACHINE_AMD64 = 34404
+
+    with open(path, "rb") as f:
+        s = f.read(2)
+        if s != "MZ":
+            print "check_binary_type - Not an EXE file!"
+
+        else:
+            f.seek(60)
+            s = f.read(4)
+            header_offset = struct.unpack("<L", s)[0]
+            f.seek(header_offset + 4)
+            s = f.read(2)
+            machine = struct.unpack("<H", s)[0]
+
+            if machine == IMAGE_FILE_MACHINE_I386:
+                bin_type = "IA-32 (32-bit x86)"
+            elif machine == IMAGE_FILE_MACHINE_IA64:
+                bin_type = "IA-64 (Itanium)"
+            elif machine == IMAGE_FILE_MACHINE_AMD64:
+                bin_type = "AMD64 (64-bit x86)"
+            else:
+                bin_type = "Unknown"
+
+    return bin_type
+
+
 def moveToTrash(file_path):
     """
     Moves file/folder to Trash.
