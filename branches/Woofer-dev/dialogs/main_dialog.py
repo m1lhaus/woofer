@@ -75,22 +75,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         QTimer.singleShot(25, self.loadSettingsQueued)
         logger.debug(u"Main application dialog initialized")
 
-    @pyqtSlot()
-    def displayVolumePopup(self):
-        """
-        Called when user clicks on volume button.
-        Opens popup with mute button and volume slider
-        """
-        newPos = self.volumeBtn.pos()
-        newPos = self.controlsFrame.mapToGlobal(newPos)
-        newPos = newPos - QPoint(self.volumePopup.width()/2, self.volumePopup.height())
-
-        self.volumePopup.move(newPos)
-        self.volumePopup.show()
-
-        self.volumePopup.activateWindow()
-        self.volumePopup.setFocus()
-
     def setupGUISignals(self):
         """
         Connects GUI components with desired slots.
@@ -735,6 +719,22 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.close()
 
     @pyqtSlot()
+    def displayVolumePopup(self):
+        """
+        Called when user clicks on volume button.
+        Opens popup with mute button and volume slider
+        """
+        newPos = self.volumeBtn.pos()
+        newPos = self.controlsFrame.mapToGlobal(newPos)
+        newPos = newPos - QPoint(self.volumePopup.width()/2, self.volumePopup.height())
+
+        self.volumePopup.move(newPos)
+        self.volumePopup.show()
+
+        self.volumePopup.activateWindow()
+        self.volumePopup.setFocus()
+
+    @pyqtSlot()
     def clearErrorMsg(self):
         """
         Called to clear statusbar after displaying error message (widgets).
@@ -979,7 +979,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         text = u"Woofer player is <strong>free and open-source cross-platform</strong> music player that plays most multimedia files, " \
                u"CDs, DVDs and also various online streams. Whole written in Python and Qt provides easy, reliable, " \
-               u"and high quality playback thanks to LibVLC library developed by VideoLAN community. <br/>" \
+               u"and high quality playback thanks to LibVLC library developed by VideoLAN community. " \
                u"Woofer is distributed under: TODO!<br/>" \
                u"<br/>" \
                u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
