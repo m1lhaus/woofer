@@ -730,8 +730,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             msgBox.setText(text)
             msgBox.setInformativeText(details)
             msgBox.exec_()
-
-            raise Exception(text)
+            self.close()
 
     @pyqtSlot()
     def clearErrorMsg(self):

@@ -190,7 +190,7 @@ class MediaPlayer(QObject):
         self._media_list.unlock()
 
         if remove_error:
-            logger.error(u"Unable remove item from _media_list. "
+            logger.error(u"Unable to remove item from _media_list. "
                          u"Item is not in the list or _media_list is read only! "
                          u"Playlist len: %s, index: %s" % (len(self.shuffled_playlist), remove_index))
             self.errorEncountered.emit(tools.ErrorMessages.CRITICAL,
