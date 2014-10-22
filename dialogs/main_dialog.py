@@ -134,6 +134,8 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.playlistClearAction.triggered.connect(self.clearPlaylist)
 
+        self.helpAboutAction.triggered.connect(self.openAboutDialog)
+
     def setupSystemHook(self):
         """
         Initializes system-wide keyboard hook, which listens for media control keys (Media_Play_Pause,
@@ -965,6 +967,43 @@ class MainApp(QMainWindow, main_form.MainForm):
 
             self.mediaMuteAction.setText(u"Mute")
             self.mediaMuteAction.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
+
+    @pyqtSlot()
+    def openAboutDialog(self):
+        logger.debug(u"Opening 'About' dialog")
+        aboutDialog = QDialog(self,  Qt.WindowSystemMenuHint | Qt.WindowTitleHint)
+        aboutDialog.setWindowTitle(u"About Woofer player")
+
+        layout = QHBoxLayout()
+        layout.setMargin(20)
+
+        text = u"Woofer player is <strong>free and open-source cross-platform</strong> music player that plays most multimedia files, " \
+               u"CDs, DVDs and also various online streams. Whole written in Python and Qt provides easy, reliable, " \
+               u"and high quality playback thanks to LibVLC library developed by VideoLAN community. <br/>" \
+               u"Woofer is distributed under: TODO!<br/>" \
+               u"<br/>" \
+               u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
+               u"Web: <a href='http://www.wooferplayer.com'>www.wooferplayer.com</a><br/>" \
+               u"Source: GitHub repository"
+
+        textLabel = QLabel()
+        textLabel.setTextFormat(Qt.RichText)
+        textLabel.setWordWrap(True)
+        textLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        textLabel.setText(text)
+
+        iconLabel = QLabel()
+        iconLabel.setPixmap(QPixmap(u":/icons/app_icon.png").scaled(128, 128, transformMode=Qt.SmoothTransformation))
+        iconLabel.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+        layout.addWidget(iconLabel)
+        layout.addWidget(textLabel)
+
+        aboutDialog.setLayout(layout)
+        aboutDialog.setFixedWidth(480)
+        aboutDialog.setFixedHeight(aboutDialog.minimumSizeHint().height())
+        aboutDialog.exec_()
+        logger.debug(u"'About' dialog closed")
 
     def closeEvent(self, event):
         """
