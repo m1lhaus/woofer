@@ -979,12 +979,12 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         text = u"Woofer player is <strong>free and open-source cross-platform</strong> music player that plays most multimedia files, " \
                u"CDs, DVDs and also various online streams. Whole written in Python and Qt provides easy, reliable, " \
-               u"and high quality playback thanks to LibVLC library developed by VideoLAN community. " \
-               u"Woofer is distributed under: TODO!<br/>" \
+               u"and high quality playback thanks to LibVLC library developed by VideoLAN community.<br/>" \
                u"<br/>" \
                u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
                u"Web: <a href='http://www.wooferplayer.com'>www.wooferplayer.com</a><br/>" \
-               u"Source: GitHub repository"
+               u"Source: GitHub repository &lt; LICENCE &gt;<br/>" \
+               u"Version: 0.7a"         # todo: get version and build information globally
 
         textLabel = QLabel()
         textLabel.setTextFormat(Qt.RichText)
