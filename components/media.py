@@ -13,7 +13,7 @@ import random
 
 from PyQt4.QtCore import *
 
-from components import vlc
+from components import libvlc
 import tools
 
 
@@ -49,7 +49,7 @@ class MediaPlayer(QObject):
     def __init__(self, parent=None):
         super(MediaPlayer, self).__init__(parent)
 
-        self.instance = vlc.Instance()
+        self.instance = libvlc.Instance()
         """@type: vlc.Instance"""
         self._media_player = self.instance.media_player_new()
         """@type: vlc.MediaPlayer"""
@@ -88,25 +88,25 @@ class MediaPlayer(QObject):
         #                                              self.playerStateChanged)
         # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBuffering,
         #                                              self.playerStateChanged)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPlaying,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerPlaying,
                                                      self.__playingCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPaused,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerPaused,
                                                      self.__pausedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerStopped,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerStopped,
                                                      self.__stoppedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerForward,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerForward,
                                                      self.__forwardCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBackward,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerBackward,
                                                      self.__backwardCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerEndReached,
                                                      self.__endReachedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerEncounteredError,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerEncounteredError,
                                                      self.__errorCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerTimeChanged,
                                                      self.__timeChangedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerPositionChanged,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerPositionChanged,
                                                      self.__positionChangedCallback)
-        self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerMediaChanged,
+        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerMediaChanged,
                                                      self.__mediaChangedCallback)
 
     @pyqtSlot(list)
@@ -117,7 +117,7 @@ class MediaPlayer(QObject):
         when last session is restored on application start.
         @param restoring_session: flag when method is called manually to restore playlist from saved session
         @param mList: list of (unicode_path, media_object) or list of (unicode_path)
-        @type mList: list of (unicode, vlc.Media) or list of (unicode)
+        @type mList: list of (unicode, libvlc.Media) or list of (unicode)
         """
 
         # when restoring session, no parsed media files are available, but vlc takes both vlc.Media and mrl
@@ -255,7 +255,7 @@ class MediaPlayer(QObject):
         Get the media used by the media_player.
         Media reference counter will +1 => media should be released after usage!
         @return: the media associated with p_mi, or None if no media is associated.
-        @rtype: vlc.Media or None
+        @rtype: libvlc.Media or None
         """
         return self._media_player.get_media()
 
@@ -664,7 +664,7 @@ class MediaParser(QObject):
 
     def __init__(self):
         super(MediaParser, self).__init__()
-        self.vlcInstance = vlc.Instance()
+        self.vlcInstance = libvlc.Instance()
         self._mutex = QMutex()
         self._cancel = False
 

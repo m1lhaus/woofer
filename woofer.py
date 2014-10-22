@@ -62,7 +62,7 @@ elif os.name == 'posix':
         raise Exception(u"%s! Python-Xlib libraries are required on Linux platform!" % e.message)
 
 
-import components.vlc               # import for libvlc check
+import components.libvlc               # import for libvlc check
 from dialogs import main_dialog
 
 
@@ -122,7 +122,7 @@ def application_start(environment):
 
     logger.debug(u"No other instance is running. Initializing Qt application.")
 
-    if components.vlc.dll is None:
+    if components.libvlc.dll is None:
         if os.name == 'nt':
             logger.error(u"LibVLC dll not found, dll instance is None! Working path: %s" % os.getcwd())
             msgBox = QMessageBox()
@@ -148,7 +148,7 @@ def application_start(environment):
                                       u"<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
             msgBox.exec_()
     else:
-        logger.debug(u"Using libvlc dll found at: %s", components.vlc.plugin_path)
+        logger.debug(u"Using libvlc dll found at: %s", components.libvlc.plugin_path)
 
         main = main_dialog.MainApp()
         main.show()
