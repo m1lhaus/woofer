@@ -112,8 +112,6 @@ def find_lib():
             except OSError:  # may fail
                 dll = ctypes.CDLL('libvlc.so.5')
 
-            # plugin_path = os.path.dirname(path_to_lib)        # fixme: test on Linux !!!
-
     #########    WINDOWS    ###############
     elif sys.platform.startswith('win'):
         found_dll = False
