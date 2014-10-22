@@ -102,7 +102,6 @@ def find_lib():
     dll = None
     plugin_path = None
 
-
     #########    LINUX    ###############
     if sys.platform.startswith('linux'):
         path_to_lib = find_library('vlc')
@@ -114,60 +113,81 @@ def find_lib():
 
     #########    WINDOWS    ###############
     elif sys.platform.startswith('win'):
-        found_dll = False
+        # load libvlc.dll shipped with woofer
+        libvlc_found = False
         python_bin_type = check_binary_type(sys.executable)
-        path_to_lib = find_library('libvlc.dll')
+        cwd = os.getcwd()
 
-        # if lib not found, try registry
-        if path_to_lib is None:
-            try:  # some registry settings
-                # leaner than win32api, win32con
-                if PYTHON3:
-                    import winreg as w
-                else:
-                    import _winreg as w
-                for r in w.HKEY_LOCAL_MACHINE, w.HKEY_CURRENT_USER:
-                    try:
-                        r = w.OpenKey(r, 'Software\\VideoLAN\\VLC')
-                        plugin_path, _ = w.QueryValueEx(r, 'InstallDir')
-                        w.CloseKey(r)
-                        break
-                    except w.error:
-                        pass
-            except ImportError:  # no PyWin32
-                pass
-            if plugin_path is None:
-                 # try some standard locations.
-                for path_to_lib in ('Program Files\\VideoLan\\', 'VideoLan\\', 'Program Files\\',''):
-                    path_to_lib = 'C:\\' + path_to_lib + 'VLC\\libvlc.dll'
-                    if os.path.exists(path_to_lib):
-                        plugin_path = os.path.dirname(path_to_lib)
-                        break
-
-            # found dll or VLC location
-            if plugin_path is not None:  # try loading
-                path_to_lib = os.getcwd()
-                os.chdir(plugin_path)
-                if check_binary_type('libvlc.dll') == python_bin_type:
-                    dll = ctypes.CDLL('libvlc.dll')
-                    found_dll = True
-                os.chdir(path_to_lib)
-
-        else:
-            plugin_path = os.path.dirname(path_to_lib)
-            if check_binary_type(path_to_lib) == python_bin_type:
-                dll = ctypes.CDLL(path_to_lib)
-                found_dll = True
-
-        # if all attempts to retrieve binary-suited dll, used dll shipped with Woofer
-        if not found_dll:
-            cwd = os.getcwd()
-            plugin_path = os.path.join(os.getcwd(), 'libvlc', 'win')
-            if os.path.isdir(plugin_path):
-                os.chdir(plugin_path)
-                assert check_binary_type('libvlc.dll') == python_bin_type
+        plugin_path = os.path.join(os.getcwd(), 'libvlc', 'win')
+        dll_path = os.path.join(plugin_path, 'libvlc.dll')
+        if os.path.isdir(plugin_path) and os.path.isfile(dll_path):
+            os.chdir(plugin_path)
+            assert check_binary_type(dll_path) == python_bin_type
+            try:
                 dll = ctypes.CDLL('libvlc.dll')
-                os.chdir(cwd)
+                libvlc_found = True
+            except WindowsError, e:
+                print >> sys.stderr, u"libvlc.py :: Unable to load packed libvlc.dll in '%s'. WindowsError [%s]: %s" % \
+                                     (plugin_path, e.errno, unicode(e.strerror, sys.getfilesystemencoding()))
+            os.chdir(cwd)
+        else:
+            print >> sys.stderr, u"libvlc.py :: Unable to load packed libvlc.dll in '%s'. " \
+                                 u"File or folder doesn't exist!" % plugin_path
+
+        # try backup solution - look for VLC media player dll
+        if not libvlc_found:
+            plugin_path = None
+            dll = None
+            path_to_lib = find_library('libvlc.dll')
+
+            # if lib not found, try registry
+            if path_to_lib is None:
+                try:  # some registry settings
+                    # leaner than win32api, win32con
+                    if PYTHON3:
+                        import winreg as w
+                    else:
+                        import _winreg as w
+                    for r in w.HKEY_LOCAL_MACHINE, w.HKEY_CURRENT_USER:
+                        try:
+                            r = w.OpenKey(r, 'Software\\VideoLAN\\VLC')
+                            plugin_path, _ = w.QueryValueEx(r, 'InstallDir')
+                            w.CloseKey(r)
+                            break
+                        except w.error:
+                            pass
+                except ImportError:  # no PyWin32
+                    pass
+                if plugin_path is None:
+                     # try some standard locations.
+                    for path_to_lib in ('Program Files\\VideoLan\\', 'VideoLan\\', 'Program Files\\',''):
+                        path_to_lib = 'C:\\' + path_to_lib + 'VLC\\libvlc.dll'
+                        if os.path.exists(path_to_lib):
+                            plugin_path = os.path.dirname(path_to_lib)
+                            break
+
+                # found dll or VLC location
+                if plugin_path is not None:  # try loading
+                    path_to_lib = os.getcwd()
+                    os.chdir(plugin_path)
+                    if check_binary_type('libvlc.dll') == python_bin_type:
+                        try:
+                            dll = ctypes.CDLL('libvlc.dll')
+                        except WindowsError, e:
+                            print >> sys.stderr, u"libvlc.py :: Unable to found libvlc.dll in '%s'. " \
+                                                 u"WindowsError [%s]: %s" % \
+                                                 (plugin_path, e.errno, unicode(e.strerror, sys.getfilesystemencoding()))
+                    os.chdir(path_to_lib)
+
+            else:
+                plugin_path = os.path.dirname(path_to_lib)
+                if check_binary_type(path_to_lib) == python_bin_type:
+                    try:
+                        dll = ctypes.CDLL('libvlc.dll')
+                    except WindowsError, e:
+                        print >> sys.stderr, u"libvlc.py :: Unable to found libvlc.dll in '%s'. " \
+                                             u"WindowsError [%s]: %s" % \
+                                             (plugin_path, e.errno, unicode(e.strerror, sys.getfilesystemencoding()))
 
     else:
         raise NotImplementedError('%s: %s not supported' % (sys.argv[0], sys.platform))
@@ -175,7 +195,8 @@ def find_lib():
     return dll, plugin_path
 
 # plugin_path used on win32 and MacOS in override.py
-dll, plugin_path  = find_lib()
+dll, plugin_path = find_lib()
+
 
 class VLCException(Exception):
     """Exception raised by libvlc methods.
@@ -1367,10 +1388,13 @@ class Instance(_Ctype):
             else:
                 raise VLCException('Instance %r' % (args,))
 
-        if not args and plugin_path is not None:
-             # no parameters passed, for win32 and MacOS,
-             # specify the plugin_path if detected earlier
-            args = ['vlc', '--plugin-path=' + plugin_path]
+        # if not args and plugin_path is not None:
+            #  # no parameters passed, for win32 and MacOS,
+            #  # specify the plugin_path if detected earlier
+            # print plugin_path
+            #
+            # args = ['vlc', '--plugin-path=' + plugin_path]
+
         if PYTHON3:
             args = [ str_to_bytes(a) for a in args ]
         return libvlc_new(len(args), args)
