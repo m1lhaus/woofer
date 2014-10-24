@@ -32,8 +32,9 @@ logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
 
 
-FileExt = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma']
-FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma')
+# todo: add all supported formats by libVLC
+FileExt = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma', '*.mp4', '*.m4a']
+FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma', '.mp4', '.m4a')
 
 
 class MainApp(QMainWindow, main_form.MainForm):
