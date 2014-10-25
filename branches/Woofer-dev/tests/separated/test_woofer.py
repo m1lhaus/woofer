@@ -28,7 +28,7 @@ class TestWoofer(TestCase):
     def setUp(self):
         pass
 
-    def test_anotherInstanceIsRunning(self):
+    def test_obtainSharedMemoryLock(self):
         from woofer import obtainSharedMemoryLock
 
         sharedMemoryLock, error_str = obtainSharedMemoryLock()
@@ -50,6 +50,12 @@ class TestWoofer(TestCase):
             self.assertTrue(foundLibVLC())
         else:
             self.fail("This test is not implemented for Linux, yet!")
+
+    def test_displayAnotherInstanceError(self):
+        self.fail()
+
+    def test_displayLibVLCError(self):
+        self.fail()
 
 
 
