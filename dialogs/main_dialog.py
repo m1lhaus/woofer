@@ -20,6 +20,8 @@ from forms import main_form
 from dialogs import library_dialog
 from components import disk
 from components import media
+from components import scheduler
+
 import tools
 
 if os.name == "nt":
@@ -72,6 +74,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.setupFileBrowser(initModel=True)       # todo: future: set dynamically (from last session)
 
         self.loadSettings()
+        self.setupScheduledTasks()
 
         QTimer.singleShot(25, self.loadSettingsQueued)
         logger.debug(u"Main application dialog initialized")
@@ -171,6 +174,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parserThread = QThread(self)
         self.parser.moveToThread(self.parserThread)
 
+        # fixme: should connect before moveToThread called - cross thread access!
         self.scanFiles.connect(self.scanner.scanFiles)
         self.parser.finished.connect(self.clearProgress)
         self.parser.finished.connect(self.mediaPlayer.mediaAddingFinished)
@@ -179,6 +183,15 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.scannerThread.start()
         self.parserThread.start()
+
+    def setupScheduledTasks(self):
+        self.logCleaner = scheduler.LogCleaner()
+        self.logCleanerThread = QThread(self)
+        self.logCleanerThread.started.connect(self.logCleaner.start)
+        self.logCleaner.moveToThread(self.logCleanerThread)
+
+        self.logCleanerThread.start()
+
 
     def checkPaths(self):
         """
@@ -1017,6 +1030,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.scannerThread.quit()
         self.parserThread.quit()
         self.hkHookThread.quit()
+        self.logCleanerThread.quit()
 
         self.saveSettings()
 
