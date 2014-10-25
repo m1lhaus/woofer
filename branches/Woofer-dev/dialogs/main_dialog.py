@@ -186,6 +186,10 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parserThread.start()
 
     def setupScheduledTasks(self):
+        """
+        Setup scheduled tasks as update checker, logfile cleaner, etc.
+        All scheduled tasks live in separated threads.
+        """
         self.logCleaner = scheduler.LogCleaner()
         self.logCleanerThread = QThread(self)
         self.logCleanerThread.started.connect(self.logCleaner.start)

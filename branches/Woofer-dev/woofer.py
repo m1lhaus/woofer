@@ -67,34 +67,16 @@ from dialogs import main_dialog
 
 
 logger = logging.getLogger(__name__)
-# StdErrRedirector = RedirectDescriptor()
 
 
-# *******************************************
-# *******************************************
-# *******************************************
-# APPLICATION LAUNCHER
-# *******************************************
-# *******************************************
-# *******************************************
-# *******************************************
-
-
-def application_start(environment):
+def anotherInstanceIsRunning():
     """
-    Initializes Qt libraries and Woofer application.
-    @param environment: DEBUG or PRODUCTION string is expected
+    Checks, if another instance of Woofer player is running.
+    Tries to connect to existing shared memory (another WooferPlayer instance).
+    @rtype: bool
     """
-    components.log.setup_logging(environment)
-    logger.debug(u"Logger mode set to %s, now initializing main application loop.", environment)
-
-    app = QApplication(sys.argv)
-    app.setOrganizationName(u"WooferPlayer")
-    app.setOrganizationDomain(u"wooferplayer.com")
-    app.setApplicationName(u"Woofer")
-
-    # tries to connect to existing shared memory (another WooferPlayer instance)
     logger.debug(u"Checking if another instance is running...")
+
     sharedMemory = QSharedMemory()
     sharedMemory.setKey(u"wooferplayer.com")
     if sharedMemory.attach(QSharedMemory.ReadOnly):
@@ -106,7 +88,7 @@ def application_start(environment):
         msgBox.setInformativeText(u"If no instance of Woofer player is running, "
                                   u"please contact us on www.wooferplayer.com")
         msgBox.exec_()
-        return
+        return True
 
     logger.debug(u"Trying to create shared memory segment for id 'wooferplayer.com'")
     if not sharedMemory.create(1, QSharedMemory.ReadOnly):
@@ -118,43 +100,85 @@ def application_start(environment):
         msgBox.setText(u"Unable to create shared memory segment.\nReason: %s" % sharedMemory.errorString())
         msgBox.setInformativeText(u"Please contact us on www.wooferplayer.com for further information.")
         msgBox.exec_()
-        return
+        return True
 
     logger.debug(u"No other instance is running. Initializing Qt application.")
 
-    if components.libvlc.dll is None:
-        if os.name == 'nt':
-            logger.error(u"LibVLC dll not found, dll instance is None! Working path: %s" % os.getcwd())
-            msgBox = QMessageBox()
-            msgBox.setTextFormat(Qt.RichText)
-            msgBox.setIcon(QMessageBox.Critical)
-            msgBox.setWindowTitle(u"Critical error")
-            msgBox.setText(u"Woofer player was unable to find core playback DLL libraries!")
-            msgBox.setInformativeText(u"If you are using distributed binary package, "
-                                      u"please report this issue on www.wooferplayer.com immediately. "
-                                      u"You can try to install "
-                                      u"<a href='http://www.videolan.org/vlc/#download'>VLC media player</a> "
-                                      u"as temporary workaround. Woofer player can use their libraries.")
-            msgBox.exec_()
-        elif os.name == 'posix':
-            logger.warning(u"Libvlc background not found!")
-            msgBox = QMessageBox()
-            msgBox.setTextFormat(Qt.RichText)
-            msgBox.setIcon(QMessageBox.Warning)
-            msgBox.setWindowTitle(u"Dependency not found")
-            msgBox.setText(u"Woofer player was unable to find core LibVLC libraries!")
-            msgBox.setInformativeText(u"Please install appropriate VLC media player 2.x from your repository "
-                                      u"or you can download last version directly from "
-                                      u"<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
-            msgBox.exec_()
-    else:
-        logger.debug(u"Using libvlc dll found at: %s", components.libvlc.plugin_path)
+    return False
 
-        main = main_dialog.MainApp()
-        main.show()
-        logger.debug(u"Starting MainThread loop...")
-        app.exec_()
-        logger.debug(u"MainThread loop stopped. Application has been closed successfully.")
+
+def foundLibVLC():
+    """
+    Check if libvlc.py found valid dll.
+    @rtype: bool
+    """
+    if components.libvlc.dll is not None:
+        logger.debug(u"Using libvlc.dll found at: %s", components.libvlc.plugin_path)
+        return True
+    else:
+        return False
+
+
+def displayLibVLCError(platform):
+    if platform == 'nt':
+        logger.error(u"LibVLC dll not found, dll instance is None! Working path: %s" % os.getcwd())
+        msgBox = QMessageBox()
+        msgBox.setTextFormat(Qt.RichText)
+        msgBox.setIcon(QMessageBox.Critical)
+        msgBox.setWindowTitle(u"Critical error")
+        msgBox.setText(u"Woofer player was unable to find core playback DLL libraries!")
+        msgBox.setInformativeText(u"If you are using distributed binary package, "
+                                  u"please report this issue on www.wooferplayer.com immediately. "
+                                  u"You can try to install "
+                                  u"<a href='http://www.videolan.org/vlc/#download'>VLC media player</a> "
+                                  u"as temporary workaround. Woofer player can use their libraries.")
+        msgBox.exec_()
+    elif platform == 'posix':
+        logger.warning(u"Libvlc background not found!")
+        msgBox = QMessageBox()
+        msgBox.setTextFormat(Qt.RichText)
+        msgBox.setIcon(QMessageBox.Warning)
+        msgBox.setWindowTitle(u"Dependency not found")
+        msgBox.setText(u"Woofer player was unable to find core LibVLC libraries!")
+        msgBox.setInformativeText(u"Please install appropriate VLC media player 2.x from your repository "
+                                  u"or you can download last version directly from "
+                                  u"<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
+        msgBox.exec_()
+    else:
+        raise NotImplementedError("Unknown platform: %s" % platform)
+
+
+# *******************************************
+# APPLICATION LAUNCHER
+# *******************************************
+def application_start(environment):
+    """
+    Initializes Qt libraries and Woofer application.
+    @param environment: DEBUG or PRODUCTION string is expected
+    """
+    components.log.setup_logging(environment)
+    logger.debug(u"Logger mode set to %s, now initializing main application loop.", environment)
+
+    # init Qt application
+    app = QApplication(sys.argv)
+    app.setOrganizationName(u"WooferPlayer")
+    app.setOrganizationDomain(u"wooferplayer.com")
+    app.setApplicationName(u"Woofer")
+
+    if anotherInstanceIsRunning():
+        return True
+
+    if not foundLibVLC():
+        displayLibVLCError(os.name)
+        return True
+
+    # run the application
+    mainApp = main_dialog.MainApp()
+    mainApp.show()
+
+    logger.debug(u"Starting MainThread loop...")
+    app.exec_()
+    logger.debug(u"MainThread loop stopped. Application has been closed successfully.")
 
 
 if __name__ == "__main__":
