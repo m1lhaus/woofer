@@ -69,42 +69,20 @@ from dialogs import main_dialog
 logger = logging.getLogger(__name__)
 
 
-def anotherInstanceIsRunning():
-    """
-    Checks, if another instance of Woofer player is running.
-    Tries to connect to existing shared memory (another WooferPlayer instance).
-    @rtype: bool
-    """
+def obtainSharedMemoryLock():
     logger.debug(u"Checking if another instance is running...")
 
-    sharedMemory = QSharedMemory()
-    sharedMemory.setKey(u"wooferplayer.com")
-    if sharedMemory.attach(QSharedMemory.ReadOnly):
-        logger.debug(u"Another instance of Woofer Player is running! Closing application.")
-        msgBox = QMessageBox()
-        msgBox.setIcon(QMessageBox.Warning)
-        msgBox.setWindowTitle(u"Another instance is running")
-        msgBox.setText(u"Another instance of Woofer player is running.")
-        msgBox.setInformativeText(u"If no instance of Woofer player is running, "
-                                  u"please contact us on www.wooferplayer.com")
-        msgBox.exec_()
-        return True
+    shareMemoryLock = QSharedMemory()
+    shareMemoryLock.setKey(u"wooferplayer.com")
+    if shareMemoryLock.attach(QSharedMemory.ReadOnly):
+        return None, ""
 
     logger.debug(u"Trying to create shared memory segment for id 'wooferplayer.com'")
-    if not sharedMemory.create(1, QSharedMemory.ReadOnly):
-        logger.error(u"Unable to create shared memory segment, reason: %s", sharedMemory.errorString())
+    if not shareMemoryLock.create(1, QSharedMemory.ReadOnly):
+        return None, shareMemoryLock.errorString()
 
-        msgBox = QMessageBox()
-        msgBox.setIcon(QMessageBox.Critical)
-        msgBox.setWindowTitle(u"Initialization error")
-        msgBox.setText(u"Unable to create shared memory segment.\nReason: %s" % sharedMemory.errorString())
-        msgBox.setInformativeText(u"Please contact us on www.wooferplayer.com for further information.")
-        msgBox.exec_()
-        return True
-
-    logger.debug(u"No other instance is running. Initializing Qt application.")
-
-    return False
+    logger.debug(u"No other instance is running.")
+    return shareMemoryLock, ""
 
 
 def foundLibVLC():
@@ -117,6 +95,26 @@ def foundLibVLC():
         return True
     else:
         return False
+
+
+def displayAnotherInstanceError(error_str):
+    if not error_str:
+        logger.debug(u"Another instance of Woofer Player is running! Closing application.")
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Warning)
+        msgBox.setWindowTitle(u"Another instance is running")
+        msgBox.setText(u"Another instance of Woofer player is running.")
+        msgBox.setInformativeText(u"If no instance of Woofer player is running, "
+                                  u"please contact us on www.wooferplayer.com")
+        msgBox.exec_()
+    else:
+        logger.error(u"Unable to create shared memory segment, reason: %s", error_str)
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Critical)
+        msgBox.setWindowTitle(u"Initialization error")
+        msgBox.setText(u"Unable to create shared memory segment.\nReason: %s" % error_str)
+        msgBox.setInformativeText(u"Please contact us on www.wooferplayer.com for further information.")
+        msgBox.exec_()
 
 
 def displayLibVLCError(platform):
@@ -165,7 +163,9 @@ def startApplication(environment):
     app.setOrganizationDomain(u"wooferplayer.com")
     app.setApplicationName(u"Woofer")
 
-    if anotherInstanceIsRunning():
+    sharedMemoryLock, error_str = obtainSharedMemoryLock()
+    if not sharedMemoryLock:
+        displayAnotherInstanceError(error_str)
         return True
 
     if not foundLibVLC():
