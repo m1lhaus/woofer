@@ -168,18 +168,19 @@ class MainApp(QMainWindow, main_form.MainForm):
         # asynchronous scanner
         self.scanner = disk.RecursiveBrowser(nameFilter=FileExt_, followSym=False)
         self.scannerThread = QThread(self)
-        self.scanner.moveToThread(self.scannerThread)
+
         # asynchronous parser
         self.parser = media.MediaParser()
         self.parserThread = QThread(self)
-        self.parser.moveToThread(self.parserThread)
 
-        # fixme: should connect before moveToThread called - cross thread access!
         self.scanFiles.connect(self.scanner.scanFiles)
         self.parser.finished.connect(self.clearProgress)
         self.parser.finished.connect(self.mediaPlayer.mediaAddingFinished)
         self.parser.parsed.connect(self.mediaPlayer.addMedia)
         self.scanner.parseData.connect(self.parser.parseMedia)
+
+        self.scanner.moveToThread(self.scannerThread)
+        self.parser.moveToThread(self.parserThread)
 
         self.scannerThread.start()
         self.parserThread.start()
@@ -191,7 +192,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.logCleaner.moveToThread(self.logCleanerThread)
 
         self.logCleanerThread.start()
-
 
     def checkPaths(self):
         """
