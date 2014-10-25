@@ -12,4 +12,4 @@ import woofer
 
 
 if __name__ == "__main__":
-    woofer.application_start('DEBUG')
+    woofer.startApplication('DEBUG')

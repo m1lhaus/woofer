@@ -151,7 +151,7 @@ def displayLibVLCError(platform):
 # *******************************************
 # APPLICATION LAUNCHER
 # *******************************************
-def application_start(environment):
+def startApplication(environment):
     """
     Initializes Qt libraries and Woofer application.
     @param environment: DEBUG or PRODUCTION string is expected
@@ -182,4 +182,4 @@ def application_start(environment):
 
 
 if __name__ == "__main__":
-    application_start('PRODUCTION')
+    startApplication('PRODUCTION')
