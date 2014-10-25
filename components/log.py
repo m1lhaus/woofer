@@ -33,16 +33,16 @@ def setup_logging(mode):
     if not os.path.isdir(log_dir):
         os.mkdir(log_dir)
 
-    msg_format = u"%(threadName)-15s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
+    msg_format = u"%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
     console_formatter = logging.Formatter(msg_format)
 
     # --- BASIC CONFIGURATION ---
     if mode == "DEBUG":
-        log_path = os.path.join(log_dir, "debug_woofer_%s.log" % date.strftime("%Y-%m-%d"))
+        log_path = os.path.join(log_dir, "debug_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
         level = logging.DEBUG
     elif mode == "PRODUCTION":
         level = logging.WARNING
-        log_path = os.path.join(log_dir, "production_woofer_%s.log" % date.strftime("%Y-%m-%d"))
+        log_path = os.path.join(log_dir, "production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
     else:
         raise NotImplementedError(u"Logging mode is not implemented!")
 
