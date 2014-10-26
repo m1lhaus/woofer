@@ -7,8 +7,13 @@ def extra_datas(mydir):
             if os.path.isfile(d):
                 files.append(d)
             rec_glob("%s/*" % d, files)
+
     files = []
-    rec_glob("%s/*" % mydir, files)
+    if os.path.isfile(mydir):
+        files.append(mydir)
+    else:
+        rec_glob("%s/*" % mydir, files)
+
     extra_datas = []
     for f in files:
         extra_datas.append((f, f, 'DATA'))
@@ -24,6 +29,7 @@ a = Analysis(['woofer.py'],
 
 a.binaries = [x for x in a.binaries if not x[0].startswith("shell32")]		# shell32.dll is part of Windows
 a.datas += extra_datas('libvlc')
+a.datas += extra_datas('LICENSE.txt')
 
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
