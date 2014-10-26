@@ -46,37 +46,43 @@ class MainApp(QMainWindow, main_form.MainForm):
     - connects signals from dialogs widgets
     """
 
-    errorEncountered = pyqtSignal(int, unicode, unicode)        # (tools.Message.CRITICAL, main_text, description)
+    errorSignal = pyqtSignal(int, unicode, unicode)        # (tools.Message.CRITICAL, main_text, description)
     scanFiles = pyqtSignal(unicode)
 
     myComputerPathIndex = None
+    oldVolumeValue = 0
 
     WARNING_MSG_DELAY = 10000
     ERROR_MSG_DELAY = 20000
+    QUEUED_SETTINGS_DELAY = 100
 
     def __init__(self):
         super(MainApp, self).__init__()
-        self.appRootPath = os.path.dirname(sys.argv[0])
-        self.appDataPath = os.path.join(self.appRootPath, 'data')
-        self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
-        self.session_file = os.path.join(self.appDataPath, 'session.dat')
-        self.oldVolumeValue = 0
+        self.appRootPath = unicode(os.path.dirname(sys.argv[0]), sys.getfilesystemencoding())
+        self.appDataPath = os.path.join(self.appRootPath, u'data')
+        self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.json')
+        self.session_file = os.path.join(self.appDataPath, u'session.dat')
 
-        self.setupUi(self)          # setups all GUI components from form (design part)
-        self.setupPlayer()
+        self.mediaPlayer = media.MediaPlayer()
+
+        # setups all GUI components from form (design part)
+        self.setupUi(self)
         self.setupGUISignals()
-
-        self.setupScanner()
+        self.setupPlayerSignals()
         self.setupActionsSignals()
-        self.setupSystemHook()
 
+        # check if all needed folders and files are ready and writable
         self.checkPaths()
-        self.setupFileBrowser(initModel=True)       # todo: future: set dynamically (from last session)
 
-        self.loadSettings()
+        # create all components in their independent threads
+        self.setupScanner()
+        self.setupSystemHook()
         self.setupScheduledTasks()
 
-        QTimer.singleShot(25, self.loadSettingsQueued)
+        # restore session/settings
+        self.loadSettings()
+        QTimer.singleShot(self.QUEUED_SETTINGS_DELAY, self.loadSettingsQueued)
+
         logger.debug(u"Main application dialog initialized")
 
     def setupGUISignals(self):
@@ -92,7 +98,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.playlistTable.cellDoubleClicked.connect(self.playNow)
         self.progressCancelBtn.clicked.connect(self.cancelAdding)
 
-        self.errorEncountered.connect(self.displayErrorMsg)
+        self.errorSignal.connect(self.displayErrorMsg)
 
         self.playPauseBtn.clicked.connect(self.mediaPlayer.playPause)
         self.stopBtn.clicked.connect(self.mediaPlayer.stop)
@@ -143,13 +149,13 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.hkHookThread.started.connect(self.hkHook.start_listening)
         self.hkHookThread.start()
 
-    def setupPlayer(self):
+    def setupPlayerSignals(self):
         """
         Initializes VLC based media player.
         Player class (basically it is only the interface) lives in main thread.
         VlC player itself lives in separated threads!
         """
-        self.mediaPlayer = media.MediaPlayer()
+
 
         self.mediaPlayer.mediaAdded.connect(self.addToPlaylist)
         self.mediaPlayer.playing.connect(self.playing)
@@ -207,10 +213,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         except OSError, exception:
             if exception.errno != errno.EEXIST:
                 logger.exception(u"Unable to create data folder on path: %s", self.appDataPath)
-                self.errorEncountered.emit(tools.ErrorMessages.CRITICAL, u"Unable to create data folder.",
-                                                             u"Error number: %s\n"
-                                                             u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
-                raise
+                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to create data folder.",
+                                      u"Error number: %s\n"
+                                      u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
         else:
             logger.debug(u"Data folder didn't exist and has been created.")
 
@@ -226,19 +231,17 @@ class MainApp(QMainWindow, main_form.MainForm):
                         f.write('[]')
                 except IOError:
                     logger.exception(u"Error when creating new media library file.")
-                    self.errorEncountered.emit(tools.ErrorMessages.CRITICAL,
-                                               u"Unable to create medialib file and write default data.",
-                                               u"Error number: %s\n"
-                                               u"%s" % (exception.errno, exception.strerror))
-                    raise
+                    self.errorSignal.emit(tools.ErrorMessages.CRITICAL,
+                                          u"Unable to create medialib file and write default data.",
+                                          u"Error number: %s\n"
+                                          u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
                 else:
                     logger.debug(u"Media file has been created and initialized.")
             else:
                 logger.exception(u"Error when reading medialib file.")
-                self.errorEncountered.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
-                                                             u"Error number: %s\n"
-                                                             u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
-                raise
+                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
+                                      u"Error number: %s\n"
+                                      u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
 
     @pyqtSlot(int)
     def setupFileBrowser(self, rcode=None, initModel=False):
@@ -253,13 +256,13 @@ class MainApp(QMainWindow, main_form.MainForm):
                 mediaFolders = json.load(mediaFile)
         except IOError, exception:
             logger.exception(u"Error when reading medialib file.")
-            self.errorEncountered.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
+            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
                                                          u"Error number: %s\n"
                                                          u"%s" % (exception.errno, exception.strerror))
             raise
         except ValueError, exception:
             logger.exception(u"Unable to load and parse data from JSON file.")
-            self.errorEncountered.emit(tools.ErrorMessages.CRITICAL, u"Unable to load and parse data from medialib file.",
+            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to load and parse data from medialib file.",
                                                          u"Description: %s" % exception.message)
             raise
 
@@ -288,7 +291,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.folderCombo.addItem(folder)
                 folders_to_display.append(folder)
             else:
-                self.errorEncountered.emit(tools.ErrorMessages.WARNING, u"Some folders in media library don't exist.", u"")
+                self.errorSignal.emit(tools.ErrorMessages.WARNING, u"Some folders in media library don't exist.", u"")
 
         # set back previously selected (current) item in folderCombo if exists (may be deleted => set root folder)
         if current_folder_text in folders_to_display:
@@ -319,9 +322,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         if windowGeometry:
             self.restoreGeometry(windowGeometry)
 
-        # windowState = settings.value(u"gui/MainApp/state")
-        # if windowState:
-        #     self.restoreState(windowState)
+        self.setupFileBrowser(initModel=True)       # todo: future: set dynamically (from last session)
 
     @pyqtSlot()
     def loadSettingsQueued(self):
@@ -544,7 +545,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             try:
                 tools.moveToTrash(path)
             except OSError, exception:
-                self.errorEncountered.emit(tools.ErrorMessages.ERROR, u"Unable to move path to Trash path '%s'!" % path,
+                self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Unable to move path to Trash path '%s'!" % path,
                                                           u"Details: %s" % exception.message)
 
     @pyqtSlot('QPointF')
@@ -655,7 +656,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 # self.mainTreeBrowser.currentRootFolder = newMediaFolder
             else:
                 logger.error(u"Media path from folderCombo could not be found in fileSystemModel!")
-                self.errorEncountered.emit(tools.ErrorMessages.ERROR, u"Media folder '%s' could not be found!" % newMediaFolder, u"")
+                self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Media folder '%s' could not be found!" % newMediaFolder, u"")
                 self.folderCombo.removeItem(self.folderCombo.currentIndex())
 
     @pyqtSlot()
@@ -719,6 +720,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.stBarMsgIcon.show()
             self.stBarMsgText.show()
             QTimer.singleShot(self.WARNING_MSG_DELAY, self.clearErrorMsg)
+
         elif er_type == tools.ErrorMessages.ERROR:
             icon = QPixmap(u":/icons/error.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
@@ -727,6 +729,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.stBarMsgText.show()
             QTimer.singleShot(self.ERROR_MSG_DELAY, self.clearErrorMsg)
             QApplication.beep()
+
         elif er_type == tools.ErrorMessages.CRITICAL:
             msgBox = QMessageBox(self)
             msgBox.setIcon(QMessageBox.Critical)
@@ -734,7 +737,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             msgBox.setText(text)
             msgBox.setInformativeText(details)
             msgBox.exec_()
-            self.close()
+            sys.exit(-1)
 
     @pyqtSlot()
     def displayVolumePopup(self):
@@ -918,7 +921,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             tools.moveToTrash(filePath)
         except OSError, exception:
             logger.exception(u"Unable to send2trash media %s", fileName)
-            self.errorEncountered.emit(tools.ErrorMessages.ERROR,
+            self.errorSignal.emit(tools.ErrorMessages.ERROR,
                                        u"Unable to move path to Trash path '%s'!" % filePath,
                                        u"Details: %s" % unicode(exception.message, "utf-8"))
 
@@ -1037,7 +1040,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.logCleanerThread.quit()
 
         self.saveSettings()
-
         event.accept()
 
 
