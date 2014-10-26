@@ -25,9 +25,6 @@ from PyQt4.QtCore import QSharedMemory
 
 class TestWoofer(TestCase):
 
-    def setUp(self):
-        pass
-
     def test_obtainSharedMemoryLock(self):
         from woofer import obtainSharedMemoryLock
 
@@ -51,11 +48,6 @@ class TestWoofer(TestCase):
         else:
             self.fail("This test is not implemented for Linux, yet!")
 
-    def test_displayAnotherInstanceError(self):
-        self.fail()
-
-    def test_displayLibVLCError(self):
-        self.fail()
 
 
 
