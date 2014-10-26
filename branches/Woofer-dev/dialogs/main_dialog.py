@@ -97,6 +97,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.playlistTable.customContextMenuRequested.connect(self.playlistContextMenu)
         self.playlistTable.cellDoubleClicked.connect(self.playNow)
         self.progressCancelBtn.clicked.connect(self.cancelAdding)
+        # self.mainTreeBrowser.doubleClicked.connect(self.sourceItemsBrowserDoubleClicked)
+        self.mainTreeBrowser.activated.connect(self.sourceItemsBrowserActivated)
 
         self.errorSignal.connect(self.displayErrorMsg)
 
@@ -463,6 +465,31 @@ class MainApp(QMainWindow, main_form.MainForm):
         session_data['id_playlist'] = self.mediaPlayer.shuffled_playlist
         session_data['playlist_pointer'] = self.mediaPlayer.shuffled_playlist_current_index
         # session_data['playlist_len'] = len(self.mediaPlayer.shuffled_playlist)
+
+    @pyqtSlot('QModelIndex')
+    def sourceItemsBrowserActivated(self, index):
+        if self.sourceType == tools.PlaybackSources.FILES:
+            self.fileBrowserActivated(index)
+        if self.sourceType == tools.PlaybackSources.PLAYLISTS:
+            pass
+        if self.sourceType == tools.PlaybackSources.RADIO:
+            pass
+
+    def fileBrowserActivated(self, modelIndex):
+        """
+        When media file browser is selected and user doubleclicks or hit enter in treeview,
+        selected path will be played.
+        @type modelIndex: QModelIndex
+        """
+        logger.debug(u"File (media) browser activated, now checking if activated index if file or folder...")
+
+        fileInfo = self.fileBrowserModel.fileInfo(modelIndex)
+        targetPath = fileInfo.absoluteFilePath()
+        logger.debug(u"Initializing playing of path: %s", targetPath)
+        self.mediaPlayer.clearMediaList()
+        self.mediaPlayer.initMediaAdding(append=False)
+        self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
+        self.displayProgress(u"Adding...")
 
     @pyqtSlot('QPointF')
     def sourceItemsBrowserContextMenu(self, pos):
