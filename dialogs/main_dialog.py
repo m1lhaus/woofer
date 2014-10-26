@@ -33,10 +33,17 @@ elif os.name == "posix":
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
 
-
-# todo: add all supported formats by libVLC
-FileExt = ['*.aac', '*.flac', '*.mp3', '*.ogg', '*.wav', '*.wma', '*.mp4', '*.m4a']
-FileExt_ = ('.aac', '.flac', '.mp3', '.ogg', '.wav', '.wma', '.mp4', '.m4a')
+# all supported codecs and formats can be found at https://wiki.videolan.org/VLC_Features_Formats/
+FileExt = ('*.3ga', '*.669', '*.a52', '*.aac', '*.ac3', '*.adt', '*.adts', '*.aif', '*.aifc', '*.aiff', '*.amr', '*.aob',
+           '*.ape', '*.awb', '*.caf', '*.dts', '*.flac', '*.it', '*.kar', '*.m4a', '*.m4p', '*.m5p', '*.mid', '*.mka',
+           '*.mlp', '*.mod', '*.mpa', '*.mp1', '*.mp2', '*.mp3', '*.mpc', '*.mpga', '*.oga', '*.ogg', '*.oma',
+           '*.opus', '*.qcp', '*.ra', '*.rmi', '*.s3m', '*.spx', '*.thd', '*.tta', '*.voc', '*.vqf', '*.w64',
+           '*.wav', '*.wma', '*.wv', '*.xa', '*.xm')
+FileExt_ = ('.3ga', '.669', '.a52', '.aac', '.ac3', '.adt', '.adts', '.aif', '.aifc', '.aiff', '.amr',
+            '.aob', '.ape', '.awb', '.caf', '.dts', '.flac', '.it', '.kar', '.m4a', '.m4p', '.m5p',
+            '.mid', '.mka', '.mlp', '.mod', '.mpa', '.mp1', '.mp2', '.mp3', '.mpc', '.mpga', '.oga',
+            '.ogg', '.oma', '.opus', '.qcp', '.ra', '.rmi', '.s3m', '.spx', '.thd', '.tta', '.voc',
+            '.vqf', '.w64', '.wav', '.wma', '.wv', '.xa', '.xm')
 
 
 class MainApp(QMainWindow, main_form.MainForm):
