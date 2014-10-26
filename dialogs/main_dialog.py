@@ -1032,17 +1032,29 @@ class MainApp(QMainWindow, main_form.MainForm):
         layout = QHBoxLayout()
         layout.setMargin(20)
 
-        text = u"Woofer player is <strong>free and open-source cross-platform</strong> music player that plays most multimedia files, " \
-               u"CDs, DVDs and also various online streams. Whole written in Python and Qt provides easy, reliable, " \
-               u"and high quality playback thanks to LibVLC library developed by VideoLAN community.<br/>" \
+        if os.path.isfile(u'LICENSE.txt'):
+            path_to_licence = unicode(os.getcwd(), sys.getfilesystemencoding())
+            path_to_licence = path_to_licence.split(os.sep)
+            path_to_licence = u"/".join(path_to_licence) + u"/LICENSE.txt"
+            path_to_licence = u"file:///" + path_to_licence
+        else:
+            logger.error(u"LICENSE.txt file was not found in woofer root dir!")
+            path_to_licence = u"http://www.gnu.org/licenses/gpl-2.0.html"
+
+        text = u"Woofer player is <strong>free and open-source cross-platform</strong> music player " \
+               u"that plays most multimedia files, CDs, DVDs and also various online streams. " \
+               u"Whole written in Python and Qt provides easy, reliable, " \
+               u"and high quality playback thanks to LibVLC library developed by " \
+               u"<a href='http://www.videolan.org/index.cs.html'>VideoLAN community</a>.<br/>" \
                u"<br/>" \
                u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
                u"Web: <a href='http://www.wooferplayer.com'>www.wooferplayer.com</a><br/>" \
-               u"Source: GitHub repository &lt; LICENCE &gt;<br/>" \
-               u"Version: 0.7a"         # todo: get version and build information globally
+               u"Source: GitHub repository &lt; <a href='%s'>LICENCE GPL v2</a> &gt;<br/>" \
+               u"Version: 0.7a" % path_to_licence
 
         textLabel = QLabel()
         textLabel.setTextFormat(Qt.RichText)
+        textLabel.setOpenExternalLinks(True)
         textLabel.setWordWrap(True)
         textLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         textLabel.setText(text)
