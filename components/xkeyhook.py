@@ -30,7 +30,7 @@ MEDIA_PREV_KEY = '[269025046]'
 MEDIA_NEXT_KEY = '[269025047]'
 
 
-class KeyHook(QObject):
+class GlobalHKListener(QObject):
     """This is the main class. Instantiate it, and you can hand it KeyDown and KeyUp (functions in your own code)
     which execute to parse the pyxhookkeyevent class that is returned.
 
@@ -83,7 +83,7 @@ class KeyHook(QObject):
     mediaPrevTrackKeyPressed = pyqtSignal()
 
     def __init__(self):
-        super(KeyHook, self).__init__()
+        super(GlobalHKListener, self).__init__()
 
         # Give these some initial values
         self.ison = {u"shift": False, u"caps": False}
@@ -253,7 +253,7 @@ class KeyHook(QObject):
             print >> sys.stderr, 'WARNING: Unexpected event type: %s' % event.type
             return
 
-        return KeyHook.XHookKeyEvent(storewm["handle"],
+        return GlobalHKListener.XHookKeyEvent(storewm["handle"],
                                          storewm["name"],
                                          storewm["class"],
                                          self.lookup_keysym(keysym),
