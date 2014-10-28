@@ -147,9 +147,15 @@ class MainApp(QMainWindow, main_form.MainForm):
         Caught keys are mapped to signal and then forwarded to menubar actions.
         """
         self.hkHookThread = QThread(self)
-        self.hkHook = keyhook.KeyHook()
-        self.hkHook.moveToThread(self.hkHookThread)
 
+        if os.name == 'nt' and not keyhook.GlobalHKListener.isAbleToRegisterHK():
+            logger.warning(u"Unable to use win32 RegisterHotKey() function, "
+                           u"switching to backup solution - registering Windows hook.")
+            self.hkHook = keyhook.WindowsKeyHook()
+        else:
+            self.hkHook = keyhook.GlobalHKListener()
+
+        self.hkHook.moveToThread(self.hkHookThread)
         self.hkHook.mediaPlayKeyPressed.connect(self.mediaPlayPauseAction.trigger)
         self.hkHook.mediaStopKeyPressed.connect(self.mediaStopAction.trigger)
         self.hkHook.mediaNextTrackKeyPressed.connect(self.mediaNextAction.trigger)
