@@ -8,6 +8,9 @@ Disk components
 __version__ = "$Id$"
 
 import logging
+import send2trash
+import os
+from tools.misc import ErrorMessages
 
 from PyQt4.QtCore import *
 
@@ -83,3 +86,43 @@ class RecursiveBrowser(QObject):
         """
         pass
 
+
+class MoveToTrash(QObject):
+    """
+    Asynchronous file remover - lives in own thread!
+    """
+
+    finished = pyqtSignal(int, unicode, unicode)
+
+    def __init__(self):
+        super(MoveToTrash, self).__init__()
+
+    @pyqtSlot(unicode)
+    def remove(self, path):
+        """
+        Main worker method.
+        Called asynchronously (signal/slot) to remove file/folder from disk to Trash.
+        @type path: unicode
+        """
+        if os.path.isfile(path):
+            folder_or_file = u"file"
+        elif os.path.isdir(path):
+            folder_or_file = u"folder"
+        else:
+            logger.error(u"Given path for removing '%s' does not exist!", path)
+            self.finished.emit(ErrorMessages.ERROR, u"Given path for removing '%s' does not exist!" % path, u"")
+            return
+
+        logger.debug(u"Removing %s '%s' from disk - sending to trash...", folder_or_file, path)
+
+        try:
+            send2trash.send2trash(path)
+        except OSError, exception:
+            logger.exception(u"Unable to send %s '%s' to trash!", folder_or_file, path)
+            self.finished.emit(tools.ErrorMessages.ERROR, u"Unable to move path to Trash path '%s'!" % path,
+                               u"Details: %s" % exception.message)
+
+        else:
+            logger.debug(u"Path send to trash successfully.")
+            self.finished.emit(ErrorMessages.INFO, u"%s '%s' successfully removed from disk" %
+                               (folder_or_file.capitalize(), os.path.basename(path)), u"")

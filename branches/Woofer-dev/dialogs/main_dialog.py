@@ -21,7 +21,6 @@ from dialogs import library_dialog
 from components import disk
 from components import media
 from components import scheduler
-
 import tools
 
 if os.name == "nt":
@@ -54,11 +53,13 @@ class MainApp(QMainWindow, main_form.MainForm):
     """
 
     errorSignal = pyqtSignal(int, unicode, unicode)        # (tools.Message.CRITICAL, main_text, description)
-    scanFiles = pyqtSignal(unicode)
+    removeFileSignal = pyqtSignal(unicode)
+    scanFilesSignal = pyqtSignal(unicode)
 
     myComputerPathIndex = None
     oldVolumeValue = 0
 
+    INFO_MSG_DELAY = 5000
     WARNING_MSG_DELAY = 10000
     ERROR_MSG_DELAY = 20000
     QUEUED_SETTINGS_DELAY = 100
@@ -82,7 +83,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.checkPaths()
 
         # create all components in their independent threads
-        self.setupScanner()
+        self.setupDiskTools()
         self.setupSystemHook()
         self.setupScheduledTasks()
 
@@ -102,7 +103,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
         self.mainTreeBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
         self.playlistTable.customContextMenuRequested.connect(self.playlistContextMenu)
-        self.playlistTable.cellDoubleClicked.connect(self.playNow)
+        self.playlistTable.cellDoubleClicked.connect(self.playlistPlayNow)
         self.progressCancelBtn.clicked.connect(self.cancelAdding)
         # self.mainTreeBrowser.doubleClicked.connect(self.sourceItemsBrowserDoubleClicked)
         self.mainTreeBrowser.activated.connect(self.sourceItemsBrowserActivated)
@@ -121,9 +122,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.volumeBtn.clicked.connect(self.displayVolumePopup)
         self.muteBtn.toggled.connect(self.muteStatusChanged)
 
-        self.playlistTable.enterShortcut.activated.connect(self.playNow)
-        self.playlistTable.delShortcut.activated.connect(self.remFromPlaylist)
-        self.playlistTable.shiftDelShortcut.activated.connect(self.remFromDisk)
+        self.playlistTable.enterShortcut.activated.connect(self.playlistPlayNow)
+        self.playlistTable.delShortcut.activated.connect(self.playlistRemFromPlaylist)
+        self.playlistTable.shiftDelShortcut.activated.connect(self.playlistRemFromDisk)
 
     def setupActionsSignals(self):
         self.mediaPlayPauseAction.triggered.connect(self.mediaPlayer.playPause)
@@ -181,7 +182,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaPlayer.mediaChanged.connect(self.displayCurrentMedia)
         self.mediaPlayer.errorEncountered.connect(self.displayErrorMsg)
 
-    def setupScanner(self):
+    def setupDiskTools(self):
         """
         Setup classes for disk digging (media searching) and asynchronous parsing.
         Scanner and parser live in separated threads.
@@ -194,17 +195,23 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parser = media.MediaParser()
         self.parserThread = QThread(self)
 
-        self.scanFiles.connect(self.scanner.scanFiles)
+        self.fileRemover = disk.MoveToTrash()
+        self.fileRemoverThread = QThread(self)
+
+        self.scanFilesSignal.connect(self.scanner.scanFiles)
         self.parser.finished.connect(self.clearProgress)
         self.parser.finished.connect(self.mediaPlayer.mediaAddingFinished)
         self.parser.parsed.connect(self.mediaPlayer.addMedia)
         self.scanner.parseData.connect(self.parser.parseMedia)
-
+        self.removeFileSignal.connect(self.fileRemover.remove)
+        self.fileRemover.finished.connect(self.displayErrorMsg)
         self.scanner.moveToThread(self.scannerThread)
         self.parser.moveToThread(self.parserThread)
+        self.fileRemover.moveToThread(self.fileRemoverThread)
 
         self.scannerThread.start()
         self.parserThread.start()
+        self.fileRemoverThread.start()
 
     def setupScheduledTasks(self):
         """
@@ -501,7 +508,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         logger.debug(u"Initializing playing of path: %s", targetPath)
         self.mediaPlayer.clearMediaList()
         self.mediaPlayer.initMediaAdding(append=False)
-        self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
+        self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
         self.displayProgress(u"Adding...")
 
     @pyqtSlot('QPointF')
@@ -559,7 +566,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.mediaPlayer.clearMediaList()
             self.mediaPlayer.initMediaAdding(append=False)
             targetPath = fileInfo.absoluteFilePath()
-            self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
+            self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
             self.displayProgress(u"Adding...")
 
         # PLAY ALL
@@ -567,7 +574,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.mediaPlayer.clearMediaList()
             self.mediaPlayer.initMediaAdding(append=False)
             targetPath = fileInfo.absoluteFilePath()
-            self.scanFiles.emit(targetPath)                 # asynchronously recursively search for media files
+            self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
             self.displayProgress(u"Adding...")
 
         # ADD TO PLAYLIST
@@ -575,18 +582,14 @@ class MainApp(QMainWindow, main_form.MainForm):
             targetPath = fileInfo.absoluteFilePath()
             self.mediaPlayer.initMediaAdding(append=True)
             # asynchronously recursively search for media files
-            self.scanFiles.emit(targetPath)
+            self.scanFilesSignal.emit(targetPath)
             self.displayProgress(u"Adding...")
 
         # REMOVE FROM DISK
         elif choice is removeFromDisk:
             path = fileInfo.absoluteFilePath()
-            logger.debug(u"Moving path '%s' to Trash", path)
-            try:
-                tools.moveToTrash(path)
-            except OSError, exception:
-                self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Unable to move path to Trash path '%s'!" % path,
-                                                          u"Details: %s" % exception.message)
+            logger.debug(u"Removing path '%s' to Trash", path)
+            self.removeFileSignal.emit(path)
 
     @pyqtSlot('QPointF')
     def playlistContextMenu(self, pos):
@@ -612,11 +615,11 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         index = self.playlistTable.row(item)
         if choice is playNowAction:
-            self.playNow(index)
+            self.playlistPlayNow(index)
         elif choice is remFromPlaylistAction:
-            self.remFromPlaylist(index)
+            self.playlistRemFromPlaylist(index)
         elif choice is remFromDiskAction:
-            self.remFromDisk(index)
+            self.playlistRemFromDisk(index)
 
     @pyqtSlot()
     def changeSource(self, source_id=None):
@@ -753,7 +756,15 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param text: main text
         @param details: description
         """
-        if er_type == tools.ErrorMessages.WARNING:
+        if er_type == tools.ErrorMessages.INFO:
+            icon = QPixmap(u":/icons/info.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
+            self.stBarMsgIcon.setPixmap(icon)
+            self.stBarMsgText.setText(text + u' ' + details)
+            self.stBarMsgIcon.show()
+            self.stBarMsgText.show()
+            QTimer.singleShot(self.INFO_MSG_DELAY, self.clearErrorMsg)
+
+        elif er_type == tools.ErrorMessages.WARNING:
             icon = QPixmap(u":/icons/warning.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
@@ -762,7 +773,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             QTimer.singleShot(self.WARNING_MSG_DELAY, self.clearErrorMsg)
 
         elif er_type == tools.ErrorMessages.ERROR:
-            icon = QPixmap(u":/icons/error.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
+            icon = QPixmap(u":/icons/error.png").scaled(16, 16, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
             self.stBarMsgIcon.show()
@@ -910,7 +921,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.playlistTable.setCurrentCell(index, 0)          # select the entire row due to table selection behaviour
 
     @pyqtSlot()
-    def playNow(self, row=None, col=None):
+    def playlistPlayNow(self, row=None, col=None):
         """
         Play song from playlist table immediately.
         @param row: song row number
@@ -926,7 +937,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaPlayer.play(index)
 
     @pyqtSlot()
-    def remFromPlaylist(self, row=None):
+    def playlistRemFromPlaylist(self, row=None):
         """
         Removes song from playlist table and from player (media_list).
         @param row: row number in playlist table
@@ -942,7 +953,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.playlistTable.removeRow(index)
 
     @pyqtSlot()
-    def remFromDisk(self, row=None):
+    def playlistRemFromDisk(self, row=None):
         """
         Removes song from playlist table, from player (media_list) and from disk if possible.
         @param row: row number in playlist table
@@ -953,17 +964,10 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         filePath = self.playlistTable.item(index, self.playlistTable.columnCount()-1).text()
         fileName = os.path.basename(filePath)
-        self.remFromPlaylist(index)
+        self.playlistRemFromPlaylist(index)
 
-        logger.debug(u"Removing from disk #%s song named '%s' on path '%s'", index, fileName, filePath)
-
-        try:
-            tools.moveToTrash(filePath)
-        except OSError, exception:
-            logger.exception(u"Unable to send2trash media %s", fileName)
-            self.errorSignal.emit(tools.ErrorMessages.ERROR,
-                                       u"Unable to move path to Trash path '%s'!" % filePath,
-                                       u"Details: %s" % unicode(exception.message, "utf-8"))
+        logger.debug(u"Removing to Trash #%s song named '%s' on path '%s'", index, fileName, filePath)
+        self.removeFileSignal.emit(filePath)
 
     @pyqtSlot(bool)
     def toggleShuffle(self, checked):
@@ -1090,6 +1094,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parserThread.quit()
         self.hkHookThread.quit()
         self.logCleanerThread.quit()
+        self.fileRemoverThread.quit()
 
         self.saveSettings()
         event.accept()

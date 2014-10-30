@@ -51,15 +51,6 @@ def check_binary_type(path):
     return bin_type
 
 
-def moveToTrash(file_path):
-    """
-    Moves file/folder to Trash.
-    @type file_path: str
-    @raise OSError: Error with message and number.
-    """
-    send2trash.send2trash(file_path)
-
-
 def unicode2bytes(string):
     """
     Converts string (basestring) to unicode and byte string (ascii str).
@@ -85,6 +76,7 @@ class ErrorMessages(object):
     WARNING = 0
     ERROR = 1
     CRITICAL = 2
+    INFO = 3
 
 
 class PlaybackSources(object):
