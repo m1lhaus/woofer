@@ -1092,12 +1092,13 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.scannerThread.quit()
         self.parserThread.quit()
-        self.hkHookThread.quit()
         self.logCleanerThread.quit()
         self.fileRemoverThread.quit()
+        self.hkHookThread.quit()
+        event.accept()              # emits quit events
 
+        self.mediaPlayer.stop()
         self.saveSettings()
-        event.accept()
 
 
 
