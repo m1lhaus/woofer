@@ -4,7 +4,6 @@
 Windows classes for catching global (system-wide) shortcuts.
 """
 
-__version__ = "$Id: winkeyhook.py 149 2014-10-28 18:50:21Z m1lhaus $"
 
 import logging
 import pythoncom
@@ -12,10 +11,10 @@ import pyHook
 import ctypes
 import win32con
 
-from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt4.QtCore import *
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
+logger.debug('Import ' + __name__)
 
 
 class GlobalHKListener(QObject):
@@ -48,7 +47,7 @@ class GlobalHKListener(QObject):
             4: self.mediaPrevTrackKeyPressed
         }
 
-        logger.debug(u"Windows global hotkey listener initialized.")
+        logger.debug("Windows global hotkey listener initialized.")
 
     @pyqtSlot()
     def start_listening(self):
@@ -61,7 +60,7 @@ class GlobalHKListener(QObject):
         self.__registerHotkeys()
 
         # handles the WM_HOTKEY messages and pass everything else along.
-        logger.debug(u"Starting windows key-down hook (listener) loop.")
+        logger.debug("Starting windows key-down hook (listener) loop.")
         try:
             msg = ctypes.wintypes.MSG()
             while ctypes.windll.user32.GetMessageA(ctypes.byref(msg), None, 0, 0) != 0:
@@ -77,45 +76,45 @@ class GlobalHKListener(QObject):
         finally:
             # if anything goes wrong, don't forget to unregister hotkeys,
             # so application could register them again next time
-            logger.warning(u"Some unexpected thing happened in main listener loop, unregistering hotkeys...")
+            logger.warning("Some unexpected thing happened in main listener loop, unregistering hotkeys...")
             for hk_id in self.HOTKEYS.keys():
                 ctypes.windll.user32.UnregisterHotKey(None, hk_id)
 
-        logger.debug(u"Main listener loop ended.")
+        logger.debug("Main listener loop ended.")
 
     def stop_listening(self):
         """
         Called when application is about to close to unregister all global hotkeys.
         Worker loop (listener) will be terminated automatically when quit message is sent.
         """
-        logger.debug(u"Stopping hotkey listener, unregistering global hotkeys...")
+        logger.debug("Stopping hotkey listener, unregistering global hotkeys...")
         for hk_id in self.HOTKEYS.keys():
             ctypes.windll.user32.UnregisterHotKey(None, hk_id)
 
-        logger.debug(u"Hotkeys unregistered successfully.")
+        logger.debug("Hotkeys unregistered successfully.")
 
     def __registerHotkeys(self):
         for hk_id, (vk, vk_name) in self.HOTKEYS.items():
-            logger.debug(u"Registering hotkey id %s for key %s named %s", hk_id, vk, vk_name)
+            logger.debug("Registering hotkey id %s for key %s named %s", hk_id, vk, vk_name)
 
             if not ctypes.windll.user32.RegisterHotKey(None, hk_id, 0, vk):
-                logger.error(u"Unable to register hotkey id %s for key %s named %s", hk_id, vk, vk_name)
+                logger.error("Unable to register hotkey id %s for key %s named %s", hk_id, vk, vk_name)
 
     @staticmethod
     def isAbleToRegisterHK():
-        logger.debug(u"Trying to test media hotkeys for a test...")
+        logger.debug("Trying to test media hotkeys for a test...")
         try:
             for hk_id, (vk, vk_name) in GlobalHKListener.HOTKEYS.items():
                 if not ctypes.windll.user32.RegisterHotKey(None, hk_id, 0, vk):
-                    logger.warning(u"Unable to register hotkey id: %s named %s", hk_id, vk_name)
+                    logger.warning("Unable to register hotkey id: %s named %s", hk_id, vk_name)
                     return False
 
-            logger.debug(u"All hotkeys has been successfully registered, now unregister them...")
+            logger.debug("All hotkeys has been successfully registered, now unregister them...")
         finally:
             for hk_id in GlobalHKListener.HOTKEYS.keys():
                 ctypes.windll.user32.UnregisterHotKey(None, hk_id)
 
-        logger.debug(u"All hotkeys unregistered successfully.")
+        logger.debug("All hotkeys unregistered successfully.")
         return True
 
 
@@ -134,7 +133,7 @@ class WindowsKeyHook(QObject):
         self.hm.KeyDown = self.OnKeyboardEvent      # watch for all keyboard events
         self.hm.HookKeyboard()                      # set the hook
 
-        logger.debug(u"Windows key-down hook initialized")
+        logger.debug("Windows key-down hook initialized")
 
     def OnKeyboardEvent(self, event):
         """
@@ -164,25 +163,25 @@ class WindowsKeyHook(QObject):
 
         # Media_Play_Pause
         if event.KeyID == 179:
-            logger.debug(u"Global key Media_Play_Pause caught")
+            logger.debug("Global key Media_Play_Pause caught")
             ignore_event = False
             self.mediaPlayKeyPressed.emit()
 
         # Media_Stop
         elif event.KeyID == 178:
-            logger.debug(u"Global key Media_Stop caught")
+            logger.debug("Global key Media_Stop caught")
             ignore_event = False
             self.mediaStopKeyPressed.emit()
 
         # Media_Next_Track
         elif event.KeyID == 176:
-            logger.debug(u"Global key Media_Play_Pause caught")
+            logger.debug("Global key Media_Play_Pause caught")
             ignore_event = False
             self.mediaNextTrackKeyPressed.emit()
 
         # Media_Prev_Track
         elif event.KeyID == 177:
-            logger.debug(u"Global key Media_Play_Pause caught")
+            logger.debug("Global key Media_Play_Pause caught")
             ignore_event = False
             self.mediaPrevTrackKeyPressed.emit()
 
@@ -196,7 +195,7 @@ class WindowsKeyHook(QObject):
         When thread.quit() method is invoked, system-wide quit(0) message is sent to worker which also
         terminates message listener.
         """
-        logger.debug(u"Starting windows key-down hook (listener)")
+        logger.debug("Starting windows key-down hook (listener)")
         pythoncom.PumpMessages()        # endless loop
 
     def stop_listening(self):

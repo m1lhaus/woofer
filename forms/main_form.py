@@ -4,16 +4,16 @@
 All GUI components from main dialog initialized here.
 """
 
-__version__ = "$Id: main_form.py 132 2014-10-22 18:24:49Z m1lhaus $"
 
-import icons_rc
 import logging
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+from . import icons_rc
+
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
+logger.debug('Import ' + __name__)
 
 
 class MediaSeeker(QSlider):
@@ -65,7 +65,7 @@ class VolumePopup(QWidget):
         self.volumeSlider.setValue(self.volumeSlider.maximum())
 
         self.muteBtn = QPushButton(self)
-        self.muteBtn.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
+        self.muteBtn.setIcon(QIcon(QPixmap(":/icons/mute.png")))
         self.muteBtn.setIconSize(QSize(16, 16))
         self.muteBtn.setCheckable(True)
         self.muteBtn.setFlat(True)
@@ -156,13 +156,13 @@ class MainTreeBrowserTreeView(QTreeView):
         """
         Restores previously expanded items in mainTreeBrowser for each mode (FILES, PLAYLISTS, RADIOS)
         """
-        logger.debug(u"Restoring mainTreeBrowser state for mode enum %s ...", self._mode)
+        logger.debug("Restoring mainTreeBrowser state for mode enum %s ...", self._mode)
         settings = QSettings()
 
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
-            expandedItems = settings.value(u"gui/mtbtw/expanded/files", [])
-            rootFolder = settings.value(u"gui/mtbtw/root/files", u'/')
+            expandedItems = settings.value("gui/mtbtw/expanded/files", [])
+            rootFolder = settings.value("gui/mtbtw/root/files", '/')
             model = self.model()
 
             # find and expand restored paths from settings storage
@@ -180,7 +180,7 @@ class MainTreeBrowserTreeView(QTreeView):
                         self._expandedItems.remove(filePath)
 
             # restore media folder root index from last session
-            if rootFolder != u'/':
+            if rootFolder != '/':
                 targetIndex = self.folderCombo.findText(rootFolder)
                 if targetIndex != -1:
                     self.folderCombo.setCurrentIndex(targetIndex)
@@ -199,7 +199,7 @@ class MainTreeBrowserTreeView(QTreeView):
         """
         Saves list of expanded items to settings platform depending on current mode.
         """
-        logger.debug(u"Saving mainTreeBrowser state for mode enum %s ...", self._mode)
+        logger.debug("Saving mainTreeBrowser state for mode enum %s ...", self._mode)
         settings = QSettings()
 
         # FILES mode
@@ -219,10 +219,10 @@ class MainTreeBrowserTreeView(QTreeView):
             # if MyComputer (root) is set as current root folder
             else:
                 expandedItems = self._expandedItems
-                currentRootFolder = u'/'                 # ... == MyComputer == root
+                currentRootFolder = '/'                 # ... == MyComputer == root
 
-            settings.setValue(u"gui/mtbtw/expanded/files", expandedItems)
-            settings.setValue(u"gui/mtbtw/root/files", currentRootFolder)
+            settings.setValue("gui/mtbtw/expanded/files", expandedItems)
+            settings.setValue("gui/mtbtw/root/files", currentRootFolder)
 
         # PLAYLISTS mode
         elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
@@ -240,8 +240,8 @@ class MainTreeBrowserTreeView(QTreeView):
             RADIOS = 2
         @type mode: int
         """
-        if mode not in range(0, 4):
-            raise ValueError(u"Given mode %s is not implemented!" % mode)
+        if mode not in list(range(0, 4)):
+            raise ValueError("Given mode %s is not implemented!" % mode)
         self._mode = mode
 
     def getMode(self):
@@ -279,10 +279,10 @@ class MainForm(object):
     """
 
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName(u"MainWindow")
+        MainWindow.setObjectName("MainWindow")
         MainWindow.resize(973, 497)
         icon = QIcon()
-        icon.addPixmap(QPixmap(u":/icons/app_icon.png"), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(":/icons/app_icon.png"), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
 
         # start MAIN LAYOUT
@@ -310,16 +310,16 @@ class MainForm(object):
         self.sourceBrowser.setColumnCount(2)
         self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
         item_0 = QTreeWidgetItem(self.sourceBrowser)
-        icon1 = QIcon(QPixmap(u":/icons/music-cd.png"))
+        icon1 = QIcon(QPixmap(":/icons/music-cd.png"))
         item_0.setIcon(0, icon1)
         item_1 = QTreeWidgetItem(item_0)
-        icon2 = QIcon(QPixmap(u":/icons/folder.png"))
+        icon2 = QIcon(QPixmap(":/icons/folder.png"))
         item_1.setIcon(0, icon2)
         item_1 = QTreeWidgetItem(item_0)
-        icon3 = QIcon(QPixmap(u":/icons/playlist.png"))
+        icon3 = QIcon(QPixmap(":/icons/playlist.png"))
         item_1.setIcon(0, icon3)
         item_0 = QTreeWidgetItem(self.sourceBrowser)
-        icon4 = QIcon(QPixmap(u":/icons/radio.png"))
+        icon4 = QIcon(QPixmap(":/icons/radio.png"))
         item_0.setIcon(0, icon4)
         self.mainLeftVLayout.addWidget(self.sourceBrowser)
         # FOLDER SELECTION
@@ -337,7 +337,7 @@ class MainForm(object):
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.libraryBtn.sizePolicy().hasHeightForWidth())
         self.libraryBtn.setSizePolicy(sizePolicy)
-        icon5 = QIcon(QPixmap(u":/icons/settings.png"))
+        icon5 = QIcon(QPixmap(":/icons/settings.png"))
         self.libraryBtn.setIcon(icon5)
         self.libraryBtn.setIconSize(QSize(16, 16))
         self.filterHLayout.addWidget(self.libraryBtn)
@@ -377,7 +377,7 @@ class MainForm(object):
         sizePolicy.setHeightForWidth(self.repeatBtn.sizePolicy().hasHeightForWidth())
         self.repeatBtn.setSizePolicy(sizePolicy)
         self.repeatBtn.setMinimumSize(QSize(30, 30))
-        icon6 = QIcon(QPixmap(u":/icons/media-repeat.png"))
+        icon6 = QIcon(QPixmap(":/icons/media-repeat.png"))
         self.repeatBtn.setIcon(icon6)
         self.repeatBtn.setIconSize(QSize(16, 16))
         self.repeatBtn.setFlat(True)
@@ -385,7 +385,7 @@ class MainForm(object):
         self.controlsHLayout.addWidget(self.repeatBtn)
         self.previousBtn = QPushButton(self.controlsFrame)
         self.previousBtn.setMinimumSize(QSize(30, 30))
-        icon7 = QIcon(QPixmap(u":/icons/media-previous.png"))
+        icon7 = QIcon(QPixmap(":/icons/media-previous.png"))
         self.previousBtn.setIcon(icon7)
         self.previousBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.previousBtn)
@@ -394,7 +394,7 @@ class MainForm(object):
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.playPauseBtn.sizePolicy().hasHeightForWidth())
         self.playPauseBtn.setSizePolicy(sizePolicy)
-        icon8 = QIcon(QPixmap(u":/icons/media-play.png"))
+        icon8 = QIcon(QPixmap(":/icons/media-play.png"))
         self.playPauseBtn.setIcon(icon8)
         self.playPauseBtn.setIconSize(QSize(32, 32))
         self.controlsHLayout.addWidget(self.playPauseBtn)
@@ -403,19 +403,19 @@ class MainForm(object):
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHeightForWidth(self.stopBtn.sizePolicy().hasHeightForWidth())
         self.stopBtn.setSizePolicy(sizePolicy)
-        icon9 = QIcon(QPixmap(u":/icons/media-stop.png"))
+        icon9 = QIcon(QPixmap(":/icons/media-stop.png"))
         self.stopBtn.setIcon(icon9)
         self.stopBtn.setIconSize(QSize(32, 32))
         self.controlsHLayout.addWidget(self.stopBtn)
         self.nextBtn = QPushButton(self.controlsFrame)
         self.nextBtn.setMinimumSize(QSize(30, 30))
-        icon10 = QIcon(QPixmap(u":/icons/media-next.png"))
+        icon10 = QIcon(QPixmap(":/icons/media-next.png"))
         self.nextBtn.setIcon(icon10)
         self.nextBtn.setIconSize(QSize(24, 24))
         self.controlsHLayout.addWidget(self.nextBtn)
         self.shuffleBtn = QPushButton(self.controlsFrame)
         self.shuffleBtn.setMinimumSize(QSize(30, 30))
-        icon11 = QIcon(QPixmap(u":/icons/media-shuffle.png"))
+        icon11 = QIcon(QPixmap(":/icons/media-shuffle.png"))
         self.shuffleBtn.setIcon(icon11)
         self.shuffleBtn.setIconSize(QSize(16, 16))
         self.shuffleBtn.setFlat(True)
@@ -431,7 +431,7 @@ class MainForm(object):
         self.volumeBtn.setMinimumSize(QSize(10, 30))
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.volumeBtn.setSizePolicy(sizePolicy)
-        icon12 = QIcon(QPixmap(u":/icons/volume-max.png"))
+        icon12 = QIcon(QPixmap(":/icons/volume-max.png"))
         self.volumeBtn.setIcon(icon12)
         self.volumeBtn.setIconSize(QSize(16, 16))
         self.volumeBtn.setFlat(True)
@@ -450,40 +450,40 @@ class MainForm(object):
         self.menuTools = QMenu(self.menubar)
         self.menuHelp = QMenu(self.menubar)
 
-        self.mediaPlayPauseAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play", MainWindow)
+        self.mediaPlayPauseAction = QAction(QIcon(":/icons/media-play.png"), "&Play", MainWindow)
         self.mediaPlayPauseAction.setShortcut(QKeySequence(Qt.Key_F6))
         self.mediaPlayPauseAction.setShortcutContext(Qt.ApplicationShortcut)
-        self.mediaStopAction = QAction(QIcon(u":/icons/media-stop.png"), u"&Stop", MainWindow)
+        self.mediaStopAction = QAction(QIcon(":/icons/media-stop.png"), "&Stop", MainWindow)
         self.mediaStopAction.setShortcut(QKeySequence(Qt.Key_F7))
         self.mediaStopAction.setShortcutContext(Qt.ApplicationShortcut)
-        self.mediaNextAction = QAction(QIcon(u":/icons/media-next.png"), u"&Next", MainWindow)
+        self.mediaNextAction = QAction(QIcon(":/icons/media-next.png"), "&Next", MainWindow)
         self.mediaNextAction.setShortcut(QKeySequence(Qt.Key_F8))
         self.mediaNextAction.setShortcutContext(Qt.ApplicationShortcut)
-        self.mediaPreviousAction = QAction(QIcon(u":/icons/media-previous.png"), u"Pre&vious", MainWindow)
+        self.mediaPreviousAction = QAction(QIcon(":/icons/media-previous.png"), "Pre&vious", MainWindow)
         self.mediaPreviousAction.setShortcut(QKeySequence(Qt.Key_F5))
         self.mediaPreviousAction.setShortcutContext(Qt.ApplicationShortcut)
-        self.mediaShuffleAction = QAction(QIcon(u":/icons/media-shuffle.png"), u"Shu&ffle", MainWindow)
+        self.mediaShuffleAction = QAction(QIcon(":/icons/media-shuffle.png"), "Shu&ffle", MainWindow)
         self.mediaShuffleAction.setCheckable(True)
-        self.mediaRepeatAction = QAction(QIcon(u":/icons/media-repeat.png"), u"&Repeat", MainWindow)
+        self.mediaRepeatAction = QAction(QIcon(":/icons/media-repeat.png"), "&Repeat", MainWindow)
         self.mediaRepeatAction.setCheckable(True)
-        self.mediaMuteAction = QAction(QIcon(u":/icons/mute.png"), u"&Mute", MainWindow)
+        self.mediaMuteAction = QAction(QIcon(":/icons/mute.png"), "&Mute", MainWindow)
         self.mediaMuteAction.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_M))
         self.mediaMuteAction.setShortcutContext(Qt.ApplicationShortcut)
-        self.mediaQuitAction = QAction(QIcon(u":/icons/quit.png"), u"&Quit", MainWindow)
+        self.mediaQuitAction = QAction(QIcon(":/icons/quit.png"), "&Quit", MainWindow)
         self.mediaQuitAction.setShortcut(QKeySequence(QKeySequence.Quit))
         self.mediaQuitAction.setShortcutContext(Qt.ApplicationShortcut)
         # self.playlistPlayAction = QAction(QIcon(u":/icons/media-play.png"), u"&Play files...", MainWindow)
         # self.playlistAddAction = QAction(QIcon(u":/icons/media-next.png"), u"&Add files...", MainWindow)
-        self.playlistSaveAction = QAction(QIcon(u":/icons/save.png"), u"&Save playlist", MainWindow)
+        self.playlistSaveAction = QAction(QIcon(":/icons/save.png"), "&Save playlist", MainWindow)
         self.playlistSaveAction.setEnabled(False)
-        self.playlistLoadAction = QAction(QIcon(u":/icons/open.png"), u"&Load playlist", MainWindow)
+        self.playlistLoadAction = QAction(QIcon(":/icons/open.png"), "&Load playlist", MainWindow)
         self.playlistLoadAction.setEnabled(False)
-        self.playlistClearAction = QAction(QIcon(u":/icons/delete.png"), u"&Clear current playlist", MainWindow)
-        self.toolsSettingsAction = QAction(QIcon(u":/icons/settings.png"), u"&Settings", MainWindow)
+        self.playlistClearAction = QAction(QIcon(":/icons/delete.png"), "&Clear current playlist", MainWindow)
+        self.toolsSettingsAction = QAction(QIcon(":/icons/settings.png"), "&Settings", MainWindow)
         self.toolsSettingsAction.setEnabled(False)
-        self.helpHelpAction = QAction(QIcon(u":/icons/help.png"), u"&Help", MainWindow)
+        self.helpHelpAction = QAction(QIcon(":/icons/help.png"), "&Help", MainWindow)
         self.helpHelpAction.setEnabled(False)
-        self.helpAboutAction = QAction(QIcon(u":/icons/info.png"), u"&About", MainWindow)
+        self.helpAboutAction = QAction(QIcon(":/icons/info.png"), "&About", MainWindow)
 
         self.menubar.addAction(self.menuMedia.menuAction())
         self.menubar.addAction(self.menuPlaylist.menuAction())
@@ -511,7 +511,7 @@ class MainForm(object):
         self.progressLabel = QLabel(self)
         self.progressBar.setMaximumSize(200, self.progressBar.minimumSizeHint().height())
         self.progressCancelBtn = QPushButton()
-        icon_progressCancelBtn = QIcon(QPixmap(u":/icons/remove_close.png"))
+        icon_progressCancelBtn = QIcon(QPixmap(":/icons/remove_close.png"))
         self.progressCancelBtn.setIcon(icon_progressCancelBtn)
         self.progressCancelBtn.setIconSize(QSize(10, 10))
         self.progressCancelBtn.setFixedSize(QSize(self.progressBar.sizeHint().height(), self.progressBar.sizeHint().height()))

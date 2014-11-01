@@ -3,18 +3,17 @@
 """
 Various tools and functions
 """
-__version__ = "$Id: misc.py 150 2014-10-30 17:31:32Z m1lhaus $"
+
 
 import os
 import sys
-import send2trash
 
 
 def check_binary_type(path):
     """
     Method reads PE header and get binary type (x32 vs x64)
-    @param path:
-    @return:
+    @param path: path to existing file (executable or dll)
+    @rtype: bool
     """
     if not os.path.isfile(path):
         return None
@@ -29,7 +28,7 @@ def check_binary_type(path):
     with open(path, "rb") as f:
         s = f.read(2)
         if s != "MZ":
-            print "check_binary_type - Not an EXE file!"
+            print("check_binary_type - Not an EXE file!")
 
         else:
             f.seek(60)
@@ -49,24 +48,6 @@ def check_binary_type(path):
                 bin_type = "Unknown"
 
     return bin_type
-
-
-def unicode2bytes(string):
-    """
-    Converts string (basestring) to unicode and byte string (ascii str).
-    @type string: str or unicode
-    @rtype: (unicode, str)
-    """
-    assert isinstance(string, basestring)
-
-    if isinstance(string, unicode):
-        byte_str = string.encode("utf8")
-        unicode_str = string
-    else:
-        byte_str = string
-        unicode_str = unicode(string, "utf-8")
-
-    return unicode_str, byte_str
 
 
 class ErrorMessages(object):
@@ -95,6 +76,8 @@ class RedirectDescriptor(object):
 
     def redirect_C_stderr_null(self):
         """
+        BREAKS WITH PYINSTALLER!!!
+
         Redirects all stderr ouput to new descriptor. So original stderr ouput will be thrown away.
         Only new sys.stderr output since this method call will be printed out.
 

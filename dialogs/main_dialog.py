@@ -4,7 +4,6 @@
 Main application GUI module.
 """
 
-__version__ = "$Id: main_dialog.py 151 2014-10-30 17:36:42Z m1lhaus $"
 
 import logging
 import pickle
@@ -21,7 +20,7 @@ from dialogs import library_dialog
 from components import disk
 from components import media
 from components import scheduler
-import tools
+from tools.misc import ErrorMessages, PlaybackSources
 
 if os.name == "nt":
     from components import winkeyhook as keyhook
@@ -30,19 +29,16 @@ elif os.name == "posix":
 
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
+logger.debug('Import ' + __name__)
 
 # all supported codecs and formats can be found at https://wiki.videolan.org/VLC_Features_Formats/
-FileExt = ('*.3ga', '*.669', '*.a52', '*.aac', '*.ac3', '*.adt', '*.adts', '*.aif', '*.aifc', '*.aiff', '*.amr', '*.aob',
-           '*.ape', '*.awb', '*.caf', '*.dts', '*.flac', '*.it', '*.kar', '*.m4a', '*.m4p', '*.m5p', '*.mid', '*.mka',
-           '*.mlp', '*.mod', '*.mpa', '*.mp1', '*.mp2', '*.mp3', '*.mpc', '*.mpga', '*.oga', '*.ogg', '*.oma',
-           '*.opus', '*.qcp', '*.ra', '*.rmi', '*.s3m', '*.spx', '*.thd', '*.tta', '*.voc', '*.vqf', '*.w64',
-           '*.wav', '*.wma', '*.wv', '*.xa', '*.xm')
-FileExt_ = ('.3ga', '.669', '.a52', '.aac', '.ac3', '.adt', '.adts', '.aif', '.aifc', '.aiff', '.amr',
-            '.aob', '.ape', '.awb', '.caf', '.dts', '.flac', '.it', '.kar', '.m4a', '.m4p', '.m5p',
-            '.mid', '.mka', '.mlp', '.mod', '.mpa', '.mp1', '.mp2', '.mp3', '.mpc', '.mpga', '.oga',
-            '.ogg', '.oma', '.opus', '.qcp', '.ra', '.rmi', '.s3m', '.spx', '.thd', '.tta', '.voc',
-            '.vqf', '.w64', '.wav', '.wma', '.wv', '.xa', '.xm')
+FileExt = ('*.mp3', '*.m4a', '*.m4p', '*.flac', '*.wav', '*.wma', '*.aac', '*.mpga', '*.3ga', '*.669', '*.a52',
+           '*.ac3', '*.adt', '*.adts', '*.aif', '*.aifc', '*.aiff', '*.amr', '*.aob', '*.ape', '*.awb', '*.caf',
+           '*.dts',  '*.it', '*.kar',  '*.m5p', '*.mid', '*.mka', '*.mlp', '*.mod', '*.mpa', '*.mp1', '*.mp2',
+           '*.mpc',  '*.oga', '*.ogg', '*.oma', '*.opus', '*.qcp', '*.ra', '*.rmi', '*.s3m', '*.spx', '*.thd',
+           '*.tta', '*.voc', '*.vqf', '*.w64', '*.wv', '*.xa', '*.xm')
+assert not any([not ext.startswith('*.') for ext in FileExt])
+assert len(set(FileExt)) == len(FileExt)
 
 
 class MainApp(QMainWindow, main_form.MainForm):
@@ -52,24 +48,24 @@ class MainApp(QMainWindow, main_form.MainForm):
     - connects signals from dialogs widgets
     """
 
-    errorSignal = pyqtSignal(int, unicode, unicode)        # (tools.Message.CRITICAL, main_text, description)
-    removeFileSignal = pyqtSignal(unicode)
-    scanFilesSignal = pyqtSignal(unicode)
+    errorSignal = pyqtSignal(int, str, str)        # (tools.Message.CRITICAL, main_text, description)
+    removeFileSignal = pyqtSignal(str)
+    scanFilesSignal = pyqtSignal(str)
 
     myComputerPathIndex = None
     oldVolumeValue = 0
 
-    INFO_MSG_DELAY = 5000
+    INFO_MSG_DELAY = 10000
     WARNING_MSG_DELAY = 10000
     ERROR_MSG_DELAY = 20000
     QUEUED_SETTINGS_DELAY = 100
 
     def __init__(self):
         super(MainApp, self).__init__()
-        self.appRootPath = unicode(os.path.dirname(sys.argv[0]), sys.getfilesystemencoding())
-        self.appDataPath = os.path.join(self.appRootPath, u'data')
-        self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.json')
-        self.session_file = os.path.join(self.appDataPath, u'session.dat')
+        self.appRootPath = os.path.dirname(sys.argv[0])
+        self.appDataPath = os.path.join(self.appRootPath, 'data')
+        self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.json')
+        self.session_file = os.path.join(self.appDataPath, 'session.dat')
 
         self.mediaPlayer = media.MediaPlayer()
 
@@ -91,7 +87,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.loadSettings()
         QTimer.singleShot(self.QUEUED_SETTINGS_DELAY, self.loadSettingsQueued)
 
-        logger.debug(u"Main application dialog initialized")
+        logger.debug("Main application dialog initialized")
 
     def setupGUISignals(self):
         """
@@ -112,8 +108,8 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.playPauseBtn.clicked.connect(self.mediaPlayer.playPause)
         self.stopBtn.clicked.connect(self.mediaPlayer.stop)
-        self.nextBtn.clicked.connect(self.mediaPlayer.next)
-        self.previousBtn.clicked.connect(self.mediaPlayer.prev)
+        self.nextBtn.clicked.connect(self.mediaPlayer.nextTrack)
+        self.previousBtn.clicked.connect(self.mediaPlayer.prevTrack)
         self.seekerSlider.valueChanged.connect(self.mediaPlayer.setPosition)
         self.volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
         self.volumeSlider.valueChanged.connect(self.volumeChanged)
@@ -129,8 +125,8 @@ class MainApp(QMainWindow, main_form.MainForm):
     def setupActionsSignals(self):
         self.mediaPlayPauseAction.triggered.connect(self.mediaPlayer.playPause)
         self.mediaStopAction.triggered.connect(self.mediaPlayer.stop)
-        self.mediaNextAction.triggered.connect(self.mediaPlayer.next)
-        self.mediaPreviousAction.triggered.connect(self.mediaPlayer.prev)
+        self.mediaNextAction.triggered.connect(self.mediaPlayer.nextTrack)
+        self.mediaPreviousAction.triggered.connect(self.mediaPlayer.prevTrack)
         self.mediaShuffleAction.triggered.connect(self.shuffleBtn.toggle)
         self.mediaRepeatAction.triggered.connect(self.repeatBtn.toggle)
         self.mediaMuteAction.triggered.connect(self.muteBtn.toggle)
@@ -150,8 +146,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.hkHookThread = QThread(self)
 
         if os.name == 'nt' and not keyhook.GlobalHKListener.isAbleToRegisterHK():
-            logger.warning(u"Unable to use win32 RegisterHotKey() function, "
-                           u"switching to backup solution - registering Windows hook.")
+            logger.warning("Unable to use win32 RegisterHotKey() function, "
+                           "switching to backup solution - registering Windows hook.")
             self.hkHook = keyhook.WindowsKeyHook()
         else:
             self.hkHook = keyhook.GlobalHKListener()
@@ -173,14 +169,14 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
 
 
-        self.mediaPlayer.mediaAdded.connect(self.addToPlaylist)
-        self.mediaPlayer.playing.connect(self.playing)
-        self.mediaPlayer.paused.connect(self.paused)
-        self.mediaPlayer.stopped.connect(self.stopped)
-        self.mediaPlayer.timeChanged.connect(self.syncPlayTime)
-        self.mediaPlayer.positionChanged.connect(self.syncSeeker)
-        self.mediaPlayer.mediaChanged.connect(self.displayCurrentMedia)
-        self.mediaPlayer.errorEncountered.connect(self.displayErrorMsg)
+        self.mediaPlayer.mediaAddedSignal.connect(self.addToPlaylist)
+        self.mediaPlayer.playingSignal.connect(self.playing)
+        self.mediaPlayer.pausedSignal.connect(self.paused)
+        self.mediaPlayer.stoppedSignal.connect(self.stopped)
+        self.mediaPlayer.timeChangedSignal.connect(self.syncPlayTime)
+        self.mediaPlayer.positionChangedSignal.connect(self.syncSeeker)
+        self.mediaPlayer.mediaChangedSignal.connect(self.displayCurrentMedia)
+        self.mediaPlayer.errorSignal.connect(self.displayErrorMsg)
 
     def setupDiskTools(self):
         """
@@ -188,7 +184,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Scanner and parser live in separated threads.
         """
         # asynchronous scanner
-        self.scanner = disk.RecursiveBrowser(nameFilter=FileExt_, followSym=False)
+        self.scanner = disk.RecursiveBrowser(fileNamesFilter=FileExt, followSym=False)
         self.scannerThread = QThread(self)
 
         # asynchronous parser
@@ -202,9 +198,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parser.finished.connect(self.clearProgress)
         self.parser.finished.connect(self.mediaPlayer.mediaAddingFinished)
         self.parser.parsed.connect(self.mediaPlayer.addMedia)
-        self.scanner.parseData.connect(self.parser.parseMedia)
+        self.scanner.parseDataSignal.connect(self.parser.parseMedia)
         self.removeFileSignal.connect(self.fileRemover.remove)
-        self.fileRemover.finished.connect(self.displayErrorMsg)
+        self.fileRemover.finishedSignal.connect(self.displayErrorMsg)
         self.scanner.moveToThread(self.scannerThread)
         self.parser.moveToThread(self.parserThread)
         self.fileRemover.moveToThread(self.fileRemoverThread)
@@ -232,38 +228,37 @@ class MainApp(QMainWindow, main_form.MainForm):
         # check data folder
         try:
             os.makedirs(self.appDataPath)
-        except OSError, exception:
-            if exception.errno != errno.EEXIST:
-                logger.exception(u"Unable to create data folder on path: %s", self.appDataPath)
-                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to create data folder.",
-                                      u"Error number: %s\n"
-                                      u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                logger.exception("Unable to create data folder on path: %s", self.appDataPath)
+                self.errorSignal.emit(ErrorMessages.CRITICAL, "Unable to create data folder.",
+                                      e.args if len(e.args) > 1 else e.args[0])
         else:
-            logger.debug(u"Data folder didn't exist and has been created.")
+            logger.debug("Data folder didn't exist and has been created.")
 
         # check medialib file
         try:
             with open(self.mediaLibFile, 'r') as f:
                 pass
-        except IOError, exception:
+        except IOError as exception:
             #  file doesn't exist => create and init file
             if exception.errno == errno.ENOENT:
                 try:
                     with open(self.mediaLibFile, 'w') as f:
                         f.write('[]')
                 except IOError:
-                    logger.exception(u"Error when creating new media library file.")
-                    self.errorSignal.emit(tools.ErrorMessages.CRITICAL,
-                                          u"Unable to create medialib file and write default data.",
-                                          u"Error number: %s\n"
-                                          u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
+                    logger.exception("Error when creating new media library file.")
+                    self.errorSignal.emit(ErrorMessages.CRITICAL,
+                                          "Unable to create medialib file and write default data.",
+                                          "Error number: %s\n"
+                                          "%s" % (exception.errno, exception.strerror))
                 else:
-                    logger.debug(u"Media file has been created and initialized.")
+                    logger.debug("Media file has been created and initialized.")
             else:
-                logger.exception(u"Error when reading medialib file.")
-                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
-                                      u"Error number: %s\n"
-                                      u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
+                logger.exception("Error when reading medialib file.")
+                self.errorSignal.emit(ErrorMessages.CRITICAL, "Unable to open and read medialib file.",
+                                      "Error number: %s\n"
+                                      "%s" % (exception.errno, exception.strerror))
 
     @pyqtSlot(int)
     def setupFileBrowser(self, rcode=None, initModel=False):
@@ -272,20 +267,19 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param rcode: return code from library dialog (ignore it)
         @param initModel: if true, fileSystemModel is re-initialized
         """
-        logger.debug(u"Opening media folder and reading data.")
+        logger.debug("Opening media folder and reading data.")
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
                 mediaFolders = json.load(mediaFile)
-        except IOError, exception:
-            logger.exception(u"Error when reading medialib file.")
-            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
-                                                         u"Error number: %s\n"
-                                                         u"%s" % (exception.errno, exception.strerror))
+        except IOError as exception:
+            logger.exception("Error when reading medialib file.")
+            self.errorSignal.emit(ErrorMessages.CRITICAL, "Unable to open and read medialib file.",
+                                                          "Error number: %s\n"
+                                                          "%s" % (exception.errno, exception.strerror))
             raise
-        except ValueError, exception:
-            logger.exception(u"Unable to load and parse data from JSON file.")
-            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to load and parse data from medialib file.",
-                                                         u"Description: %s" % exception.message)
+        except ValueError:
+            logger.exception("Unable to load and parse data from JSON file.")
+            self.errorSignal.emit(ErrorMessages.CRITICAL, "Unable to load and parse data from medialib file.", "")
             raise
 
         if initModel:
@@ -313,7 +307,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.folderCombo.addItem(folder)
                 folders_to_display.append(folder)
             else:
-                self.errorSignal.emit(tools.ErrorMessages.WARNING, u"Some folders in media library don't exist.", u"")
+                self.errorSignal.emit(ErrorMessages.WARNING, "Some folders in media library don't exist.", "")
 
         # set back previously selected (current) item in folderCombo if exists (may be deleted => set root folder)
         if current_folder_text in folders_to_display:
@@ -336,11 +330,11 @@ class MainApp(QMainWindow, main_form.MainForm):
         Method called on start to load and set stuff.
         Method is called directly, so no heavy operation is expected. (see loadSettingsQueued() for more info)
         """
-        logger.debug(u"Global load settings called. Loading settings...")
+        logger.debug("Global load settings called. Loading settings...")
 
         # restore window position
         settings = QSettings()
-        windowGeometry = settings.value(u"gui/MainApp/geometry")
+        windowGeometry = settings.value("gui/MainApp/geometry")
         if windowGeometry:
             self.restoreGeometry(windowGeometry)
 
@@ -355,7 +349,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         but almost unnoticeable.
         """
         self.loadSession()
-        self.changeSource(tools.PlaybackSources.FILES)
+        self.changeSource(PlaybackSources.FILES)
 
     def loadSession(self):
         """
@@ -363,16 +357,16 @@ class MainApp(QMainWindow, main_form.MainForm):
         e.g. last playlist, etc.
         """
         if not os.path.isfile(self.session_file):
-            logger.debug(u"No session file found, skipping")
+            logger.debug("No session file found, skipping")
             return
 
-        logger.debug(u"Loading session file...")
+        logger.debug("Loading session file...")
 
         try:
             with open(self.session_file, 'rb') as f:
                 session_data = pickle.load(f)
         except IOError:
-            logger.exception(u"Unable to load data from session file!")
+            logger.exception("Unable to load data from session file!")
         else:
             self.loadPlaylist(session_data)
 
@@ -388,7 +382,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.repeatBtn.blockSignals(False)
             self.mediaRepeatAction.setChecked(self.mediaPlayer.repeat_mode)
 
-            logger.debug(u"Session restored successfully")
+            logger.debug("Session restored successfully")
 
     def loadPlaylist(self, session_data):
         """
@@ -404,7 +398,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         paths_list = table_content[-1]
 
-        logger.debug(u"Restoring items from playlist in playlistTable...")
+        logger.debug("Restoring items from playlist in playlistTable...")
         self.playlistTable.setRowCount(n_rows)
         self.playlistTable.setColumnCount(n_cols)
 
@@ -418,7 +412,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 item = QTableWidgetItem(cell_data)
                 self.playlistTable.setItem(row, column, item)
 
-        logger.debug(u"Restoring items from playlist in mediaPlayer object...")
+        logger.debug("Restoring items from playlist in mediaPlayer object...")
         self.mediaPlayer.shuffled_playlist = session_data['id_playlist']
         self.mediaPlayer.shuffled_playlist_current_index = session_data['playlist_pointer']
         # self.mediaPlayer.playlist_len = len(self.mediaPlayer.shuffled_playlist)
@@ -435,14 +429,14 @@ class MainApp(QMainWindow, main_form.MainForm):
         When program is about to close, all desired settings is saved.
         Called when dialog closeEvent in caught.
         """
-        logger.debug(u"Global save settings called. Saving settings...")
+        logger.debug("Global save settings called. Saving settings...")
         self.saveSession()
         self.mainTreeBrowser.saveSettings()
 
         # save window position
         settings = QSettings()
-        settings.setValue(u"gui/MainApp/geometry", self.saveGeometry())
-        settings.setValue(u"gui/MainApp/state", self.saveState())
+        settings.setValue("gui/MainApp/geometry", self.saveGeometry())
+        # settings.setValue("gui/MainApp/state", self.saveState())
 
     def saveSession(self):
         """
@@ -456,7 +450,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         session_data['shuffle'] = self.mediaPlayer.shuffle_mode
         session_data['repeat'] = self.mediaPlayer.repeat_mode
 
-        logger.debug(u"Dumping session file to disk...")
+        logger.debug("Dumping session file to disk...")
         with open(self.session_file, 'wb') as f:
             pickle.dump(session_data, f)
 
@@ -465,7 +459,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Dump information about playlist from playlist_table and from media_player
         @param session_data: all information are stored to this dict file
         """
-        logger.debug(u"Dumping and saving playlist information...")
+        logger.debug("Dumping and saving playlist information...")
 
         n_cols = self.playlistTable.columnCount()
         n_rows = self.playlistTable.rowCount()
@@ -488,11 +482,11 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot('QModelIndex')
     def sourceItemsBrowserActivated(self, index):
-        if self.sourceType == tools.PlaybackSources.FILES:
+        if self.sourceType == PlaybackSources.FILES:
             self.fileBrowserActivated(index)
-        if self.sourceType == tools.PlaybackSources.PLAYLISTS:
+        if self.sourceType == PlaybackSources.PLAYLISTS:
             pass
-        if self.sourceType == tools.PlaybackSources.RADIO:
+        if self.sourceType == PlaybackSources.RADIO:
             pass
 
     def fileBrowserActivated(self, modelIndex):
@@ -501,15 +495,15 @@ class MainApp(QMainWindow, main_form.MainForm):
         selected path will be played.
         @type modelIndex: QModelIndex
         """
-        logger.debug(u"File (media) browser activated, now checking if activated index if file or folder...")
+        logger.debug("File (media) browser activated, now checking if activated index if file or folder...")
 
         fileInfo = self.fileBrowserModel.fileInfo(modelIndex)
         targetPath = fileInfo.absoluteFilePath()
-        logger.debug(u"Initializing playing of path: %s", targetPath)
+        logger.debug("Initializing playing of path: %s", targetPath)
         self.mediaPlayer.clearMediaList()
         self.mediaPlayer.initMediaAdding(append=False)
         self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-        self.displayProgress(u"Adding...")
+        self.displayProgress("Adding...")
 
     @pyqtSlot('QPointF')
     def sourceItemsBrowserContextMenu(self, pos):
@@ -519,16 +513,16 @@ class MainApp(QMainWindow, main_form.MainForm):
         @type pos: QPointF
         """
 
-        logger.debug(u"Browser context menu called. Choosing appropriate context menu...")
+        logger.debug("Browser context menu called. Choosing appropriate context menu...")
 
-        if self.sourceType == tools.PlaybackSources.FILES:
+        if self.sourceType == PlaybackSources.FILES:
             self.fileBrowserContextMenu(pos)
 
-        if self.sourceType == tools.PlaybackSources.PLAYLISTS:
-            logger.debug(u"Opening playlist browser context menu.")
+        if self.sourceType == PlaybackSources.PLAYLISTS:
+            logger.debug("Opening playlist browser context menu.")
 
-        if self.sourceType == tools.PlaybackSources.RADIO:
-            logger.debug(u"Opening radio browser context menu.")
+        if self.sourceType == PlaybackSources.RADIO:
+            logger.debug("Opening radio browser context menu.")
 
     def fileBrowserContextMenu(self, pos):
         """
@@ -541,10 +535,10 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         # menu setup
         menu = QMenu(self.mainTreeBrowser)
-        playNow = QAction(QIcon(u":/icons/play-now.png"), u"Play now", menu)
-        addToPlayList = QAction(QIcon(u":/icons/play-next.png"), u"Add to playlist", menu)
-        playAll = QAction(QIcon(u":/icons/play-now.png"), u"Play all", menu)
-        removeFromDisk = QAction(QIcon(u":/icons/delete.png"), u"Remove from disk", menu)
+        playNow = QAction(QIcon(":/icons/play-now.png"), "Play now", menu)
+        addToPlayList = QAction(QIcon(":/icons/play-next.png"), "Add to playlist", menu)
+        playAll = QAction(QIcon(":/icons/play-now.png"), "Play all", menu)
+        removeFromDisk = QAction(QIcon(":/icons/delete.png"), "Remove from disk", menu)
         separator = QAction(menu)
         separator.setSeparator(True)
 
@@ -555,10 +549,10 @@ class MainApp(QMainWindow, main_form.MainForm):
             if fileInfo.isRoot():
                 removeFromDisk.setEnabled(False)        # disable root removing (i.e. C:\)
         else:
-            logger.error(u"Unknown media type on '%s'", fileInfo.absoluteFilePath())
+            logger.error("Unknown media type on '%s'", fileInfo.absoluteFilePath())
             return
 
-        logger.debug(u"Opening file browser context menu.")
+        logger.debug("Opening file browser context menu.")
         choice = menu.exec_(self.mainTreeBrowser.viewport().mapToGlobal(pos))
 
         # PLAY NOW
@@ -567,7 +561,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.mediaPlayer.initMediaAdding(append=False)
             targetPath = fileInfo.absoluteFilePath()
             self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-            self.displayProgress(u"Adding...")
+            self.displayProgress("Adding...")
 
         # PLAY ALL
         elif choice is playAll:
@@ -575,7 +569,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.mediaPlayer.initMediaAdding(append=False)
             targetPath = fileInfo.absoluteFilePath()
             self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-            self.displayProgress(u"Adding...")
+            self.displayProgress("Adding...")
 
         # ADD TO PLAYLIST
         elif choice is addToPlayList:
@@ -583,12 +577,12 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.mediaPlayer.initMediaAdding(append=True)
             # asynchronously recursively search for media files
             self.scanFilesSignal.emit(targetPath)
-            self.displayProgress(u"Adding...")
+            self.displayProgress("Adding...")
 
         # REMOVE FROM DISK
         elif choice is removeFromDisk:
             path = fileInfo.absoluteFilePath()
-            logger.debug(u"Removing path '%s' to Trash", path)
+            logger.debug("Removing path '%s' to Trash", path)
             self.removeFileSignal.emit(path)
 
     @pyqtSlot('QPointF')
@@ -597,19 +591,19 @@ class MainApp(QMainWindow, main_form.MainForm):
         if not item:
             return
 
-        logger.debug(u"Opening playlist context menu.")
+        logger.debug("Opening playlist context menu.")
         menu = QMenu(self.playlistTable)
-        playNowAction = QAction(QIcon(u":/icons/play-now.png"), u"Play now", menu)
+        playNowAction = QAction(QIcon(":/icons/play-now.png"), "Play now", menu)
         playNowAction.setShortcut(QKeySequence(Qt.Key_Enter))
-        remFromPlaylistAction = QAction(u"Remove from playlist", menu)
+        remFromPlaylistAction = QAction("Remove from playlist", menu)
         remFromPlaylistAction.setShortcut(QKeySequence(Qt.Key_Delete))
-        remFromDiskAction = QAction(QIcon(u":/icons/delete.png"), u"Remove from disk", menu)
+        remFromDiskAction = QAction(QIcon(":/icons/delete.png"), "Remove from disk", menu)
         remFromDiskAction.setShortcut(QKeySequence(Qt.SHIFT + Qt.Key_Delete))
         separator = QAction(menu)
         separator.setSeparator(True)
 
         menu.addActions([playNowAction, separator])
-        removeMenu = menu.addMenu(u"Remove")
+        removeMenu = menu.addMenu("Remove")
         removeMenu.addActions([remFromPlaylistAction, remFromDiskAction])
         choice = menu.exec_(self.playlistTable.viewport().mapToGlobal(pos))
 
@@ -642,9 +636,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         if oldTreeMode is not None and oldTreeMode != source_id:
             self.mainTreeBrowser.saveSettings()
 
-        if source_id == tools.PlaybackSources.FILES:
-            self.sourceType = tools.PlaybackSources.FILES
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
+        if source_id == PlaybackSources.FILES:
+            self.sourceType = PlaybackSources.FILES
+            self.mainTreeBrowser.setMode(PlaybackSources.FILES)
             self.mainTreeBrowser.setModel(self.fileBrowserModel)
 
             # hide unwanted columns
@@ -657,19 +651,19 @@ class MainApp(QMainWindow, main_form.MainForm):
 
             self.mainTreeBrowser.restoreSettings()
 
-            logger.debug(u"Browser source has been selected to FILES.")
+            logger.debug("Browser source has been selected to FILES.")
 
-        elif source_id == tools.PlaybackSources.PLAYLISTS:
-            self.sourceType = tools.PlaybackSources.PLAYLISTS
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
-            logger.debug(u"Browser source has been selected to PLAYLISTS.")
-            logger.warning(u"PLAYLISTS NOT IMPLEMENTED!")
+        elif source_id == PlaybackSources.PLAYLISTS:
+            self.sourceType = PlaybackSources.PLAYLISTS
+            self.mainTreeBrowser.setMode(PlaybackSources.FILES)
+            logger.debug("Browser source has been selected to PLAYLISTS.")
+            logger.warning("PLAYLISTS NOT IMPLEMENTED!")
 
-        elif source_id == tools.PlaybackSources.RADIO:
-            self.sourceType = tools.PlaybackSources.RADIO
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
-            logger.debug(u"Browser source has been selected to RADIOS.")
-            logger.warning(u"RADIOS NOT IMPLEMENTED!")
+        elif source_id == PlaybackSources.RADIO:
+            self.sourceType = PlaybackSources.RADIO
+            self.mainTreeBrowser.setMode(PlaybackSources.FILES)
+            logger.debug("Browser source has been selected to RADIOS.")
+            logger.warning("RADIOS NOT IMPLEMENTED!")
 
     @pyqtSlot(int)
     def changeFileBrowserRoot(self, index):
@@ -685,7 +679,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         if newMediaFolder == self.fileBrowserModel.myComputer(Qt.DisplayRole):
             # display MyComputer folder (root on Linux)
             if self.myComputerPathIndex is not None:
-                logger.debug(u"Changing file_browser root to 'My Computer/root'.")
+                logger.debug("Changing file_browser root to 'My Computer/root'.")
                 self.mainTreeBrowser.setRootIndex(self.myComputerPathIndex)
                 self.fileBrowserModel.setRootPath(QDir.rootPath())
                 # self.mainTreeBrowser.currentRootFolder = '/'
@@ -693,13 +687,13 @@ class MainApp(QMainWindow, main_form.MainForm):
             # if valid, display given folder as root
             folderIndex = self.fileBrowserModel.index(newMediaFolder)
             if folderIndex.row() != -1 and folderIndex.column() != -1:
-                logger.debug(u"Changing file_browser root to '%s'.", newMediaFolder)
+                logger.debug("Changing file_browser root to '%s'.", newMediaFolder)
                 self.mainTreeBrowser.setRootIndex(folderIndex)
                 self.fileBrowserModel.setRootPath(newMediaFolder)
                 # self.mainTreeBrowser.currentRootFolder = newMediaFolder
             else:
-                logger.error(u"Media path from folderCombo could not be found in fileSystemModel!")
-                self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Media folder '%s' could not be found!" % newMediaFolder, u"")
+                logger.error("Media path from folderCombo could not be found in fileSystemModel!")
+                self.errorSignal.emit(ErrorMessages.ERROR, "Media folder '%s' could not be found!" % newMediaFolder, "")
                 self.folderCombo.removeItem(self.folderCombo.currentIndex())
 
     @pyqtSlot()
@@ -720,7 +714,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         @type sources: list of (unicode, int)
         """
         n = len(sources)
-        logger.debug(u"Adding '%s' sources to current playlist.", n)
+        logger.debug("Adding '%s' sources to current playlist.", n)
 
         lastItemIndex = self.playlistTable.rowCount() if append else 0
         self.playlistTable.setRowCount(lastItemIndex + n)
@@ -737,7 +731,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot()
     def clearPlaylist(self):
-        logger.debug(u"Clear media playlist called")
+        logger.debug("Clear media playlist called")
         self.mediaPlayer.clearMediaList()
 
         self.playlistTable.clearContents()
@@ -745,35 +739,37 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot()
     def cancelAdding(self):
-        logger.debug(u"Canceling adding new files to playlist (parsing).")
+        logger.debug("Canceling adding new files to playlist (parsing).")
         self.parser.stop(True)
 
-    @pyqtSlot(int, unicode, unicode)
-    def displayErrorMsg(self, er_type, text, details=u""):
+    @pyqtSlot(int, str, str)
+    def displayErrorMsg(self, er_type, text, details=""):
         """
         Called to display warnings and errors.
         @param er_type: error type (Message enum)
         @param text: main text
         @param details: description
         """
-        if er_type == tools.ErrorMessages.INFO:
-            icon = QPixmap(u":/icons/info.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
+        details = "Details: <i>" + str(details) + "</i>" if details else ""
+
+        if er_type == ErrorMessages.INFO:
+            icon = QPixmap(":/icons/info.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
-            self.stBarMsgText.setText(text + u' ' + details)
+            self.stBarMsgText.setText(text + ' ' + details)
             self.stBarMsgIcon.show()
             self.stBarMsgText.show()
             QTimer.singleShot(self.INFO_MSG_DELAY, self.clearErrorMsg)
 
-        elif er_type == tools.ErrorMessages.WARNING:
-            icon = QPixmap(u":/icons/warning.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
+        elif er_type == ErrorMessages.WARNING:
+            icon = QPixmap(":/icons/warning.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
             self.stBarMsgIcon.show()
             self.stBarMsgText.show()
             QTimer.singleShot(self.WARNING_MSG_DELAY, self.clearErrorMsg)
 
-        elif er_type == tools.ErrorMessages.ERROR:
-            icon = QPixmap(u":/icons/error.png").scaled(16, 16, transformMode=Qt.SmoothTransformation)
+        elif er_type == ErrorMessages.ERROR:
+            icon = QPixmap(":/icons/error.png").scaled(16, 16, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
             self.stBarMsgIcon.show()
@@ -781,10 +777,10 @@ class MainApp(QMainWindow, main_form.MainForm):
             QTimer.singleShot(self.ERROR_MSG_DELAY, self.clearErrorMsg)
             QApplication.beep()
 
-        elif er_type == tools.ErrorMessages.CRITICAL:
+        elif er_type == ErrorMessages.CRITICAL:
             msgBox = QMessageBox(self)
             msgBox.setIcon(QMessageBox.Critical)
-            msgBox.setWindowTitle(u"Critical error")
+            msgBox.setWindowTitle("Critical error")
             msgBox.setText(text)
             msgBox.setInformativeText(details)
             msgBox.exec_()
@@ -858,36 +854,36 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot()
     def playing(self):
-        logger.debug(u"Media player playing.")
+        logger.debug("Media player playing.")
         icon = QIcon()
-        icon.addPixmap(QPixmap(u":/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(":/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
         self.mediaPlayPauseAction.setIcon(icon)
-        self.mediaPlayPauseAction.setText(u"Pause")
+        self.mediaPlayPauseAction.setText("Pause")
 
     @pyqtSlot()
     def paused(self):
-        logger.debug(u"Media player paused.")
+        logger.debug("Media player paused.")
         icon = QIcon()
-        icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
         self.mediaPlayPauseAction.setIcon(icon)
-        self.mediaPlayPauseAction.setText(u"Play")
+        self.mediaPlayPauseAction.setText("Play")
 
     @pyqtSlot()
     def stopped(self):
-        logger.debug(u"Media player stopped.")
+        logger.debug("Media player stopped.")
         self.paused()
-        self.timeLbl.setText(u"00:00:00")
+        self.timeLbl.setText("00:00:00")
         self.seekerSlider.blockSignals(True)        # prevent syncing
         self.seekerSlider.setValue(0)
         self.seekerSlider.blockSignals(False)
 
         icon = QIcon()
-        icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
+        icon.addPixmap(QPixmap(":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
         self.mediaPlayPauseAction.setIcon(icon)
-        self.mediaPlayPauseAction.setText(u"Play")
+        self.mediaPlayPauseAction.setText("Play")
 
     @pyqtSlot(int)
     def syncPlayTime(self, value):
@@ -932,7 +928,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             return
 
         fileName = os.path.basename(self.playlistTable.item(index, self.playlistTable.columnCount()-1).text())
-        logger.debug(u"Play now called, playing #%s song from playlist named '%s'.", index, fileName)
+        logger.debug("Play now called, playing #%s song from playlist named '%s'.", index, fileName)
 
         self.mediaPlayer.play(index)
 
@@ -947,7 +943,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             return
 
         fileName = os.path.basename(self.playlistTable.item(index, self.playlistTable.columnCount()-1).text())
-        logger.debug(u"Removing from playlist #%s song named '%s'", index, fileName)
+        logger.debug("Removing from playlist #%s song named '%s'", index, fileName)
 
         self.mediaPlayer.removeItem(index)
         self.playlistTable.removeRow(index)
@@ -966,7 +962,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         fileName = os.path.basename(filePath)
         self.playlistRemFromPlaylist(index)
 
-        logger.debug(u"Removing to Trash #%s song named '%s' on path '%s'", index, fileName, filePath)
+        logger.debug("Removing to Trash #%s song named '%s' on path '%s'", index, fileName, filePath)
         self.removeFileSignal.emit(filePath)
 
     @pyqtSlot(bool)
@@ -991,13 +987,13 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.volumePopup.muteBtn.setChecked(False)
 
             if volume < 20:
-                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-min.png")))
+                self.volumeBtn.setIcon(QIcon(QPixmap(":/icons/volume-min.png")))
             elif volume < 40:
-                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-low.png")))
+                self.volumeBtn.setIcon(QIcon(QPixmap(":/icons/volume-low.png")))
             elif volume < 80:
-                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-medium.png")))
+                self.volumeBtn.setIcon(QIcon(QPixmap(":/icons/volume-medium.png")))
             else:
-                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-max.png")))
+                self.volumeBtn.setIcon(QIcon(QPixmap(":/icons/volume-max.png")))
 
     @pyqtSlot(bool)
     def muteStatusChanged(self, status):
@@ -1009,17 +1005,17 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaPlayer.setMute(status)
 
         if status:
-            logger.debug(u"Mute button checked, MUTING audio...")
-            self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
+            logger.debug("Mute button checked, MUTING audio...")
+            self.volumeBtn.setIcon(QIcon(QPixmap(":/icons/mute.png")))
             self.oldVolumeValue = self.volumeSlider.value()
             self.volumeSlider.blockSignals(True)
             self.volumeSlider.setValue(0)
             self.volumeSlider.blockSignals(False)
 
-            self.mediaMuteAction.setText(u"Unmute")
-            self.mediaMuteAction.setIcon(QIcon(QPixmap(u":/icons/volume-max.png")))
+            self.mediaMuteAction.setText("Unmute")
+            self.mediaMuteAction.setIcon(QIcon(QPixmap(":/icons/volume-max.png")))
         else:
-            logger.debug(u"Mute button checked, UN-MUTING audio...")
+            logger.debug("Mute button checked, UN-MUTING audio...")
 
             if not self.oldVolumeValue:
                 self.oldVolumeValue = 20
@@ -1030,37 +1026,37 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.volumeSlider.blockSignals(False)
                 self.volumeChanged(self.oldVolumeValue)
 
-            self.mediaMuteAction.setText(u"Mute")
-            self.mediaMuteAction.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
+            self.mediaMuteAction.setText("Mute")
+            self.mediaMuteAction.setIcon(QIcon(QPixmap(":/icons/mute.png")))
 
     @pyqtSlot()
     def openAboutDialog(self):
-        logger.debug(u"Opening 'About' dialog")
+        logger.debug("Opening 'About' dialog")
         aboutDialog = QDialog(self,  Qt.WindowSystemMenuHint | Qt.WindowTitleHint)
-        aboutDialog.setWindowTitle(u"About Woofer player")
+        aboutDialog.setWindowTitle("About Woofer player")
 
         layout = QHBoxLayout()
         layout.setMargin(20)
 
-        if os.path.isfile(u'LICENSE.txt'):
-            path_to_licence = unicode(os.getcwd(), sys.getfilesystemencoding())
+        if os.path.isfile('LICENSE.txt'):
+            path_to_licence = os.getcwd()
             path_to_licence = path_to_licence.split(os.sep)
-            path_to_licence = u"/".join(path_to_licence) + u"/LICENSE.txt"
-            path_to_licence = u"file:///" + path_to_licence
+            path_to_licence = "/".join(path_to_licence) + "/LICENSE.txt"
+            path_to_licence = "file:///" + path_to_licence
         else:
-            logger.error(u"LICENSE.txt file was not found in woofer root dir!")
-            path_to_licence = u"http://www.gnu.org/licenses/gpl-2.0.html"
+            logger.error("LICENSE.txt file was not found in woofer root dir!")
+            path_to_licence = "http://www.gnu.org/licenses/gpl-2.0.html"
 
-        text = u"Woofer player is <strong>free and open-source cross-platform</strong> music player " \
-               u"that plays most multimedia files, CDs, DVDs and also various online streams. " \
-               u"Whole written in Python and Qt provides easy, reliable, " \
-               u"and high quality playback thanks to LibVLC library developed by " \
-               u"<a href='http://www.videolan.org/index.cs.html'>VideoLAN community</a>.<br/>" \
-               u"<br/>" \
-               u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
-               u"Web: <a href='http://www.wooferplayer.com'>www.wooferplayer.com</a><br/>" \
-               u"Source: GitHub repository &lt; <a href='%s'>LICENCE GPL v2</a> &gt;<br/>" \
-               u"Version: 0.7a" % path_to_licence
+        text = "Woofer player is <strong>free and open-source cross-platform</strong> music player " \
+               "that plays most multimedia files, CDs, DVDs and also various online streams. " \
+               "Whole written in Python and Qt provides easy, reliable, " \
+               "and high quality playback thanks to LibVLC library developed by " \
+               "<a href='http://www.videolan.org/index.cs.html'>VideoLAN community</a>.<br/>" \
+               "<br/>" \
+               "Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
+               "Web: <a href='http://www.wooferplayer.com'>www.wooferplayer.com</a><br/>" \
+               "Source: GitHub repository &lt; <a href='%s'>LICENCE GPL v2</a> &gt;<br/>" \
+               "Version: 0.7a" % path_to_licence
 
         textLabel = QLabel()
         textLabel.setTextFormat(Qt.RichText)
@@ -1070,7 +1066,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         textLabel.setText(text)
 
         iconLabel = QLabel()
-        iconLabel.setPixmap(QPixmap(u":/icons/app_icon.png").scaled(128, 128, transformMode=Qt.SmoothTransformation))
+        iconLabel.setPixmap(QPixmap(":/icons/app_icon.png").scaled(128, 128, transformMode=Qt.SmoothTransformation))
         iconLabel.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         layout.addWidget(iconLabel)
@@ -1080,7 +1076,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         aboutDialog.setFixedWidth(480)
         aboutDialog.setFixedHeight(aboutDialog.minimumSizeHint().height())
         aboutDialog.exec_()
-        logger.debug(u"'About' dialog closed")
+        logger.debug("'About' dialog closed")
 
     def closeEvent(self, event):
         """

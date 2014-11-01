@@ -8,7 +8,6 @@ Custom configuration and setup for logger
 - add DEBUG and INFO logs to stdout (only in DEBUG mode)
 """
 
-__version__ = "$Id: log.py 136 2014-10-25 11:51:31Z m1lhaus $"
 
 import logging
 import os
@@ -33,7 +32,7 @@ def setup_logging(mode):
     if not os.path.isdir(log_dir):
         os.mkdir(log_dir)
 
-    msg_format = u"%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
+    msg_format = "%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
     console_formatter = logging.Formatter(msg_format)
 
     # --- BASIC CONFIGURATION ---
@@ -44,7 +43,7 @@ def setup_logging(mode):
         level = logging.WARNING
         log_path = os.path.join(log_dir, "production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
     else:
-        raise NotImplementedError(u"Logging mode is not implemented!")
+        raise NotImplementedError("Logging mode is not implemented!")
 
     logging.basicConfig(level=level, format=msg_format, filename=log_path)
     # ---------------------------
