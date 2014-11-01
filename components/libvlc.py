@@ -50,7 +50,8 @@ from ctypes.util import find_library
 # Used by EventManager in override.py
 from inspect import getargspec
 
-_vlc_version_ = "2.1.5"
+# LibVLC version 2.1.5
+__version__ = ""            # todo: get through git
 build_date = "Sat Nov  1 15:53:30 2014"
 
 if sys.version_info[0] > 2:
@@ -63,7 +64,7 @@ if sys.version_info[0] > 2:
         """Translate string or bytes to bytes.
         """
         if isinstance(s, str):
-            return bytes(s, sys.getfilesystemencoding())
+            return bytes(s, sys.getdefaultencoding())
         else:
             return s
 
@@ -71,7 +72,7 @@ if sys.version_info[0] > 2:
         """Translate bytes to string.
         """
         if isinstance(b, bytes):
-            return b.decode(sys.getfilesystemencoding())
+            return b.decode(sys.getdefaultencoding())
         else:
             return b
 else:
