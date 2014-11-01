@@ -1,0 +1,34 @@
+<RCC>
+  <qresource prefix="/">
+    <file>icons/remove_close.png</file>
+    <file>icons/info.png</file>
+    <file>icons/error.png</file>
+    <file>icons/warning.png</file>
+    <file>icons/delete.png</file>
+    <file>icons/play-next.png</file>
+    <file>icons/play-now.png</file>
+    <file>icons/app_icon.png</file>
+    <file>icons/media-next.png</file>
+    <file>icons/settings.png</file>
+    <file>icons/media-pause.png</file>
+    <file>icons/media-play.png</file>
+    <file>icons/media-previous.png</file>
+    <file>icons/media-repeat.png</file>
+    <file>icons/media-shuffle.png</file>
+    <file>icons/media-stop.png</file>
+    <file>icons/music-cd.png</file>
+    <file>icons/radio.png</file>
+    <file>icons/folder.png</file>
+    <file>icons/playlist.png</file>
+    <file>icons/music-icon.png</file>
+    <file>icons/mute.png</file>
+    <file>icons/quit.png</file>
+    <file>icons/volume-max.png</file>
+    <file>icons/volume-medium.png</file>
+    <file>icons/volume-low.png</file>
+    <file>icons/volume-min.png</file>
+	<file>icons/save.png</file>
+	<file>icons/open.png</file>
+	<file>icons/help.png</file>
+  </qresource>
+</RCC>
