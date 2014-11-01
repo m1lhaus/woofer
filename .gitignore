@@ -1,1 +1,7 @@
 .idea/
+build/release
+build/woofer
+log/
+data/
+libvlc/win/
+*.pyc
