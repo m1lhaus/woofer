@@ -11,7 +11,7 @@ import pyHook
 import ctypes
 import win32con
 
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
 
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)

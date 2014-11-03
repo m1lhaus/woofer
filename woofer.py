@@ -16,19 +16,19 @@ import components.log
 if sys.version_info < (3, 0):
     raise Exception("Application requires Python 3!")
 
-try:
-    import sip
-except ImportError as e:
-    raise Exception("%s! Sip package (PyQt4) is required!" % e.message)
-else:
-    # set PyQt API to v2
-    sip.setapi('QDate', 2)
-    sip.setapi('QDateTime', 2)
-    sip.setapi('QString', 2)
-    sip.setapi('QTextStream', 2)
-    sip.setapi('QTime', 2)
-    sip.setapi('QUrl', 2)
-    sip.setapi('QVariant', 2)
+# try:
+#     import sip
+# except ImportError as e:
+#     raise Exception("%s! Sip package (PyQt4) is required!" % e.message)
+# else:
+#     # set PyQt API to v2
+#     sip.setapi('QDate', 2)
+#     sip.setapi('QDateTime', 2)
+#     sip.setapi('QString', 2)
+#     sip.setapi('QTextStream', 2)
+#     sip.setapi('QTime', 2)
+#     sip.setapi('QUrl', 2)
+#     sip.setapi('QVariant', 2)
 
 try:
     import send2trash
@@ -36,8 +36,9 @@ except ImportError as e:
     raise Exception("%s! Send2Trash package is required!" % e.message)
 
 try:
-    from PyQt4.QtCore import *
-    from PyQt4.QtGui import *
+    from PyQt5.QtCore import *
+    from PyQt5.QtGui import *
+    from PyQt5.QtWidgets import *
 except ImportError as e:
     raise Exception("%s! PyQt4 library is required!" % e.message)
 

@@ -12,8 +12,9 @@ import os
 import errno
 import json
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 from forms import main_form
 from dialogs import library_dialog

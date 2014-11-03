@@ -9,7 +9,7 @@ import logging
 import os
 import time
 
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
 
 
 logger = logging.getLogger(__name__)

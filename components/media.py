@@ -10,7 +10,7 @@ Media components
 import logging
 import random
 
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
 
 from components import libvlc as libvlc
 from tools.misc import ErrorMessages

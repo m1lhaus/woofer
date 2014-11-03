@@ -7,8 +7,9 @@ All GUI components from library dialog initialized here.
 
 import logging
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
@@ -46,7 +47,7 @@ class Ui_libraryDialog(object):
         self.retranslateUi(libraryDialog)
 
     def retranslateUi(self, libraryDialog):
-        libraryDialog.setWindowTitle(QApplication.translate("libraryDialog", "Media library", None, QApplication.UnicodeUTF8))
-        self.label.setText(QApplication.translate("libraryDialog", "Add folders for quick access:", None, QApplication.UnicodeUTF8))
-        self.addBtn.setText(QApplication.translate("libraryDialog", "Add", None, QApplication.UnicodeUTF8))
-        self.removeBtn.setText(QApplication.translate("libraryDialog", "Remove", None, QApplication.UnicodeUTF8))
+        libraryDialog.setWindowTitle("Media library")
+        self.label.setText("Add folders for quick access:")
+        self.addBtn.setText("Add")
+        self.removeBtn.setText("Remove")

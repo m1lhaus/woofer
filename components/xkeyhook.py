@@ -18,7 +18,7 @@ from Xlib import X, XK, display
 from Xlib.ext import record
 from Xlib.protocol import rq
 
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
 
 logger = logging.getLogger(__name__)
 logger.debug('Import ' + __name__)
