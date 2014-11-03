@@ -19,14 +19,14 @@ if sys.version_info < (3, 0):
 try:
     import send2trash
 except ImportError as e:
-    raise Exception("%s! Send2Trash package is required!" % e.message)
+    raise Exception("%s! Send2Trash package is required!" % e.msg)
 
 try:
     from PyQt5.QtCore import *
     from PyQt5.QtGui import *
     from PyQt5.QtWidgets import *
 except ImportError as e:
-    raise Exception("%s! PyQt4 library is required!" % e.message)
+    raise Exception("%s! PyQt4 library is required!" % e.msg)
 
 # requirements for system-wide hooks
 if os.name == 'nt':
@@ -34,7 +34,7 @@ if os.name == 'nt':
         import pywintypes
         import pythoncom
     except ImportError as e:
-        raise Exception("%s! PyWin32 libraries (package) are required on Windows platform!" % e.message)
+        raise Exception("%s! PyWin32 libraries (package) are required on Windows platform!" % e.msg)
 
     # try:
     #     import pyHook
@@ -45,7 +45,7 @@ elif os.name == 'posix':
     try:
         import Xlib
     except ImportError as e:
-        raise Exception("%s! Python-Xlib libraries are required on Linux platform!" % e.message)
+        raise Exception("%s! Python-Xlib libraries are required on Linux platform!" % e.msg)
 
 
 import components.libvlc as libvlc               # import for libvlc check
