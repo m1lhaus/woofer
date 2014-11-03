@@ -16,20 +16,6 @@ import components.log
 if sys.version_info < (3, 0):
     raise Exception("Application requires Python 3!")
 
-# try:
-#     import sip
-# except ImportError as e:
-#     raise Exception("%s! Sip package (PyQt4) is required!" % e.message)
-# else:
-#     # set PyQt API to v2
-#     sip.setapi('QDate', 2)
-#     sip.setapi('QDateTime', 2)
-#     sip.setapi('QString', 2)
-#     sip.setapi('QTextStream', 2)
-#     sip.setapi('QTime', 2)
-#     sip.setapi('QUrl', 2)
-#     sip.setapi('QVariant', 2)
-
 try:
     import send2trash
 except ImportError as e:
@@ -50,10 +36,10 @@ if os.name == 'nt':
     except ImportError as e:
         raise Exception("%s! PyWin32 libraries (package) are required on Windows platform!" % e.message)
 
-    try:
-        import pyHook
-    except ImportError as e:
-        raise Exception("%s! pyHook package is required on Windows platform!" % e.message)
+    # try:
+    #     import pyHook
+    # except ImportError as e:
+    #     raise Exception("%s! pyHook package is required on Windows platform!" % e.message)
 
 elif os.name == 'posix':
     try:
@@ -156,6 +142,8 @@ def startApplication(environment):
     """
     components.log.setup_logging(environment)
     logger.debug("Logger mode set to %s, now initializing main application loop.", environment)
+    logger.debug("Using Python %s.%s.%s PyQt version '%s' built against Qt version '%s'",
+                 sys.version_info[0], sys.version_info[1], sys.version_info[2], PYQT_VERSION_STR, QT_VERSION_STR)
 
     # init Qt application
     app = QApplication(sys.argv)

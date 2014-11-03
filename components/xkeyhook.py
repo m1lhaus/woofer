@@ -81,6 +81,7 @@ class GlobalHKListener(QObject):
     mediaStopKeyPressed = pyqtSignal()
     mediaNextTrackKeyPressed = pyqtSignal()
     mediaPrevTrackKeyPressed = pyqtSignal()
+    errorSignal = pyqtSignal(int, str, str)
 
     def __init__(self):
         super(GlobalHKListener, self).__init__()

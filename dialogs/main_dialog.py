@@ -60,6 +60,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     WARNING_MSG_DELAY = 10000
     ERROR_MSG_DELAY = 20000
     QUEUED_SETTINGS_DELAY = 100
+    THREAD_TERMINATE_DELAY = 3000
 
     def __init__(self):
         super(MainApp, self).__init__()
@@ -145,19 +146,14 @@ class MainApp(QMainWindow, main_form.MainForm):
         Caught keys are mapped to signal and then forwarded to menubar actions.
         """
         self.hkHookThread = QThread(self)
-
-        if os.name == 'nt' and not keyhook.GlobalHKListener.isAbleToRegisterHK():
-            logger.warning("Unable to use win32 RegisterHotKey() function, "
-                           "switching to backup solution - registering Windows hook.")
-            self.hkHook = keyhook.WindowsKeyHook()
-        else:
-            self.hkHook = keyhook.GlobalHKListener()
+        self.hkHook = keyhook.GlobalHKListener()
 
         self.hkHook.moveToThread(self.hkHookThread)
         self.hkHook.mediaPlayKeyPressed.connect(self.mediaPlayPauseAction.trigger)
         self.hkHook.mediaStopKeyPressed.connect(self.mediaStopAction.trigger)
         self.hkHook.mediaNextTrackKeyPressed.connect(self.mediaNextAction.trigger)
         self.hkHook.mediaPrevTrackKeyPressed.connect(self.mediaPreviousAction.trigger)
+        self.hkHook.errorSignal.connect(self.displayErrorMsg)
 
         self.hkHookThread.started.connect(self.hkHook.start_listening)
         self.hkHookThread.start()
@@ -1086,12 +1082,20 @@ class MainApp(QMainWindow, main_form.MainForm):
         :type event: QCloseEvent
         """
         self.hkHook.stop_listening()
+        self.hkHookThread.requestInterruption()
 
         self.scannerThread.quit()
         self.parserThread.quit()
         self.logCleanerThread.quit()
         self.fileRemoverThread.quit()
         self.hkHookThread.quit()
+
+        self.scannerThread.wait(self.THREAD_TERMINATE_DELAY)
+        self.parserThread.wait(self.THREAD_TERMINATE_DELAY)
+        self.logCleanerThread.wait(self.THREAD_TERMINATE_DELAY)
+        self.fileRemoverThread.wait(self.THREAD_TERMINATE_DELAY)
+        self.hkHookThread.wait(self.THREAD_TERMINATE_DELAY)
+
         event.accept()              # emits quit events
 
         self.mediaPlayer.stop()
