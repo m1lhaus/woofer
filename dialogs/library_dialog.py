@@ -69,7 +69,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         When 'Add' button clicked, system folder dialog is opened and new directory is added
         """
         logger.debug("Opening system file dialog.")
-        homeFolder = QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
+        homeFolder = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
         newFolder = QFileDialog.getExistingDirectory(self, directory=homeFolder)
 
         if newFolder:
