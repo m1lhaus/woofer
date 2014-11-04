@@ -1030,7 +1030,6 @@ class MainApp(QMainWindow, main_form.MainForm):
     def openAboutDialog(self):
         logger.debug("Opening 'About' dialog")
 
-
         aboutDialog = QDialog(self)
         aboutDialog.setWindowFlags(aboutDialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         aboutDialog.setWindowTitle("About Woofer player")
