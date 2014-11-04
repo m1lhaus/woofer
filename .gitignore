@@ -1,5 +1,5 @@
 .idea/
-build/release
+build/
 log/
 data/
 libvlc/win/
