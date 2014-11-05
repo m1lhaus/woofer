@@ -3,4 +3,5 @@ build/
 log/
 data/
 libvlc/win/
+foo/
 *.pyc
