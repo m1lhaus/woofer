@@ -6,12 +6,10 @@ Main application launcher. Method application_start(string) is used to start the
 PRODUCTION mode is set as default if started from console.
 """
 
-
 import sys
 import os
 import logging
-import components.log
-
+import argparse
 
 if sys.version_info < (3, 0):
     raise Exception("Application requires Python 3!")
@@ -26,26 +24,19 @@ try:
     from PyQt5.QtGui import *
     from PyQt5.QtWidgets import *
 except ImportError as e:
-    raise Exception("%s! PyQt4 library is required!" % e.msg)
+    raise Exception("%s! PyQt5 library is required!" % e.msg)
 
 # requirements for system-wide hooks
-if os.name == 'nt':
-    try:
-        import pywintypes
-        import pythoncom
-    except ImportError as e:
-        raise Exception("%s! PyWin32 libraries (package) are required on Windows platform!" % e.msg)
-
-elif os.name == 'posix':
+if os.name == 'posix':
     try:
         import Xlib
     except ImportError as e:
-        raise Exception("%s! Python-Xlib libraries are required on Linux platform!" % e.msg)
+        raise Exception("%s! Python3-Xlib libraries are required on Linux platform!" % e.msg)
 
 
 from components import libvlc               # import for libvlc check
+from components import log
 from dialogs import main_dialog
-
 
 logger = logging.getLogger(__name__)
 
@@ -127,18 +118,30 @@ def displayLibVLCError(platform):
         raise NotImplementedError("Unknown platform: %s" % platform)
 
 
-# *******************************************
-# APPLICATION LAUNCHER
-# *******************************************
-def startApplication(environment):
-    """
-    Initializes Qt libraries and Woofer application.
-    @param environment: DEBUG or PRODUCTION string is expected
-    """
-    components.log.setup_logging(environment)
-    logger.debug("Logger mode set to %s, now initializing main application loop.", environment)
-    logger.debug("Using Python %s.%s.%s PyQt version '%s' built against Qt version '%s'",
-                 sys.version_info[0], sys.version_info[1], sys.version_info[2], PYQT_VERSION_STR, QT_VERSION_STR)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Woofer player is free and open-source cross-platform music player.")
+
+    # parser.add_argument("input", type=str,
+    #                     help="Input JSON file with videos.")
+    # parser.add_argument("extractors", type=str, nargs="+",
+    #                     help="Image descriptors.")
+    # parser.add_argument("-o", "--output", type=str, default="",
+    #                     help="Output root directory where result will be stored in format: "
+    #                          "'output_dir'/method/category/video.avi/data.npz")
+    # optional
+    # parser.add_argument("-j", "--jobs", type=int, default=1,
+    #                     help="Number of parallel jobs (multiprocessing). ONLY FOR LOCAL USAGE!")
+    # parser.add_argument("-p", "--priority", type=str, default="normal",
+    #                     help="Process priority. Normal priority is set as default. ONLY FOR LOCAL USAGE!")
+    parser.add_argument('-d', "--debug", action='store_true',
+                        help="Debug/verbose mode. Prints debug information on screen.")
+
+    args = parser.parse_args()
+
+    env = 'DEBUG' if args.debug else 'PRODUCTION'
+    log.setup_logging(env)
+    logger.debug("Mode: '%s' Python '%s.%s.%s' PyQt: '%s' Qt: '%s'", env, sys.version_info[0], sys.version_info[1],
+                 sys.version_info[2], PYQT_VERSION_STR, QT_VERSION_STR)
 
     # init Qt application
     app = QApplication(sys.argv)
@@ -147,22 +150,18 @@ def startApplication(environment):
     app.setApplicationName("Woofer")
 
     sharedMemoryLock, error_str = obtainSharedMemoryLock()
+
+    # init check
     if not sharedMemoryLock:
         displayAnotherInstanceError(error_str)
-        return True
-
-    if not foundLibVLC():
+    elif not foundLibVLC():
         displayLibVLCError(os.name)
-        return True
+    else:
 
-    # run the application
-    mainApp = main_dialog.MainApp()
-    mainApp.show()
+        # run the application
+        mainApp = main_dialog.MainApp()
+        mainApp.show()
 
-    logger.debug("Starting MainThread loop...")
-    app.exec_()
-    logger.debug("MainThread loop stopped. Application has been closed successfully.")
-
-
-if __name__ == "__main__":
-    startApplication('PRODUCTION')
+        logger.debug("Starting MainThread loop...")
+        app.exec_()
+        logger.debug("MainThread loop stopped. Application has been closed successfully.")

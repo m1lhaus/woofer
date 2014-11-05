@@ -4,12 +4,8 @@
 Windows classes for catching global (system-wide) shortcuts.
 """
 
-
 import logging
-# import pythoncom
-# import pyHook
 import ctypes
-import win32con
 
 from PyQt5.QtCore import *
 
@@ -33,6 +29,7 @@ class GlobalHKListener(QObject):
     mediaPrevTrackKeyPressed = pyqtSignal()
     errorSignal = pyqtSignal(int, str, str)
 
+    WM_HOTKEY = 0x0312
     HOTKEYS = {
         1: (0xB3, 'VK_MEDIA_PLAY_PAUSE'),
         2: (0xB2, 'VK_MEDIA_STOP'),
@@ -72,7 +69,7 @@ class GlobalHKListener(QObject):
 
                 # handles the WM_HOTKEY messages and pass everything else along.
                 while not currentThread.isInterruptionRequested() and ctypes.windll.user32.GetMessageA(ctypes.byref(msg), None, 0, 0) != 0:
-                    if msg.message == win32con.WM_HOTKEY:
+                    if msg.message == self.WM_HOTKEY:
                         # process -> call handler
                         keySignal = self.HOTKEY_ACTIONS.get(msg.wParam)
                         if keySignal:
@@ -121,114 +118,3 @@ class GlobalHKListener(QObject):
                 return False
 
         return True
-
-    # @staticmethod
-    # def isAbleToRegisterHK():
-    #     logger.debug("Trying to test media hotkeys for a test...")
-    #     try:
-    #         for hk_id, (vk, vk_name) in GlobalHKListener.HOTKEYS.items():
-    #             if not ctypes.windll.user32.RegisterHotKey(None, hk_id, 0, vk):
-    #                 logger.warning("Unable to register hotkey id: %s named %s", hk_id, vk_name)
-    #                 return False
-    #
-    #         logger.debug("All hotkeys has been successfully registered, now unregister them...")
-    #     finally:
-    #         for hk_id in GlobalHKListener.HOTKEYS.keys():
-    #             ctypes.windll.user32.UnregisterHotKey(None, hk_id)
-    #
-    #     logger.debug("All hotkeys unregistered successfully.")
-    #     return True
-
-
-# class WindowsKeyHook(QObject):
-#
-#     mediaPlayKeyPressed = pyqtSignal()
-#     mediaStopKeyPressed = pyqtSignal()
-#     mediaNextTrackKeyPressed = pyqtSignal()
-#     mediaPrevTrackKeyPressed = pyqtSignal()
-#
-#     def __init__(self):
-#         super(WindowsKeyHook, self).__init__()
-#
-#         # create a hook manager
-#         self.hm = pyHook.HookManager()
-#         self.hm.KeyDown = self.OnKeyboardEvent      # watch for all keyboard events
-#         self.hm.HookKeyboard()                      # set the hook
-#
-#         logger.debug("Windows key-down hook initialized")
-#
-#     def OnKeyboardEvent(self, event):
-#         """
-#         Callback called when keyboard message 'key down' is sent system-wide. If one of the media keys is being pressed,
-#         sent signal to GUI app and filter this event, so another multimedia application wont get this event.
-#
-#         Available properties:
-#         ---------------------------------
-#         'MessageName:',event.MessageName
-#         'Message:',event.Message
-#         'Time:',event.Time
-#         'Window:',event.Window
-#         'WindowName:',event.WindowName
-#         'Ascii:', event.Ascii, chr(event.Ascii)
-#         'Key:', event.Key
-#         'KeyID:', event.KeyID
-#         'ScanCode:', event.ScanCode
-#         'Extended:', event.Extended
-#         'Injected:', event.Injected
-#         'Alt', event.Alt
-#         'Transition', event.Transition
-#         ---------------------------------
-#         @type event: pyhook.HookManager.KeyboardEvent
-#         @return: bool - ignore event or not
-#         """
-#         ignore_event = True
-#
-#         # Media_Play_Pause
-#         if event.KeyID == 179:
-#             logger.debug("Global key Media_Play_Pause caught")
-#             ignore_event = False
-#             self.mediaPlayKeyPressed.emit()
-#
-#         # Media_Stop
-#         elif event.KeyID == 178:
-#             logger.debug("Global key Media_Stop caught")
-#             ignore_event = False
-#             self.mediaStopKeyPressed.emit()
-#
-#         # Media_Next_Track
-#         elif event.KeyID == 176:
-#             logger.debug("Global key Media_Play_Pause caught")
-#             ignore_event = False
-#             self.mediaNextTrackKeyPressed.emit()
-#
-#         # Media_Prev_Track
-#         elif event.KeyID == 177:
-#             logger.debug("Global key Media_Play_Pause caught")
-#             ignore_event = False
-#             self.mediaPrevTrackKeyPressed.emit()
-#
-#         return ignore_event
-#
-#     @pyqtSlot()
-#     def start_listening(self):
-#         """
-#         Thread worker. Called when thread is executed.
-#         Listens for all system-wide messages. Method makes thread busy, unresponsive!
-#         When thread.quit() method is invoked, system-wide quit(0) message is sent to worker which also
-#         terminates message listener.
-#         """
-#         logger.debug("Starting windows key-down hook (listener)")
-#         pythoncom.PumpMessages()        # endless loop
-#
-#         # currentThread = self.thread()
-#         #
-#         # while not currentThread.isInterruptionRequested():
-#         #     pythoncom.PumpWaitingMessages()
-#         #     currentThread.msleep(100)
-#
-#     def stop_listening(self):
-#         """
-#         Listening is stopped automatically when QThread.quit() is invoked => quit message is caught
-#         @return:
-#         """
-#         pass
