@@ -3,6 +3,7 @@
 # run script:
 # python setup.py build
 
+import shutil
 import subprocess
 import sys
 import os
@@ -15,6 +16,9 @@ VERSION = "0.7.0"       # todo: get this version from git
 branch_name = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()
 target_dir = os.path.join("build", "woofer_v%s" % VERSION + branch_name)
 icon_file = os.path.join("icons", "woofer.ico")
+
+if os.path.isdir(target_dir):
+    shutil.rmtree(target_dir)
 
 base = None
 libEGL = ()
