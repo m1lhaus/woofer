@@ -15,6 +15,37 @@ import sys
 import datetime
 
 
+class StdErrToLogger(object):
+    """
+    Fake file-like stream object that redirects writes to a logger instance.
+    """
+
+    def __init__(self, fdnum, logger, log_level=logging.INFO):
+        if fdnum == 0:
+            sys.stdout = self
+            self.orig_output = sys.__stdout__
+        elif fdnum == 1:
+            sys.stderr = self
+            self.orig_output = sys.__stderr__
+        else:
+            raise Exception("Given file descriptor num: %s is not supported!" % fdnum)
+
+        self.logger = logger
+        self.log_level = log_level
+        self.linebuf = ''
+
+    def write(self, buf):
+        if buf == '\n':
+            self.orig_output.write(buf)
+        else:
+            for line in buf.rstrip().splitlines():
+                self.logger.log(self.log_level, line.rstrip())
+
+    def __getattr__(self, name):
+        # pass all other methods to original fd
+        return self.orig_output.__getattribute__(name)
+
+
 class InfoFilter(logging.Filter):
     """
     Logging filter. Filters out ERROR messages and higher.
@@ -53,7 +84,12 @@ def setup_logging(mode):
     console_err = logging.StreamHandler(stream=sys.stderr)
     console_err.setLevel(logging.WARNING)
     console_err.setFormatter(console_formatter)
-    logging.getLogger('').addHandler(console_err)
+
+    logger = logging.getLogger('')
+    logger.addHandler(console_err)
+
+    # redirects all stderr output (exceptions, etc.) to logger ERROR level
+    sys.stderr = StdErrToLogger(1, logger, logging.ERROR)
 
     # add console handler with the DEBUG level
     if level == logging.DEBUG:
@@ -61,5 +97,5 @@ def setup_logging(mode):
         console_std.setLevel(logging.DEBUG)
         console_std.addFilter(InfoFilter())
         console_std.setFormatter(console_formatter)
-        logging.getLogger('').addHandler(console_std)
+        logger.addHandler(console_std)
     # ----------------------------
