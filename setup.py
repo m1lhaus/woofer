@@ -43,7 +43,7 @@ executables = [
 
 setup(name="Woofer player",
       version=VERSION,
-      description="Něco",
+      description="Free and open-source cross-platform music player.",
       options=options,
       executables=executables, requires=['cx_Freeze']
 )

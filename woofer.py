@@ -36,11 +36,6 @@ if os.name == 'nt':
     except ImportError as e:
         raise Exception("%s! PyWin32 libraries (package) are required on Windows platform!" % e.msg)
 
-    # try:
-    #     import pyHook
-    # except ImportError as e:
-    #     raise Exception("%s! pyHook package is required on Windows platform!" % e.message)
-
 elif os.name == 'posix':
     try:
         import Xlib
@@ -48,7 +43,7 @@ elif os.name == 'posix':
         raise Exception("%s! Python-Xlib libraries are required on Linux platform!" % e.msg)
 
 
-import components.libvlc as libvlc               # import for libvlc check
+from components import libvlc               # import for libvlc check
 from dialogs import main_dialog
 
 
