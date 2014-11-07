@@ -1048,16 +1048,19 @@ class MainApp(QMainWindow, main_form.MainForm):
             logger.error(u"LICENSE.txt file was not found in woofer root dir!")
             path_to_licence = u"http://www.gnu.org/licenses/gpl-2.0.html"
 
+        videolan_url = u"http://www.videolan.org/index.cs.html"
+        woofer_url = u"http://www.wooferplayer.com"
+        github_url = u"https://github.com/m1lhaus/woofer"
         text = u"Woofer player is <strong>free and open-source cross-platform</strong> music player " \
                u"that plays most multimedia files, CDs, DVDs and also various online streams. " \
                u"Whole written in Python and Qt provides easy, reliable, " \
                u"and high quality playback thanks to LibVLC library developed by " \
-               u"<a href='http://www.videolan.org/index.cs.html'>VideoLAN community</a>.<br/>" \
+               u"<a href='%s'>VideoLAN community</a>.<br/>" \
                u"<br/>" \
                u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
-               u"Web: <a href='http://www.wooferplayer.com'>www.wooferplayer.com</a><br/>" \
-               u"Source: GitHub repository &lt; <a href='%s'>LICENCE GPL v2</a> &gt;<br/>" \
-               u"Version: 0.7a" % path_to_licence
+               u"Web: <a href='%s'>www.wooferplayer.com</a><br/>" \
+               u"Source: <a href='%s'>GitHub repository</a> &lt; <a href='%s'>LICENCE GPL v2</a> &gt;<br/>" \
+               u"Version: 0.7a" % (videolan_url, woofer_url, github_url, path_to_licence)
 
         textLabel = QLabel()
         textLabel.setTextFormat(Qt.RichText)
@@ -1075,7 +1078,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         aboutDialog.setLayout(layout)
         aboutDialog.setFixedWidth(480)
-        aboutDialog.setFixedHeight(aboutDialog.minimumSizeHint().height())
+        aboutDialog.setFixedHeight(aboutDialog.sizeHint().height())
         aboutDialog.exec_()
         logger.debug(u"'About' dialog closed")
 
