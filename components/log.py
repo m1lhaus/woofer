@@ -14,6 +14,38 @@ import sys
 import datetime
 
 
+class StreamToLogger(object):
+    """
+    Fake file-like stream object that redirects stdout/stderr writes to a logger instance.
+    """
+
+    def __init__(self, fdnum, logger, log_level=logging.INFO):
+        if fdnum == 0:
+            sys.stdout = self
+            self.orig_output = sys.__stdout__
+        elif fdnum == 1:
+            sys.stderr = self
+            self.orig_output = sys.__stderr__
+        else:
+            raise Exception("Given file descriptor num: %s is not supported!" % fdnum)
+
+        self.logger = logger
+        self.log_level = log_level
+
+    def write(self, buf):
+        if buf == '\n':
+            self.orig_output.write(buf)
+        else:
+            if isinstance(buf, str):
+                buf = unicode(buf, 'utf-8')
+            for line in buf.rstrip().splitlines():
+                self.logger.log(self.log_level, line.rstrip())
+
+    def __getattr__(self, name):
+        # pass all other methods to original fd
+        return self.orig_output.__getattribute__(name)
+
+
 class InfoFilter(logging.Filter):
     """
     Logging filter. Filters out ERROR messages and higher.
@@ -31,7 +63,7 @@ def setup_logging(mode):
     if not os.path.isdir(log_dir):
         os.mkdir(log_dir)
 
-    msg_format = u"%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
+    msg_format = "%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
     console_formatter = logging.Formatter(msg_format)
 
     # --- BASIC CONFIGURATION ---
@@ -47,18 +79,22 @@ def setup_logging(mode):
     logging.basicConfig(level=level, format=msg_format, filename=log_path)
     # ---------------------------
 
-    # ----- CONSOLE HANDLERS ----
-    # setup logging warning and errors to stderr
-    console_err = logging.StreamHandler(stream=sys.stderr)
-    console_err.setLevel(logging.WARNING)
-    console_err.setFormatter(console_formatter)
-    logging.getLogger('').addHandler(console_err)
+    logger = logging.getLogger('')
+    # redirects all stderr output (exceptions, etc.) to logger ERROR level
+    sys.stderr = StreamToLogger(1, logger, logging.ERROR)
 
-    # add console handler with the DEBUG level
-    if level == logging.DEBUG:
-        console_std = logging.StreamHandler(stream=sys.stdout)
-        console_std.setLevel(logging.DEBUG)
-        console_std.addFilter(InfoFilter())
-        console_std.setFormatter(console_formatter)
-        logging.getLogger('').addHandler(console_std)
-    # ----------------------------
+    # if not win32gui application, add console handlers
+    if sys.stdout is not None:
+        # setup logging warning and errors to stderr
+        console_err = logging.StreamHandler(stream=sys.__stderr__)      # write to original stderr, not to the logger
+        console_err.setLevel(logging.WARNING)
+        console_err.setFormatter(console_formatter)
+        logger.addHandler(console_err)
+
+        # add console handler with the DEBUG level
+        if level == logging.DEBUG:
+            console_std = logging.StreamHandler(stream=sys.__stdout__)
+            console_std.setLevel(logging.DEBUG)
+            console_std.addFilter(InfoFilter())
+            console_std.setFormatter(console_formatter)
+            logger.addHandler(console_std)
