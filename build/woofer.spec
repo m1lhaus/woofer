@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 
-##### include mydir in distribution #######
+# #### include mydir in distribution #######
 def extra_datas(mydir):
     def rec_glob(p, files):
         for d in glob.glob(p):
@@ -19,15 +19,19 @@ def extra_datas(mydir):
         extra_datas.append((f, f, 'DATA'))
 
     return extra_datas
+
 ###########################################
 
 a = Analysis(['woofer.py'],
-             pathex=['d:\\Programovani\\Woofer-dev\\build'],
-             hiddenimports=[],
-             hookspath=None,
-             runtime_hooks=None)
+             pathex=['d:\\Programovani\\Woofer-dev\\build'])
 
-a.binaries = [x for x in a.binaries if not x[0].startswith("shell32")]		# shell32.dll is part of Windows
+b = Analysis(['cmdargs.py'],
+             pathex=['d:\\Programovani\\Woofer-dev\\build'])
+
+MERGE((a, "woofer", "woofer.exe"),
+      (b, "cmdargs", 'cmdargs.exe'))
+
+a.binaries = [x for x in a.binaries if not x[0].startswith("shell32")]  # shell32.dll is part of Windows
 a.datas += extra_datas('libvlc')
 a.datas += extra_datas('LICENSE.txt')
 
@@ -38,10 +42,23 @@ exe = EXE(pyz,
           name='woofer.exe',
           debug=False,
           strip=None,
-          upx=True,
+          upx=False,
           console=False,
-		  icon='.\\icons\woofer.ico')
-coll = COLLECT(exe,
+          icon='.\\icons\woofer.ico')
+
+pyzB = PYZ(b.pure)
+exeB = EXE(pyzB,
+          b.scripts,
+          exclude_binaries=1,
+          name='cmdargs.exe',
+          debug=False,
+          strip=None,
+          upx=False,
+          console=True,
+          icon='.\\icons\cmdargs.ico')
+
+
+coll = COLLECT(exe, exeB,
                a.binaries,
                a.zipfiles,
                a.datas,
