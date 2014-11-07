@@ -4,8 +4,6 @@
 Unittest for woofer.py
 """
 
-__version__ = "$Id: test_woofer.py 143 2014-10-26 13:52:36Z m1lhaus $"
-
 import sys
 import os
 

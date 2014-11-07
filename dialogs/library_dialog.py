@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "$Id: library_dialog.py 89 2014-09-27 18:24:40Z m1lhaus $"
-
 import logging
 import json
 import os

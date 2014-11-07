@@ -4,8 +4,6 @@
 Windows classes for catching global (system-wide) shortcuts.
 """
 
-__version__ = "$Id: winkeyhook.py 149 2014-10-28 18:50:21Z m1lhaus $"
-
 import logging
 import pythoncom
 import pyHook

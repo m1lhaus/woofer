@@ -4,15 +4,11 @@
 Scheduler/maintenance modules.
 """
 
-__version__ = "$Id: scheduler.py 137 2014-10-25 13:46:44Z m1lhaus $"
-
-
 import logging
 import os
 import time
 import sys
 
-from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 

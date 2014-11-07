@@ -8,8 +8,6 @@ Custom configuration and setup for logger
 - add DEBUG and INFO logs to stdout (only in DEBUG mode)
 """
 
-__version__ = "$Id: log.py 136 2014-10-25 11:51:31Z m1lhaus $"
-
 import logging
 import os
 import sys

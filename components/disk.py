@@ -5,14 +5,13 @@ Disk components
 - Recursive disk browser for searching media files on folder tree.
 """
 
-__version__ = "$Id: disk.py 150 2014-10-30 17:31:32Z m1lhaus $"
-
+import os
 import logging
 import send2trash
-import os
-from tools.misc import ErrorMessages
 
 from PyQt4.QtCore import *
+
+from tools import ErrorMessages
 
 logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
@@ -119,7 +118,7 @@ class MoveToTrash(QObject):
             send2trash.send2trash(path)
         except OSError, exception:
             logger.exception(u"Unable to send %s '%s' to trash!", folder_or_file, path)
-            self.finished.emit(tools.ErrorMessages.ERROR, u"Unable to move path to Trash path '%s'!" % path,
+            self.finished.emit(ErrorMessages.ERROR, u"Unable to move path to Trash path '%s'!" % path,
                                u"Details: %s" % exception.message)
 
         else:

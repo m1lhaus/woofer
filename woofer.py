@@ -6,8 +6,6 @@ Main application launcher. Method application_start(string) is used to start the
 PRODUCTION mode is set as default if started from console.
 """
 
-__version__ = "$Id: woofer.py 141 2014-10-25 20:40:10Z m1lhaus $"
-
 import sys
 import os
 import logging

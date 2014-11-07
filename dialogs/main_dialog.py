@@ -4,8 +4,6 @@
 Main application GUI module.
 """
 
-__version__ = "$Id: main_dialog.py 151 2014-10-30 17:36:42Z m1lhaus $"
-
 import logging
 import pickle
 import sys
@@ -18,10 +16,8 @@ from PyQt4.QtCore import *
 
 from forms import main_form
 from dialogs import library_dialog
-from components import disk
-from components import media
-from components import scheduler
-import tools
+from components import disk,  media, scheduler
+from tools import ErrorMessages, PlaybackSources
 
 if os.name == "nt":
     from components import winkeyhook as keyhook
@@ -235,7 +231,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         except OSError, exception:
             if exception.errno != errno.EEXIST:
                 logger.exception(u"Unable to create data folder on path: %s", self.appDataPath)
-                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to create data folder.",
+                self.errorSignal.emit(ErrorMessages.CRITICAL, u"Unable to create data folder.",
                                       u"Error number: %s\n"
                                       u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
         else:
@@ -253,7 +249,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                         f.write('[]')
                 except IOError:
                     logger.exception(u"Error when creating new media library file.")
-                    self.errorSignal.emit(tools.ErrorMessages.CRITICAL,
+                    self.errorSignal.emit(ErrorMessages.CRITICAL,
                                           u"Unable to create medialib file and write default data.",
                                           u"Error number: %s\n"
                                           u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
@@ -261,7 +257,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                     logger.debug(u"Media file has been created and initialized.")
             else:
                 logger.exception(u"Error when reading medialib file.")
-                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
+                self.errorSignal.emit(ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
                                       u"Error number: %s\n"
                                       u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
 
@@ -278,13 +274,13 @@ class MainApp(QMainWindow, main_form.MainForm):
                 mediaFolders = json.load(mediaFile)
         except IOError, exception:
             logger.exception(u"Error when reading medialib file.")
-            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
+            self.errorSignal.emit(ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
                                                          u"Error number: %s\n"
                                                          u"%s" % (exception.errno, exception.strerror))
             raise
         except ValueError, exception:
             logger.exception(u"Unable to load and parse data from JSON file.")
-            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to load and parse data from medialib file.",
+            self.errorSignal.emit(ErrorMessages.CRITICAL, u"Unable to load and parse data from medialib file.",
                                                          u"Description: %s" % exception.message)
             raise
 
@@ -313,7 +309,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.folderCombo.addItem(folder)
                 folders_to_display.append(folder)
             else:
-                self.errorSignal.emit(tools.ErrorMessages.WARNING, u"Some folders in media library don't exist.", u"")
+                self.errorSignal.emit(ErrorMessages.WARNING, u"Some folders in media library don't exist.", u"")
 
         # set back previously selected (current) item in folderCombo if exists (may be deleted => set root folder)
         if current_folder_text in folders_to_display:
@@ -355,7 +351,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         but almost unnoticeable.
         """
         self.loadSession()
-        self.changeSource(tools.PlaybackSources.FILES)
+        self.changeSource(PlaybackSources.FILES)
 
     def loadSession(self):
         """
@@ -488,11 +484,11 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot('QModelIndex')
     def sourceItemsBrowserActivated(self, index):
-        if self.sourceType == tools.PlaybackSources.FILES:
+        if self.sourceType == PlaybackSources.FILES:
             self.fileBrowserActivated(index)
-        if self.sourceType == tools.PlaybackSources.PLAYLISTS:
+        if self.sourceType == PlaybackSources.PLAYLISTS:
             pass
-        if self.sourceType == tools.PlaybackSources.RADIO:
+        if self.sourceType == PlaybackSources.RADIO:
             pass
 
     def fileBrowserActivated(self, modelIndex):
@@ -521,13 +517,13 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         logger.debug(u"Browser context menu called. Choosing appropriate context menu...")
 
-        if self.sourceType == tools.PlaybackSources.FILES:
+        if self.sourceType == PlaybackSources.FILES:
             self.fileBrowserContextMenu(pos)
 
-        if self.sourceType == tools.PlaybackSources.PLAYLISTS:
+        if self.sourceType == PlaybackSources.PLAYLISTS:
             logger.debug(u"Opening playlist browser context menu.")
 
-        if self.sourceType == tools.PlaybackSources.RADIO:
+        if self.sourceType == PlaybackSources.RADIO:
             logger.debug(u"Opening radio browser context menu.")
 
     def fileBrowserContextMenu(self, pos):
@@ -642,9 +638,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         if oldTreeMode is not None and oldTreeMode != source_id:
             self.mainTreeBrowser.saveSettings()
 
-        if source_id == tools.PlaybackSources.FILES:
-            self.sourceType = tools.PlaybackSources.FILES
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
+        if source_id == PlaybackSources.FILES:
+            self.sourceType = PlaybackSources.FILES
+            self.mainTreeBrowser.setMode(PlaybackSources.FILES)
             self.mainTreeBrowser.setModel(self.fileBrowserModel)
 
             # hide unwanted columns
@@ -659,15 +655,15 @@ class MainApp(QMainWindow, main_form.MainForm):
 
             logger.debug(u"Browser source has been selected to FILES.")
 
-        elif source_id == tools.PlaybackSources.PLAYLISTS:
-            self.sourceType = tools.PlaybackSources.PLAYLISTS
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
+        elif source_id == PlaybackSources.PLAYLISTS:
+            self.sourceType = PlaybackSources.PLAYLISTS
+            self.mainTreeBrowser.setMode(PlaybackSources.FILES)
             logger.debug(u"Browser source has been selected to PLAYLISTS.")
             logger.warning(u"PLAYLISTS NOT IMPLEMENTED!")
 
-        elif source_id == tools.PlaybackSources.RADIO:
-            self.sourceType = tools.PlaybackSources.RADIO
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
+        elif source_id == PlaybackSources.RADIO:
+            self.sourceType = PlaybackSources.RADIO
+            self.mainTreeBrowser.setMode(PlaybackSources.FILES)
             logger.debug(u"Browser source has been selected to RADIOS.")
             logger.warning(u"RADIOS NOT IMPLEMENTED!")
 
@@ -699,7 +695,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 # self.mainTreeBrowser.currentRootFolder = newMediaFolder
             else:
                 logger.error(u"Media path from folderCombo could not be found in fileSystemModel!")
-                self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Media folder '%s' could not be found!" % newMediaFolder, u"")
+                self.errorSignal.emit(ErrorMessages.ERROR, u"Media folder '%s' could not be found!" % newMediaFolder, u"")
                 self.folderCombo.removeItem(self.folderCombo.currentIndex())
 
     @pyqtSlot()
@@ -756,7 +752,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param text: main text
         @param details: description
         """
-        if er_type == tools.ErrorMessages.INFO:
+        if er_type == ErrorMessages.INFO:
             icon = QPixmap(u":/icons/info.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + u' ' + details)
@@ -764,7 +760,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.stBarMsgText.show()
             QTimer.singleShot(self.INFO_MSG_DELAY, self.clearErrorMsg)
 
-        elif er_type == tools.ErrorMessages.WARNING:
+        elif er_type == ErrorMessages.WARNING:
             icon = QPixmap(u":/icons/warning.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
@@ -772,7 +768,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.stBarMsgText.show()
             QTimer.singleShot(self.WARNING_MSG_DELAY, self.clearErrorMsg)
 
-        elif er_type == tools.ErrorMessages.ERROR:
+        elif er_type == ErrorMessages.ERROR:
             icon = QPixmap(u":/icons/error.png").scaled(16, 16, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
             self.stBarMsgText.setText(text + ' ' + details)
@@ -781,7 +777,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             QTimer.singleShot(self.ERROR_MSG_DELAY, self.clearErrorMsg)
             QApplication.beep()
 
-        elif er_type == tools.ErrorMessages.CRITICAL:
+        elif er_type == ErrorMessages.CRITICAL:
             msgBox = QMessageBox(self)
             msgBox.setIcon(QMessageBox.Critical)
             msgBox.setWindowTitle(u"Critical error")

@@ -39,10 +39,12 @@ will be implicitly created.  The latter can be obtained using the
 C{get_instance} method of L{MediaPlayer} and L{MediaListPlayer}.
 """
 
-import ctypes
-from ctypes.util import find_library
 import os
 import sys
+import ctypes
+from _ctypes import byref
+from ctypes.util import find_library
+
 from tools.misc import check_binary_type
 
 # Used by EventManager in override.py
@@ -1897,7 +1899,7 @@ class Media(_Ctype):
         """
         mediaTrack_pp = ctypes.POINTER(MediaTrack)()
         n = libvlc_media_tracks_get(self, byref(mediaTrack_pp))
-        info = cast(ctypes.mediaTrack_pp, ctypes.POINTER(ctypes.POINTER(MediaTrack) * n))
+        info = ctypes.cast(ctypes.mediaTrack_pp, ctypes.POINTER(ctypes.POINTER(MediaTrack) * n))
         return info
 
 

@@ -3,11 +3,9 @@
 """
 Various tools and functions
 """
-__version__ = "$Id: misc.py 150 2014-10-30 17:31:32Z m1lhaus $"
 
 import os
 import sys
-import send2trash
 
 
 def check_binary_type(path):
