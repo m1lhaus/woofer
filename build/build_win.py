@@ -16,7 +16,7 @@ import shutil
 os.chdir("..")
 print "Working directory set to: ", os.getcwd()
 
-
+VERSION = "0.7.0"                   # todo: get version and revision from GIT
 PRJ_SPEC_FILE = "woofer.spec"
 PYINSTALLER_EXE_NAME = "pyinstaller"
 
@@ -44,46 +44,7 @@ def which(program):
     return ""
 
 
-def find_svn(start_dir):
-    current_dir = start_dir
-    depth = 0
-    while depth < 5:
-        if '.svn' in os.listdir(current_dir):
-            return current_dir
-
-        depth += 1
-        current_dir = os.path.dirname(current_dir)
-
-
-def get_svn_revision(folder='.'):
-    p = subprocess.Popen(["svnversion", folder, '-n'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    return stdout if stdout[0].isdigit() else ""
-
-
 def main():
-    print "Finding subversion working copy root dir to retrieve revision number."
-    svn_dir = find_svn(os.getcwd())
-    svn_rev = get_svn_revision(svn_dir)
-
-    if not svn_rev:
-        print "Unable to get svn revision number of working copy in tree from:", os.getcwd()
-        decision = raw_input("Are you want to continue anyway? (y/n) ")
-        if decision != 'y':
-            return False
-    svn_rev = svn_rev.replace(':', '-')
-    print "Subversion working copy found, revision:", svn_rev
-
-    try:
-        int(svn_rev)
-    except ValueError:
-        print "Subversion revision number isn't pure integer."
-        print "You should first commit all changes and update working copy to get nice and clean working copy."
-        decision = raw_input("Are you want to continue anyway? (y/n) ")
-
-        if decision != 'y':
-            return
-
     print "Trying to find PyInstaller executable in system PATH..."
 
     pyinstaller_exe = which(PYINSTALLER_EXE_NAME)
@@ -109,8 +70,8 @@ def main():
     if retcode != 0:
         raise Exception("Building finished with error code: %s!!!" % retcode)
 
-    new_dist_path = os.path.join(os.getcwd(), "build", "release", "woofer_%s_rev%s"
-                                 % (platform.architecture()[0], svn_rev))
+    new_dist_path = os.path.join(os.getcwd(), "build", "release", "woofer_%s_v%s"
+                                 % (platform.architecture()[0], VERSION))
     if os.path.isdir(new_dist_path):
         shutil.rmtree(new_dist_path)
     shutil.move(dist_path, new_dist_path)
