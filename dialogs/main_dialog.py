@@ -1032,14 +1032,15 @@ class MainApp(QMainWindow, main_form.MainForm):
     @pyqtSlot()
     def openAboutDialog(self):
         logger.debug(u"Opening 'About' dialog")
-        aboutDialog = QDialog(self,  Qt.WindowSystemMenuHint | Qt.WindowTitleHint)
+        aboutDialog = QDialog(self)
+        aboutDialog.setWindowFlags(aboutDialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         aboutDialog.setWindowTitle(u"About Woofer player")
 
         layout = QHBoxLayout()
         layout.setMargin(20)
 
         if os.path.isfile(u'LICENSE.txt'):
-            path_to_licence = os.path.dirname(os.path.realpath(sys.argv[0]))
+            path_to_licence = unicode(os.path.dirname(os.path.realpath(sys.argv[0])), sys.getfilesystemencoding())
             path_to_licence = path_to_licence.split(os.sep)
             path_to_licence = u"/".join(path_to_licence) + u"/LICENSE.txt"
             path_to_licence = u"file:///" + path_to_licence
