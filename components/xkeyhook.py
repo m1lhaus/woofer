@@ -18,10 +18,10 @@ from Xlib import X, XK, display
 from Xlib.ext import record
 from Xlib.protocol import rq
 
-from PyQt5.QtCore import *
+from PyQt4.QtCore import *
 
 logger = logging.getLogger(__name__)
-logger.debug('Import ' + __name__)
+logger.debug(u'Import ' + __name__)
 
 # key ids
 MEDIA_PLAYPAUSE_KEY = '[269025044]'
@@ -67,27 +67,26 @@ class GlobalHKListener(QObject):
             self.MessageName = MessageName
 
         def __str__(self):
-            return "Window Handle: " + str(self.Window) + \
-                   "\nWindow Name: " + str(self.WindowName) + \
-                   "\nWindow's Process Name: " + str(self.WindowProcName) + \
-                   "\nKey Pressed: " + str(self.Key) + \
-                   "\nAscii Value: " + str(self.Ascii) + \
-                   "\nKeyID: " + str(self.KeyID) + \
-                   "\nScanCode: " + str(self.ScanCode) + \
-                   "\nMessageName: " + str(self.MessageName) + \
-                   "\n"
+            return u"Window Handle: " + str(self.Window) + \
+                   u"\nWindow Name: " + str(self.WindowName) + \
+                   u"\nWindow's Process Name: " + str(self.WindowProcName) + \
+                   u"\nKey Pressed: " + str(self.Key) + \
+                   u"\nAscii Value: " + str(self.Ascii) + \
+                   u"\nKeyID: " + str(self.KeyID) + \
+                   u"\nScanCode: " + str(self.ScanCode) + \
+                   u"\nMessageName: " + str(self.MessageName) + \
+                   u"\n"
 
     mediaPlayKeyPressed = pyqtSignal()
     mediaStopKeyPressed = pyqtSignal()
     mediaNextTrackKeyPressed = pyqtSignal()
     mediaPrevTrackKeyPressed = pyqtSignal()
-    errorSignal = pyqtSignal(int, str, str)
 
     def __init__(self):
         super(GlobalHKListener, self).__init__()
 
         # Give these some initial values
-        self.ison = {"shift": False, "caps": False}
+        self.ison = {u"shift": False, u"caps": False}
 
         # Compile our regex statements.
         self.isshift = re.compile('^Shift')
@@ -101,27 +100,27 @@ class GlobalHKListener(QObject):
         self.key_down_callback = self.on_keypress
         # self.key_up_callback = lambda x: True
 
-        logger.debug("Trying to hook to our X display...")
+        logger.debug(u"Trying to hook to our X display...")
 
         # Hook to our display.
         self.local_dpy = display.Display()
         self.record_dpy = display.Display()
 
-        logger.debug("XKeyHook initialized successfully")
+        logger.debug(u"XKeyHook initialized successfully")
 
     @pyqtSlot()
     def start_listening(self):
         """
         Initializes all components and starts recording KeyPress and KeyRelease events.
         """
-        logger.debug("Initializing recording components from X")
+        logger.debug(u"Initializing recording components from X")
 
         # Check if the extension is present
         if not self.record_dpy.has_extension("RECORD"):
-            logger.error("XDisplay RECORD extension not found!")
+            logger.error(u"XDisplay RECORD extension not found!")
             return
         r = self.record_dpy.record_get_version(0, 0)
-        logger.debug("XDisplay RECORD extension version %d.%d", r.major_version, r.minor_version)
+        logger.debug(u"XDisplay RECORD extension version %d.%d", r.major_version, r.minor_version)
 
         # Create a recording context; we only want key and mouse events
         self.recording_context = self.record_dpy.record_create_context(
@@ -139,7 +138,7 @@ class GlobalHKListener(QObject):
                 'client_died': False,
              }])
 
-        logger.debug("Creating recording context and starting recording...")
+        logger.debug(u"Creating recording context and starting recording...")
         # Enable the context; this only returns after a call to record_disable_context,
         # while calling the callback function in the meantime
         self.record_dpy.record_enable_context(self.recording_context, self.process_events)
@@ -147,26 +146,26 @@ class GlobalHKListener(QObject):
         # *** waits up here ***
 
         # Finally free the context
-        logger.debug("Recording stopped, now trying to free context...")
+        logger.debug(u"Recording stopped, now trying to free context...")
         self.record_dpy.record_free_context(self.recording_context)
 
-        logger.debug("Recording context has been released, key listening finished")
+        logger.debug(u"Recording context has been released, key listening finished")
 
     def stop_listening(self):
         """
         Method called to display recording context, so worker thread can finish.
         WARNING: Method is being called directly from main thread! No lock available!!!
         """
-        logger.debug("Stop listening called, now disabling context...")
+        logger.debug(u"Stop listening called, now disabling context...")
         self.local_dpy.record_disable_context(self.recording_context)
         self.local_dpy.flush()
-        logger.debug("Local XDisplay flushed, recording stopped")
+        logger.debug(u"Local XDisplay flushed, recording stopped")
 
     def process_events(self, reply):
         if reply.category != record.FromServer:
             return
         if reply.client_swapped:
-            logger.warning("Received swapped protocol data, cowardly ignored")
+            logger.warning(u"Received swapped protocol data, cowardly ignored")
             return
         if not len(reply.data) or ord(reply.data[0]) < 2:
             # not an event
@@ -251,7 +250,7 @@ class GlobalHKListener(QObject):
         elif event.type == X.KeyRelease:
             MessageName = "key up"
         else:
-            print('WARNING: Unexpected event type: %s' % event.type, file=sys.stderr)
+            print >> sys.stderr, 'WARNING: Unexpected event type: %s' % event.type
             return
 
         return GlobalHKListener.XHookKeyEvent(storewm["handle"],
@@ -290,7 +289,7 @@ class GlobalHKListener(QObject):
 
     @staticmethod
     def print_event(event):
-        print(event)
+        print event
 
     def on_keypress(self, event):
         """
@@ -300,14 +299,14 @@ class GlobalHKListener(QObject):
         key = event.Key
 
         if key == MEDIA_PLAYPAUSE_KEY:
-            logger.debug("Global key Media_Play_Pause caught")
+            logger.debug(u"Global key Media_Play_Pause caught")
             self.mediaPlayKeyPressed.emit()
         elif key == MEDIA_STOP_KEY:
-            logger.debug("Global key Media_Stop caught")
+            logger.debug(u"Global key Media_Stop caught")
             self.mediaStopKeyPressed.emit()
         elif key == MEDIA_PREV_KEY:
-            logger.debug("Global key Media_Play_Pause caught")
+            logger.debug(u"Global key Media_Play_Pause caught")
             self.mediaPrevTrackKeyPressed.emit()
         elif key == MEDIA_NEXT_KEY:
-            logger.debug("Global key Media_Play_Pause caught")
+            logger.debug(u"Global key Media_Play_Pause caught")
             self.mediaNextTrackKeyPressed.emit()

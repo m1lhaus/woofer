@@ -6,13 +6,15 @@ Media components
 - Radio player
 """
 
+__version__ = "$Id: media.py 131 2014-10-22 17:07:22Z m1lhaus $"
+
 import logging
 import random
 
 from PyQt4.QtCore import *
 
 from components import libvlc
-from tools import unicode2bytes, ErrorMessages
+import tools
 
 
 logger = logging.getLogger(__name__)
@@ -124,7 +126,7 @@ class MediaPlayer(QObject):
 
             self._media_list.lock()
             for path in mList:
-                unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
+                unicode_path, byte_path = tools.unicode2bytes(path)       # fix Windows encoding issues
                 # vlc will parse media automatically if needed (before playing)
                 self._media_list.add_media(byte_path)
 
@@ -191,7 +193,7 @@ class MediaPlayer(QObject):
             logger.error(u"Unable to remove item from _media_list. "
                          u"Item is not in the list or _media_list is read only! "
                          u"Playlist len: %s, index: %s" % (len(self.shuffled_playlist), remove_index))
-            self.errorEncountered.emit(ErrorMessages.CRITICAL,
+            self.errorEncountered.emit(tools.ErrorMessages.CRITICAL,
                                        u"Unable remove item from _media_list. "
                                        u"Item is not in the list or _media_list is read only!",
                                        u"playlist len: %s, removed index: %s" % (len(self.shuffled_playlist), remove_index))

@@ -1,4 +1,0 @@
-Woofer player
-======
-
-TODO

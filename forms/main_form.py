@@ -4,6 +4,8 @@
 All GUI components from main dialog initialized here.
 """
 
+__version__ = "$Id: main_form.py 132 2014-10-22 18:24:49Z m1lhaus $"
+
 import icons_rc
 import logging
 
@@ -535,28 +537,28 @@ class MainForm(object):
         self.sourceBrowser.topLevelItem(1).setDisabled(True)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle("Woofer")
-        self.sourceBrowser.headerItem().setText(0, "Playback source")
-        self.sourceBrowser.headerItem().setText(1, "ID")
+        MainWindow.setWindowTitle(QApplication.translate("MainWindow", "Woofer", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.headerItem().setText(0, QApplication.translate("MainWindow", "Playback source", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.headerItem().setText(1, QApplication.translate("MainWindow", "ID", None, QApplication.UnicodeUTF8))
         __sortingEnabled = self.sourceBrowser.isSortingEnabled()
         self.sourceBrowser.setSortingEnabled(False)
-        self.sourceBrowser.topLevelItem(0).setText(0, "Music")
-        self.sourceBrowser.topLevelItem(0).child(0).setText(0, "Folders")
-        self.sourceBrowser.topLevelItem(0).child(0).setText(1, "0")
-        self.sourceBrowser.topLevelItem(0).child(1).setText(0, "Playlists")
-        self.sourceBrowser.topLevelItem(0).child(1).setText(1, "1")
-        self.sourceBrowser.topLevelItem(1).setText(0, "Radios")
-        self.sourceBrowser.topLevelItem(1).setText(1, "2")
+        self.sourceBrowser.topLevelItem(0).setText(0, QApplication.translate("MainWindow", "Music", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).child(0).setText(0, QApplication.translate("MainWindow", "Folders", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).child(0).setText(1, QApplication.translate("MainWindow", "0", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).child(1).setText(0, QApplication.translate("MainWindow", "Playlists", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(0).child(1).setText(1, QApplication.translate("MainWindow", "1", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(1).setText(0, QApplication.translate("MainWindow", "Radios", None, QApplication.UnicodeUTF8))
+        self.sourceBrowser.topLevelItem(1).setText(1, QApplication.translate("MainWindow", "2", None, QApplication.UnicodeUTF8))
         self.sourceBrowser.setSortingEnabled(__sortingEnabled)
-        self.folderLbl.setText("Folder:")
-        self.libraryBtn.setToolTip("Edit media library")
-        self.playlistTable.horizontalHeaderItem(0).setText("Title")
-        self.playlistTable.horizontalHeaderItem(1).setText("Favorite")
-        self.playlistTable.horizontalHeaderItem(2).setText("Duration")
-        self.playlistTable.horizontalHeaderItem(3).setText("Path")
-        self.timeLbl.setText("00:00:00")
-        self.playPauseBtn.setShortcut("Ctrl+Alt+P")
-        self.menuMedia.setTitle("&Media")
-        self.menuPlaylist.setTitle("&Playlist")
-        self.menuTools.setTitle("&Tools")
-        self.menuHelp.setTitle("&Help")
+        self.folderLbl.setText(QApplication.translate("MainWindow", "Folder:", None, QApplication.UnicodeUTF8))
+        self.libraryBtn.setToolTip(QApplication.translate("MainWindow", "Edit media library", None, QApplication.UnicodeUTF8))
+        self.playlistTable.horizontalHeaderItem(0).setText(QApplication.translate("MainWindow", "Title", None, QApplication.UnicodeUTF8))
+        self.playlistTable.horizontalHeaderItem(1).setText(QApplication.translate("MainWindow", "Favorite", None, QApplication.UnicodeUTF8))
+        self.playlistTable.horizontalHeaderItem(2).setText(QApplication.translate("MainWindow", "Duration", None, QApplication.UnicodeUTF8))
+        self.playlistTable.horizontalHeaderItem(3).setText(QApplication.translate("MainWindow", "Path", None, QApplication.UnicodeUTF8))
+        self.timeLbl.setText(QApplication.translate("MainWindow", "00:00:00", None, QApplication.UnicodeUTF8))
+        self.playPauseBtn.setShortcut(QApplication.translate("MainWindow", "Ctrl+Alt+P", None, QApplication.UnicodeUTF8))
+        self.menuMedia.setTitle(QApplication.translate("MainWindow", "&Media", None, QApplication.UnicodeUTF8))
+        self.menuPlaylist.setTitle(QApplication.translate("MainWindow", "&Playlist", None, QApplication.UnicodeUTF8))
+        self.menuTools.setTitle(QApplication.translate("MainWindow", "&Tools", None, QApplication.UnicodeUTF8))
+        self.menuHelp.setTitle(QApplication.translate("MainWindow", "&Help", None, QApplication.UnicodeUTF8))

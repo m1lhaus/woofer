@@ -10,6 +10,7 @@ Optionally built dist could be zipped.
 import sys
 import os
 import subprocess
+import zipfile
 import platform
 import shutil
 
