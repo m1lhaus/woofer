@@ -97,6 +97,18 @@ def foundLibVLC():
         return False
 
 
+def findCmdHelpFile():
+    cmd_args_file = None
+    exe = False
+    if os.path.isfile('cmdargs.exe'):      # built exe dist
+        cmd_args_file = 'cmdargs.exe'
+        exe = True
+    elif os.path.isfile('cmdargs.py'):
+        cmd_args_file = 'cmdargs.py'
+
+    return cmd_args_file, exe
+
+
 def displayAnotherInstanceError(error_str):
     if not error_str:
         logger.debug(u"Another instance of Woofer Player is running! Closing application.")
@@ -119,7 +131,7 @@ def displayAnotherInstanceError(error_str):
 
 def displayLibVLCError(platform):
     if platform == 'nt':
-        logger.error(u"LibVLC dll not found, dll instance is None! Working path: %s" % os.getcwd())
+        logger.error(u"LibVLC dll not found, dll instance is None! Root path: %s" % os.path.dirname(os.path.realpath(sys.argv[0])))
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
         msgBox.setIcon(QMessageBox.Critical)
@@ -143,33 +155,40 @@ def displayLibVLCError(platform):
                                   u"<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
         msgBox.exec_()
     else:
-        raise NotImplementedError("Unknown platform: %s" % platform)
+        raise NotImplementedError(u"Unknown platform: %s" % platform)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=u"Woofer player is free and open-source cross-platform music player.")
-
-    # parser.add_argument("input", type=str,
-    #                     help="Input JSON file with videos.")
-    # parser.add_argument("extractors", type=str, nargs="+",
-    #                     help="Image descriptors.")
-    # parser.add_argument("-o", "--output", type=str, default="",
-    #                     help="Output root directory where result will be stored in format: "
-    #                          "'output_dir'/method/category/video.avi/data.npz")
-    # optional
-    # parser.add_argument("-j", "--jobs", type=int, default=1,
-    #                     help="Number of parallel jobs (multiprocessing). ONLY FOR LOCAL USAGE!")
-    # parser.add_argument("-p", "--priority", type=str, default="normal",
-    #                     help="Process priority. Normal priority is set as default. ONLY FOR LOCAL USAGE!")
+    parser = argparse.ArgumentParser(description=u"Woofer player is free and open-source cross-platform music player.",
+                                     add_help=False)
     parser.add_argument('-d', "--debug", action='store_true',
-                        help=u"Debug/verbose mode. Prints debug information on screen.")
-
+                        help=u"debug/verbose mode")
+    parser.add_argument('-h', "--help", action='store_true',
+                        help=u"show this help message and exit")
     args = parser.parse_args()
 
     env = 'DEBUG' if args.debug else 'PRODUCTION'
     log.setup_logging(env)
     logger.debug(u"Mode: '%s' Python '%s.%s.%s' PyQt: '%s' Qt: '%s'", env, sys.version_info[0], sys.version_info[1],
                  sys.version_info[2], PYQT_VERSION_STR, QT_VERSION_STR)
+
+    # if -h/--help console argument is given, display help content
+    if args.help:
+        logger.debug(u"Help cmd arg given, opening cmd help file...")
+        cmd_args_file, exe = findCmdHelpFile()
+
+        # if not running built win32 dist
+        if not exe:
+            parser.print_help()
+
+        # win32gui apps has no stdout/stderr, so cmd help has to be opened in new window
+        elif cmd_args_file:
+            os.startfile(cmd_args_file)         # opens console application window with help
+
+        else:
+            logger.error(u"File cmdargs.exe/cmdargs.py not found!")
+
+        sys.exit(0)
 
     # init Qt application
     app = QApplication(sys.argv)
