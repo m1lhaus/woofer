@@ -1079,7 +1079,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         from components import libvlc
         libvlc_version = libvlc.bytes_to_str(libvlc.libvlc_get_version())
         pyversion = u"%s.%s.%s" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
-        detailtext = u"<strong>Build information:</strong><br/>" \
+        detailtext = u"<hr><br/>" \
+                     u"<strong>Build information:</strong><br/>" \
                      u"Version: 0.7.0 | Python: %s | PyQt: %s | Qt: %s<br />" \
                      u"LibVLC version: %s" % (pyversion, PYQT_VERSION_STR, QT_VERSION_STR, libvlc_version)
 
@@ -1096,7 +1097,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         # ------------------------------
 
         topLayout = QVBoxLayout()
-        topLayout.setMargin(20)
+        topLayout.setMargin(15)
         topLayout.addLayout(maintextLayout)
         topLayout.addLayout(detailtextLayout)
         aboutDialog.setLayout(topLayout)
