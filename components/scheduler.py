@@ -28,7 +28,7 @@ class LogCleaner(QObject):
     def __init__(self):
         super(LogCleaner, self).__init__()
 
-        self.LOG_DIR = os.path.join(os.getcwd(), 'log')
+        self.LOG_DIR = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'log')
         self.DELAY = 5 * (60 * 1000)                        # 5 minutes in ms
 
         logger.debug(u"LogCleaner initialized")

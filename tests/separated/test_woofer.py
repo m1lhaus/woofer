@@ -37,7 +37,7 @@ class TestWoofer(TestCase):
 
         if os.name == "nt":
             # check if libvlc.dll exists and is usable
-            libvlc_lib_path = os.path.join(os.getcwd(), 'libvlc', 'win', 'libvlc.dll')
+            libvlc_lib_path = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'libvlc', 'win', 'libvlc.dll')
             self.assertTrue(os.path.isfile(libvlc_lib_path))
             self.assertEqual(check_binary_type(libvlc_lib_path), check_binary_type(sys.executable))
 

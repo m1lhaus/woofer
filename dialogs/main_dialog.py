@@ -1039,7 +1039,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         layout.setMargin(20)
 
         if os.path.isfile(u'LICENSE.txt'):
-            path_to_licence = unicode(os.getcwd(), sys.getfilesystemencoding())
+            path_to_licence = os.path.dirname(os.path.realpath(sys.argv[0]))
             path_to_licence = path_to_licence.split(os.sep)
             path_to_licence = u"/".join(path_to_licence) + u"/LICENSE.txt"
             path_to_licence = u"file:///" + path_to_licence

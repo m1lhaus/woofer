@@ -118,9 +118,9 @@ def find_lib():
         # load libvlc.dll shipped with woofer
         libvlc_found = False
         python_bin_type = check_binary_type(sys.executable)
-        cwd = os.getcwd()
+        cwd = os.path.dirname(os.path.realpath(sys.argv[0]))
 
-        plugin_path = os.path.join(os.getcwd(), 'libvlc', 'win')
+        plugin_path = os.path.join(cwd, 'libvlc', 'win')
         dll_path = os.path.join(plugin_path, 'libvlc.dll')
         if os.path.isdir(plugin_path) and os.path.isfile(dll_path):
             os.chdir(plugin_path)
@@ -170,7 +170,7 @@ def find_lib():
 
                 # found dll or VLC location
                 if plugin_path is not None:  # try loading
-                    path_to_lib = os.getcwd()
+                    path_to_lib = os.path.dirname(os.path.realpath(sys.argv[0]))
                     os.chdir(plugin_path)
                     if check_binary_type('libvlc.dll') == python_bin_type:
                         try:
