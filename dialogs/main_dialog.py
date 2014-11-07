@@ -1036,9 +1036,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         aboutDialog.setWindowFlags(aboutDialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         aboutDialog.setWindowTitle(u"About Woofer player")
 
-        layout = QHBoxLayout()
-        layout.setMargin(20)
-
         if os.path.isfile(u'LICENSE.txt'):
             path_to_licence = unicode(os.path.dirname(os.path.realpath(sys.argv[0])), sys.getfilesystemencoding())
             path_to_licence = path_to_licence.split(os.sep)
@@ -1051,32 +1048,59 @@ class MainApp(QMainWindow, main_form.MainForm):
         videolan_url = u"http://www.videolan.org/index.cs.html"
         woofer_url = u"http://www.wooferplayer.com"
         github_url = u"https://github.com/m1lhaus/woofer"
-        text = u"Woofer player is <strong>free and open-source cross-platform</strong> music player " \
-               u"that plays most multimedia files, CDs, DVDs and also various online streams. " \
-               u"Whole written in Python and Qt provides easy, reliable, " \
-               u"and high quality playback thanks to LibVLC library developed by " \
-               u"<a href='%s'>VideoLAN community</a>.<br/>" \
-               u"<br/>" \
-               u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
-               u"Web: <a href='%s'>www.wooferplayer.com</a><br/>" \
-               u"Source: <a href='%s'>GitHub repository</a> &lt; <a href='%s'>LICENCE GPL v2</a> &gt;<br/>" \
-               u"Version: 0.7a" % (videolan_url, woofer_url, github_url, path_to_licence)
+        maintext = u"Woofer player is <strong>free and open-source cross-platform</strong> music player " \
+                   u"that plays most multimedia files, CDs, DVDs and also various online streams. " \
+                   u"Whole written in Python and Qt provides easy, reliable, " \
+                   u"and high quality playback thanks to LibVLC library developed by " \
+                   u"<a href='%s'>VideoLAN community</a>.<br/>" \
+                   u"<br/>" \
+                   u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
+                   u"Web: <a href='%s'>www.wooferplayer.com</a><br/>" \
+                   u"Source: <a href='%s'>GitHub repository</a> &lt; <a href='%s'>LICENCE GPL v2</a> &gt;"\
+                   % (videolan_url, woofer_url, github_url, path_to_licence)
 
-        textLabel = QLabel()
-        textLabel.setTextFormat(Qt.RichText)
-        textLabel.setOpenExternalLinks(True)
-        textLabel.setWordWrap(True)
-        textLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        textLabel.setText(text)
+        maintextLabel = QLabel()
+        maintextLabel.setTextFormat(Qt.RichText)
+        maintextLabel.setOpenExternalLinks(True)
+        maintextLabel.setWordWrap(True)
+        maintextLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        maintextLabel.setText(maintext)
 
         iconLabel = QLabel()
         iconLabel.setPixmap(QPixmap(u":/icons/app_icon.png").scaled(128, 128, transformMode=Qt.SmoothTransformation))
         iconLabel.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
-        layout.addWidget(iconLabel)
-        layout.addWidget(textLabel)
+        maintextLayout = QHBoxLayout()
+        maintextLayout.addWidget(iconLabel)
+        maintextLayout.addWidget(maintextLabel)
 
-        aboutDialog.setLayout(layout)
+        # ------------------------------
+
+        from components import libvlc
+        libvlc_version = libvlc.bytes_to_str(libvlc.libvlc_get_version())
+        pyversion = u"%s.%s.%s" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
+        detailtext = u"<strong>Build information:</strong><br/>" \
+                     u"Version: 0.7.0 | Python: %s | PyQt: %s | Qt: %s<br />" \
+                     u"LibVLC version: %s" % (pyversion, PYQT_VERSION_STR, QT_VERSION_STR, libvlc_version)
+
+        detailtextLabel = QLabel()
+        detailtextLabel.setTextFormat(Qt.RichText)
+        detailtextLabel.setOpenExternalLinks(True)
+        detailtextLabel.setWordWrap(True)
+        detailtextLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        detailtextLabel.setText(detailtext)
+
+        detailtextLayout = QVBoxLayout()
+        detailtextLayout.addWidget(detailtextLabel)
+
+        # ------------------------------
+
+        topLayout = QVBoxLayout()
+        topLayout.setMargin(20)
+        topLayout.addLayout(maintextLayout)
+        topLayout.addLayout(detailtextLayout)
+        aboutDialog.setLayout(topLayout)
+
         aboutDialog.setFixedWidth(480)
         aboutDialog.setFixedHeight(aboutDialog.sizeHint().height())
         aboutDialog.exec_()
