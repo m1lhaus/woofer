@@ -10,50 +10,50 @@ import os
 import logging
 import send2trash
 
+from PyQt4.QtCore import *
+
 from tools.misc import ErrorMessages
 
-from PyQt5.QtCore import *
 
 logger = logging.getLogger(__name__)
-logger.debug('Import ' + __name__)
+logger.debug(u'Import ' + __name__)
 
 
 class RecursiveBrowser(QObject):
     """
     Recursive disk browser for searching media files on folder tree.
-    Data are transferred via Signal/Slot mechanism.
     Runs in separated thread!
+    Data are transferred via Signal/Slot mechanism.
     """
-
-    parseDataSignal = pyqtSignal(list)
+    parseData = pyqtSignal(list)
 
     SEND_LIMIT = 5     # cca 50ms blocks for parsing
 
-    def __init__(self, fileNamesFilter, followSym=False):
+    def __init__(self, nameFilter=None, followSym=False):
         """
-        @param fileNamesFilter: Which files or file extensions we looking for.
+        @param nameFilter: Which file extensions we looking for.
         @param followSym: Follow symbolic links. WARNING! Beware of cyclic symlinks!
-        @type fileNamesFilter: tuple of str
+        @type nameFilter: tuple of str
         @type followSym: bool
         """
         super(RecursiveBrowser, self).__init__()
         self.followSym = followSym
-        self.fileNamesFilter = tuple([ext.replace('*', '') for ext in fileNamesFilter])     # i.e. remove * from *.mp3
+        self.nameFilter = nameFilter
 
-        logger.debug("Recursive browser initialized.")
+        logger.debug(u"Recursive browser initialized.")
 
-    @pyqtSlot(str)
+    @pyqtSlot(unicode)
     def scanFiles(self, targetDir):
         """
         Thread worker! Called asynchronously from main thread.
         The final data are sent to media parser in another thread.
-        @type targetDir: str
+        @type targetDir: unicode
         """
         # if target dir is already a file
-        if targetDir.endswith(self.fileNamesFilter):
-            logger.debug("Scanned target dir is a file.")
-            self.parseDataSignal.emit([targetDir])
-            self.parseDataSignal.emit([])             # end flag for media parser
+        if targetDir.endswith(self.nameFilter):
+            logger.debug(u"Scanned target dir is a file.")
+            self.parseData.emit([targetDir])
+            self.parseData.emit([])             # end flag for media parser
             return
 
         flags = QDirIterator.Subdirectories | QDirIterator.FollowSymlinks if self.followSym else QDirIterator.Subdirectories
@@ -61,70 +61,69 @@ class RecursiveBrowser(QObject):
         result = []
         n = 0
 
-        logger.debug("Dir iterator initialized, starting recursive search and parsing.")
+        logger.debug(u"Dir iterator initialized, starting recursive search and parsing.")
         while dirIter.hasNext():
             path = dirIter.next()
-            if path.endswith(self.fileNamesFilter):    # little bit slower than using regex (few ms), but more readable
+            if path.endswith(self.nameFilter):
                 result.append(path)
 
                 n += 1
                 if n == self.SEND_LIMIT:
-                    self.parseDataSignal.emit(result)
+                    self.parseData.emit(result)
                     n = 0
                     result = []
 
         if result:
-            self.parseDataSignal.emit(result)
+            self.parseData.emit(result)
 
-        logger.debug("Recursive search finished, sending finish_parser flag.")
-        self.parseDataSignal.emit([])
+        logger.debug(u"Recursive search finished, sending finish_parser flag.")
+        self.parseData.emit([])
 
     @pyqtSlot()
     def finish(self):
         """
         Called to to job after all work is finished (media files are all parsed).
-        Not used for now.
+        Not used!
         """
         pass
 
 
 class MoveToTrash(QObject):
     """
-    Asynchronous file remover.
-    Runs in separated thread!
+    Asynchronous file remover - lives in own thread!
     """
 
-    finishedSignal = pyqtSignal(int, str, str)
+    finished = pyqtSignal(int, unicode, unicode)
 
     def __init__(self):
         super(MoveToTrash, self).__init__()
 
-    @pyqtSlot(str)
+    @pyqtSlot(unicode)
     def remove(self, path):
         """
         Main worker method.
         Called asynchronously (signal/slot) to remove file/folder from disk to Trash.
-        @type path: str
+        @type path: unicode
         """
         if os.path.isfile(path):
-            folder_or_file = "file"
+            folder_or_file = u"file"
         elif os.path.isdir(path):
-            folder_or_file = "folder"
+            folder_or_file = u"folder"
         else:
-            logger.error("Given path for removing '%s' does not exist!", path)
-            self.finishedSignal.emit(ErrorMessages.ERROR, "Given path for removing '%s' does not exist!" % path, "")
+            logger.error(u"Given path for removing '%s' does not exist!", path)
+            self.finished.emit(ErrorMessages.ERROR, u"Given path for removing '%s' does not exist!" % path, u"")
             return
 
-        logger.debug("Removing %s '%s' from disk - sending to trash...", folder_or_file, path)
+        logger.debug(u"Removing %s '%s' from disk - sending to trash...", folder_or_file, path)
 
         try:
             send2trash.send2trash(path)
-        except OSError as e:
-            logger.exception("Unable to send %s '%s' to trash!", folder_or_file, path)
-            self.finishedSignal.emit(ErrorMessages.ERROR, "Unable to move path to Trash path '%s'!" % path,
-                                     e.args if len(e.args) > 1 else e.args[0])
+        except OSError, exception:
+            logger.exception(u"Unable to send %s '%s' to trash!", folder_or_file, path)
+            self.finished.emit(ErrorMessages.ERROR, u"Unable to move path to Trash path '%s'!" % path,
+                               u"Details: %s" % exception.message)
 
         else:
-            logger.debug("Path send to trash successfully.")
-            self.finishedSignal.emit(ErrorMessages.INFO, "%s '%s' successfully removed from disk" %
-                                    (folder_or_file.capitalize(), os.path.basename(path)), "")
+            logger.debug(u"Path send to trash successfully.")
+            self.finished.emit(ErrorMessages.INFO, u"%s '%s' successfully removed from disk" %
+                               (folder_or_file.capitalize(), os.path.basename(path)), u"")
