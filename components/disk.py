@@ -130,7 +130,7 @@ class MoveToTrash(QObject):
         except OSError, exception:
             logger.exception(u"Unable to send %s '%s' to trash!", folder_or_file, path)
             self.errorSignal.emit(ErrorMessages.ERROR, u"Unable move to Trash path '%s'!" % path,
-                                  u"Details: %s" % unicode(exception.message, sys.getfilesystemencoding()))         # TODO: test on Windows
+                                  u"Details: %s" % exception.message)
 
         else:
             logger.debug(u"%s send to Trash successfully.", folder_or_file.capitalize())
