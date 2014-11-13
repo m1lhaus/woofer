@@ -29,16 +29,13 @@ logger = logging.getLogger(__name__)
 logger.debug(u'Import ' + __name__)
 
 # all supported codecs and formats can be found at https://wiki.videolan.org/VLC_Features_Formats/
-FileExt = ('*.3ga', '*.669', '*.a52', '*.aac', '*.ac3', '*.adt', '*.adts', '*.aif', '*.aifc', '*.aiff', '*.amr', '*.aob',
-           '*.ape', '*.awb', '*.caf', '*.dts', '*.flac', '*.it', '*.kar', '*.m4a', '*.m4p', '*.m5p', '*.mid', '*.mka',
-           '*.mlp', '*.mod', '*.mpa', '*.mp1', '*.mp2', '*.mp3', '*.mpc', '*.mpga', '*.oga', '*.ogg', '*.oma',
-           '*.opus', '*.qcp', '*.ra', '*.rmi', '*.s3m', '*.spx', '*.thd', '*.tta', '*.voc', '*.vqf', '*.w64',
-           '*.wav', '*.wma', '*.wv', '*.xa', '*.xm')
-FileExt_ = ('.3ga', '.669', '.a52', '.aac', '.ac3', '.adt', '.adts', '.aif', '.aifc', '.aiff', '.amr',
-            '.aob', '.ape', '.awb', '.caf', '.dts', '.flac', '.it', '.kar', '.m4a', '.m4p', '.m5p',
-            '.mid', '.mka', '.mlp', '.mod', '.mpa', '.mp1', '.mp2', '.mp3', '.mpc', '.mpga', '.oga',
-            '.ogg', '.oma', '.opus', '.qcp', '.ra', '.rmi', '.s3m', '.spx', '.thd', '.tta', '.voc',
-            '.vqf', '.w64', '.wav', '.wma', '.wv', '.xa', '.xm')
+FileExt = ('*.mp3', '*.m4a', '*.m4p', '*.flac', '*.wav', '*.wma', '*.aac', '*.mpga', '*.3ga', '*.669', '*.a52',
+           '*.ac3', '*.adt', '*.adts', '*.aif', '*.aifc', '*.aiff', '*.amr', '*.aob', '*.ape', '*.awb', '*.caf',
+           '*.dts',  '*.it', '*.kar',  '*.m5p', '*.mid', '*.mka', '*.mlp', '*.mod', '*.mpa', '*.mp1', '*.mp2',
+           '*.mpc',  '*.oga', '*.ogg', '*.oma', '*.opus', '*.qcp', '*.ra', '*.rmi', '*.s3m', '*.spx', '*.thd',
+           '*.tta', '*.voc', '*.vqf', '*.w64', '*.wv', '*.xa', '*.xm')
+assert not any([not ext.startswith('*.') for ext in FileExt])
+assert len(set(FileExt)) == len(FileExt)
 
 
 class MainApp(QMainWindow, main_form.MainForm):
@@ -167,8 +164,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         Player class (basically it is only the interface) lives in main thread.
         VlC player itself lives in separated threads!
         """
-
-
         self.mediaPlayer.mediaAdded.connect(self.addToPlaylist)
         self.mediaPlayer.playing.connect(self.playing)
         self.mediaPlayer.paused.connect(self.paused)
@@ -184,7 +179,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Scanner and parser live in separated threads.
         """
         # asynchronous scanner
-        self.scanner = disk.RecursiveBrowser(nameFilter=FileExt_, followSym=False)
+        self.scanner = disk.RecursiveBrowser(fileNamesFilter=FileExt, followSym=False)
         self.scannerThread = QThread(self)
 
         # asynchronous parser

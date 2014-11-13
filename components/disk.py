@@ -27,18 +27,18 @@ class RecursiveBrowser(QObject):
 
     SEND_LIMIT = 10     # cca 100ms blocks for parsing
 
-    def __init__(self, nameFilter=None, followSym=False):
+    def __init__(self, fileNamesFilter, followSym=False):
         """
-        @param nameFilter: Which file extensions we looking for.
+        @param fileNamesFilter: Which files or file extensions we looking for.
         @param followSym: Follow symbolic links. WARNING! Beware of cyclic symlinks!
-        @type nameFilter: tuple of str
+        @type fileNamesFilter: tuple of str
         @type followSym: bool
         """
         super(RecursiveBrowser, self).__init__()
         self.followSym = followSym
-        self.nameFilter = nameFilter
+        self.fileNamesFilter = tuple([ext.replace('*', '') for ext in fileNamesFilter])     # i.e. remove * from *.mp3
 
-        logger.debug(u"Recursive browser initialized.")
+        logger.debug("Recursive browser initialized.")
 
     @pyqtSlot(unicode)
     def scanFiles(self, targetDir):
@@ -48,7 +48,7 @@ class RecursiveBrowser(QObject):
         @type targetDir: unicode
         """
         # if target dir is already a file
-        if targetDir.endswith(self.nameFilter):
+        if targetDir.endswith(self.fileNamesFilter):
             logger.debug(u"Scanned target dir is a file.")
             self.parseData.emit([targetDir])
             self.parseData.emit([])             # end flag for media parser
@@ -62,7 +62,7 @@ class RecursiveBrowser(QObject):
         logger.debug(u"Dir iterator initialized, starting recursive search and parsing.")
         while dirIter.hasNext():
             path = dirIter.next()
-            if path.endswith(self.nameFilter):
+            if path.endswith(self.fileNamesFilter):
                 result.append(path)
 
                 n += 1
