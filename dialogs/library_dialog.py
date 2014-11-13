@@ -10,7 +10,6 @@ from PyQt4.QtCore import *
 from forms.library_form import Ui_libraryDialog
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
 
 
 class LibraryDialog(QDialog, Ui_libraryDialog):

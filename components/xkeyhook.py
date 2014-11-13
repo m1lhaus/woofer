@@ -21,7 +21,6 @@ from Xlib.protocol import rq
 from PyQt4.QtCore import *
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
 
 # key ids
 MEDIA_PLAYPAUSE_KEY = '[269025044]'

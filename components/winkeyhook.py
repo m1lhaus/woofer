@@ -13,7 +13,6 @@ import win32con
 from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
 
 
 class GlobalHKListener(QObject):

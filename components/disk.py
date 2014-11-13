@@ -16,7 +16,6 @@ from PyQt4.QtCore import *
 from tools import ErrorMessages
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
 
 
 class RecursiveBrowser(QObject):

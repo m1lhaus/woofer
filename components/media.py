@@ -16,7 +16,6 @@ from tools import ErrorMessages, unicode2bytes
 
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
 
 
 class MediaPlayer(QObject):

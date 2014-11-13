@@ -11,7 +11,6 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
 
 
 class MediaSeeker(QSlider):

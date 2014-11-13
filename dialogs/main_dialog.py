@@ -26,7 +26,6 @@ elif os.name == "posix":
 
 
 logger = logging.getLogger(__name__)
-logger.debug(u'Import ' + __name__)
 
 # all supported codecs and formats can be found at https://wiki.videolan.org/VLC_Features_Formats/
 FileExt = ('*.mp3', '*.m4a', '*.m4p', '*.flac', '*.wav', '*.wma', '*.aac', '*.mpga', '*.3ga', '*.669', '*.a52',
