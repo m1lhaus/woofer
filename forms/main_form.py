@@ -534,7 +534,6 @@ class MainForm(object):
         self.sourceBrowser.topLevelItem(1).setDisabled(True)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle("Woofer")
         self.sourceBrowser.headerItem().setText(0, "Playback source")
         self.sourceBrowser.headerItem().setText(1, "ID")
         __sortingEnabled = self.sourceBrowser.isSortingEnabled()

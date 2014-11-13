@@ -222,7 +222,7 @@ if __name__ == "__main__":
     else:
 
         # run the application
-        mainApp = main_dialog.MainApp()
+        mainApp = main_dialog.MainApp(env)
         mainApp.show()
 
         logger.debug(u"Starting MainThread loop...")

@@ -42,6 +42,8 @@ class MainApp(QMainWindow, main_form.MainForm):
     Main application GUI form.
     - setup main window dialog
     - connects signals from dialogs widgets
+
+    @param mode: DEBUG or PRODUCTION
     """
 
     errorSignal = pyqtSignal(int, unicode, unicode)        # (tools.Message.CRITICAL, main_text, description)
@@ -56,7 +58,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     ERROR_MSG_DELAY = 20000
     QUEUED_SETTINGS_DELAY = 100
 
-    def __init__(self):
+    def __init__(self, mode):
         super(MainApp, self).__init__()
         self.appRootPath = unicode(os.path.dirname(sys.argv[0]), sys.getfilesystemencoding())
         self.appDataPath = os.path.join(self.appRootPath, u'data')
@@ -67,6 +69,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         # setups all GUI components from form (design part)
         self.setupUi(self)
+        self.setWindowTitle(u"Woofer" if mode == 'PRODUCTION' else u"Woofer - debug mode")
         self.setupGUISignals()
         self.setupPlayerSignals()
         self.setupActionsSignals()
