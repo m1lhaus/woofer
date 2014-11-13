@@ -634,6 +634,8 @@ class MediaParser(QObject):
     Worker method: MediaParser.parseMedia()
     """
 
+    # TODO: rewrite !
+
     finishedSignal = pyqtSignal()
     dataParsedSignal = pyqtSignal(list)
 
