@@ -189,9 +189,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.fileRemoverThread = QThread(self)
 
         self.scanFilesSignal.connect(self.scanner.scanFiles)
-        self.parser.finished.connect(self.clearProgress)
-        self.parser.finished.connect(self.mediaPlayer.mediaAddingFinished)
-        self.parser.parsed.connect(self.mediaPlayer.addMedia)
+        self.parser.finishedSignal.connect(self.clearProgress)
+        self.parser.finishedSignal.connect(self.mediaPlayer.mediaAddingFinished)
+        self.parser.dataParsedSignal.connect(self.mediaPlayer.addMedia)
         self.scanner.parseDataSignal.connect(self.parser.parseMedia)
         self.scanner.errorSignal.connect(self.displayErrorMsg)
         self.removeFileSignal.connect(self.fileRemover.remove)

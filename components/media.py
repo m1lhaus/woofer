@@ -630,15 +630,16 @@ class MediaParser(QObject):
     """
     Class for parsing media object.
     Runs in separated thread.
-    Data are transfered via Signal/Slot mechanism.
+    Data are transferred via Signal/Slot mechanism.
+    Worker method: MediaParser.parseMedia()
     """
 
-    finished = pyqtSignal()
-    parsed = pyqtSignal(list)
+    finishedSignal = pyqtSignal()
+    dataParsedSignal = pyqtSignal(list)
 
     def __init__(self):
         super(MediaParser, self).__init__()
-        self.vlcInstance = libvlc.Instance()
+        self.vlc_instance = libvlc.Instance()        # for parsing
         self._mutex = QMutex()
         self._cancel = False
 
@@ -670,15 +671,15 @@ class MediaParser(QObject):
             logger.debug(u"Parser finished, end flag received.")
             self.stop(False)            # reset stop flag
 
-            self.finished.emit()
+            self.finishedSignal.emit()
 
         # PARSE MEDIA FILES
         elif not self.stop():
-            mediaList = []
+            media_list = []
             for unicode_path in sources:
                 byte_path = unicode_path.encode("utf8")
-                mMedia = self.vlcInstance.media_new(byte_path)
-                mMedia.parse()
-                mediaList.append((unicode_path, mMedia))
+                media_object = self.vlc_instance.media_new(byte_path)
+                media_object.parse()
+                media_list.append((unicode_path, media_object))
 
-            self.parsed.emit(mediaList)
+            self.dataParsedSignal.emit(media_list)
