@@ -85,7 +85,7 @@ def setup_logging(mode):
     sys.stderr = StreamToLogger(1, logger, logging.ERROR)
 
     # if not win32gui application, add console handlers
-    if sys.stdout is not None:
+    if not sys.argv[0].endswith(".exe"):
         # setup logging warning and errors to stderr
         console_err = logging.StreamHandler(stream=sys.__stderr__)      # write to original stderr, not to the logger
         console_err.setLevel(logging.WARNING)
