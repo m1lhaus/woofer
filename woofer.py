@@ -42,20 +42,7 @@ try:
 except ImportError, e:
     raise Exception(u"%s! PyQt4 library is required!" % e.message)
 
-# requirements for system-wide hooks
-if os.name == 'nt':
-    try:
-        import pythoncom
-        import pywintypes
-    except ImportError, e:
-        raise Exception(u"%s! PyWin32 libraries (package) are required on Windows platform!" % e.message)
-
-    try:
-        import pyHook
-    except ImportError, e:
-        raise Exception(u"%s! pyHook package is required on Windows platform!" % e.message)
-
-elif os.name == 'posix':
+if os.name == 'posix':
     try:
         import Xlib
     except ImportError, e:
