@@ -141,18 +141,19 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         self.hkHookThread = QThread(self)
 
-        if os.name == 'nt' and not keyhook.GlobalHKListener.isAbleToRegisterHK():
-            logger.warning(u"Unable to use win32 RegisterHotKey() function, "
-                           u"switching to backup solution - registering Windows hook.")
-            self.hkHook = keyhook.WindowsKeyHook()
-        else:
-            self.hkHook = keyhook.GlobalHKListener()
+        # if os.name == 'nt' and not keyhook.GlobalHKListener.isAbleToRegisterHK():
+        #     logger.warning(u"Unable to use win32 RegisterHotKey() function, "
+        #                    u"switching to backup solution - registering Windows hook.")
+        #     self.hkHook = keyhook.WindowsKeyHook()
+        # else:
 
+        self.hkHook = keyhook.GlobalHKListener()
         self.hkHook.moveToThread(self.hkHookThread)
         self.hkHook.mediaPlayKeyPressed.connect(self.mediaPlayPauseAction.trigger)
         self.hkHook.mediaStopKeyPressed.connect(self.mediaStopAction.trigger)
         self.hkHook.mediaNextTrackKeyPressed.connect(self.mediaNextAction.trigger)
         self.hkHook.mediaPrevTrackKeyPressed.connect(self.mediaPreviousAction.trigger)
+        self.hkHook.errorSignal.connect(self.displayErrorMsg)
 
         self.hkHookThread.started.connect(self.hkHook.start_listening)
         self.hkHookThread.start()
@@ -1107,6 +1108,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Quits all threads, saves settings, etc. before application exit.
         :type event: QCloseEvent
         """
+        terminate_delay = 3000
         self.hkHook.stop_listening()
 
         self.scannerThread.quit()
@@ -1114,10 +1116,21 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.logCleanerThread.quit()
         self.fileRemoverThread.quit()
         self.hkHookThread.quit()
-        event.accept()              # emits quit events
+
+        self.scannerThread.wait(terminate_delay)
+        self.parserThread.wait(terminate_delay)
+        self.logCleanerThread.wait(terminate_delay)
+        self.fileRemoverThread.wait(terminate_delay)
+        self.hkHookThread.wait(terminate_delay)
+
+        if self.hkHookThread.isRunning():
+            logger.error(u"hkHookThread still running after timeout! Thread will be terminated.")
+            self.hkHookThread.terminate()
 
         self.mediaPlayer.stop()
         self.saveSettings()
+
+        event.accept()              # emits quit events
 
 
 
