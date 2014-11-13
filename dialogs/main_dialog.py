@@ -196,7 +196,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.scanner.parseDataSignal.connect(self.parser.parseMedia)
         self.scanner.errorSignal.connect(self.displayErrorMsg)
         self.removeFileSignal.connect(self.fileRemover.remove)
-        self.fileRemover.finished.connect(self.displayErrorMsg)
+        self.fileRemover.errorSignal.connect(self.displayErrorMsg)
         self.scanner.moveToThread(self.scannerThread)
         self.parser.moveToThread(self.parserThread)
         self.fileRemover.moveToThread(self.fileRemoverThread)
@@ -748,7 +748,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param text: main text
         @param details: description
         """
-        details = u"Details: <i>" + str(details) + u"</i>" if details else u""
+        details = u"Details: <i>" + details + u"</i>" if details else u""
 
         if er_type == ErrorMessages.INFO:
             icon = QPixmap(u":/icons/info.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)

@@ -7,6 +7,7 @@ Disk components
 """
 
 import os
+import sys
 import logging
 import send2trash
 
@@ -101,7 +102,7 @@ class MoveToTrash(QObject):
     Worker method: MoveToTrash.remove()
     """
 
-    finished = pyqtSignal(int, unicode, unicode)
+    errorSignal = pyqtSignal(int, unicode, unicode)             # same as finished signal when no errors
 
     def __init__(self):
         super(MoveToTrash, self).__init__()
@@ -119,19 +120,19 @@ class MoveToTrash(QObject):
             folder_or_file = u"folder"
         else:
             logger.error(u"Given path for removing '%s' does not exist!", path)
-            self.finished.emit(ErrorMessages.ERROR, u"Given path for removing '%s' does not exist!" % path, u"")
+            self.errorSignal.emit(ErrorMessages.ERROR, u"Given path for removing does not exist!",
+                                  u"%s not found!" % path)
             return
-
         logger.debug(u"Removing %s '%s' from disk - sending to trash...", folder_or_file, path)
 
         try:
             send2trash.send2trash(path)
         except OSError, exception:
             logger.exception(u"Unable to send %s '%s' to trash!", folder_or_file, path)
-            self.finished.emit(ErrorMessages.ERROR, u"Unable to move path to Trash path '%s'!" % path,
-                               u"Details: %s" % exception.message)
+            self.errorSignal.emit(ErrorMessages.ERROR, u"Unable move to Trash path '%s'!" % path,
+                                  u"Details: %s" % unicode(exception.message, sys.getfilesystemencoding()))         # TODO: test on Windows
 
         else:
-            logger.debug(u"Path send to trash successfully.")
-            self.finished.emit(ErrorMessages.INFO, u"%s '%s' successfully removed from disk" %
-                               (folder_or_file.capitalize(), os.path.basename(path)), u"")
+            logger.debug(u"%s send to Trash successfully.", folder_or_file.capitalize())
+            self.errorSignal.emit(ErrorMessages.INFO, u"%s '%s' successfully removed from disk" %
+                                 (folder_or_file.capitalize(), os.path.basename(path)), u"")
