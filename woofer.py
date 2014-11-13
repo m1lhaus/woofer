@@ -158,6 +158,16 @@ def displayLibVLCError(platform):
         raise NotImplementedError(u"Unknown platform: %s" % platform)
 
 
+def displayLoggerError(e_msg):
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Critical)
+        msgBox.setWindowTitle(u"Critical error")
+        msgBox.setText(u"Initialization of logger component failed. "
+                       u"The application doesn't seem to have write permissions.")
+        msgBox.setInformativeText(u"Details:\n" + e_msg)
+        msgBox.exec_()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=u"Woofer player is free and open-source cross-platform music player.",
                                      add_help=False)
@@ -168,7 +178,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     env = 'DEBUG' if args.debug else 'PRODUCTION'
-    log.setup_logging(env)
+
+    # init Qt application
+    app = QApplication(sys.argv)
+    app.setOrganizationName(u"WooferPlayer")
+    app.setOrganizationDomain(u"wooferplayer.com")
+    app.setApplicationName(u"Woofer")
+
+    try:
+        log.setup_logging(env)
+    except Exception as exception:
+        displayLoggerError(unicode(str(exception), sys.getfilesystemencoding()))
+        sys.exit(-1)
+
     logger.debug(u"Mode: '%s' Python '%s.%s.%s' PyQt: '%s' Qt: '%s'", env, sys.version_info[0], sys.version_info[1],
                  sys.version_info[2], PYQT_VERSION_STR, QT_VERSION_STR)
 
@@ -189,12 +211,6 @@ if __name__ == "__main__":
             logger.error(u"File cmdargs.exe/cmdargs.py not found!")
 
         sys.exit(0)
-
-    # init Qt application
-    app = QApplication(sys.argv)
-    app.setOrganizationName(u"WooferPlayer")
-    app.setOrganizationDomain(u"wooferplayer.com")
-    app.setApplicationName(u"Woofer")
 
     sharedMemoryLock, error_str = obtainSharedMemoryLock()
 

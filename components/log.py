@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 """
-Custom configuration and setup for logger
-- set logging level
-- set default handler to file
-- set ERROR logs to stderr
-- add DEBUG and INFO logs to stdout (only in DEBUG mode)
+-   Stream redirector - copies all stderr stream to logger as error messages
+-   Custom configuration and setup for logger
+    - set logging level
+    - set default handler to file
+    - set ERROR logs to stderr
+    - add DEBUG and INFO logs to stdout (only in DEBUG mode)
 """
 
 import logging
@@ -27,7 +28,7 @@ class StreamToLogger(object):
             sys.stderr = self
             self.orig_output = sys.__stderr__
         else:
-            raise Exception("Given file descriptor num: %s is not supported!" % fdnum)
+            raise Exception(u"Given file descriptor num: %s is not supported!" % fdnum)
 
         self.logger = logger
         self.log_level = log_level
@@ -37,13 +38,12 @@ class StreamToLogger(object):
             self.orig_output.write(buf)
         else:
             if isinstance(buf, str):
-                buf = unicode(buf, 'utf-8')
+                buf = unicode(buf, u'utf-8')
             for line in buf.rstrip().splitlines():
                 self.logger.log(self.log_level, line.rstrip())
 
     def __getattr__(self, name):
-        # pass all other methods to original fd
-        return self.orig_output.__getattribute__(name)
+        return self.orig_output.__getattribute__(name)              # pass all other methods to original fd
 
 
 class InfoFilter(logging.Filter):
@@ -56,8 +56,8 @@ class InfoFilter(logging.Filter):
 
 def setup_logging(mode):
 
-    root_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-    log_dir = os.path.join(root_dir, 'log')
+    root_dir = unicode(os.path.dirname(os.path.realpath(sys.argv[0])), sys.getfilesystemencoding())
+    log_dir = os.path.join(root_dir, u'log')
     date = datetime.datetime.now()
 
     if not os.path.isdir(log_dir):
@@ -68,18 +68,19 @@ def setup_logging(mode):
 
     # --- BASIC CONFIGURATION ---
     if mode == "DEBUG":
-        log_path = os.path.join(log_dir, "debug_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
+        log_path = os.path.join(log_dir, u"debug_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
         level = logging.DEBUG
     elif mode == "PRODUCTION":
         level = logging.WARNING
-        log_path = os.path.join(log_dir, "production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
+        log_path = os.path.join(log_dir, u"production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
     else:
         raise NotImplementedError(u"Logging mode is not implemented!")
 
     logging.basicConfig(level=level, format=msg_format, filename=log_path)
     # ---------------------------
 
-    logger = logging.getLogger('')
+    logger = logging.getLogger('')      # get root logger
+
     # redirects all stderr output (exceptions, etc.) to logger ERROR level
     sys.stderr = StreamToLogger(1, logger, logging.ERROR)
 
