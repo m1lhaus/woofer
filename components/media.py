@@ -21,31 +21,29 @@ logger.debug(u'Import ' + __name__)
 
 class MediaPlayer(QObject):
     """
-    Media player class
+    Media player class.
+    Uses LibVLC highlevel wrapper.
     """
 
-    TICK_INTERVAL = 1000        # in ms
+    errorSignal = pyqtSignal(int, unicode, unicode)        # (Message.CRITICAL, main_text, description)
+    tickTocSignal = pyqtSignal(int)
 
-    # error = pyqtSignal(str)
-    errorEncountered = pyqtSignal(int, unicode, unicode)        # (Message.CRITICAL, main_text, description)
-    tick = pyqtSignal(int)
-
-    mediaAdded = pyqtSignal(list, bool)
-    playing = pyqtSignal()
-    stopped = pyqtSignal()
-    paused = pyqtSignal()
-    timeChanged = pyqtSignal(int)
-    positionChanged = pyqtSignal(float)
-    mediaChanged = pyqtSignal(int)          # TODO: add metadata
-    endReached = pyqtSignal(bool)
+    mediaAddedSignal = pyqtSignal(list, bool)
+    playingSignal = pyqtSignal()
+    stoppedSignal = pyqtSignal()
+    pausedSignal = pyqtSignal()
+    timeChangedSignal = pyqtSignal(int)
+    positionChangedSignal = pyqtSignal(float)
+    mediaChangedSignal = pyqtSignal(int)          # TODO: add metadata
+    endReachedSignal = pyqtSignal(bool)
 
     # this signals are used as helper, because callback are called from vlc directly (from another thread),
     # so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
     mediaChangedCallbackSignal = pyqtSignal()
     endReachedCallbackSignal = pyqtSignal()
 
-    def __init__(self, parent=None):
-        super(MediaPlayer, self).__init__(parent)
+    def __init__(self):
+        super(MediaPlayer, self).__init__()
 
         self.instance = libvlc.Instance()
         """@type: vlc.Instance"""
@@ -55,9 +53,9 @@ class MediaPlayer(QObject):
         """@type: vlc.MediaList"""
         logger.debug(u"Core instances of VLC player created")
 
+        self.tick_rate = 1000                           # in ms
         self.shuffled_playlist = []
         self.shuffled_playlist_current_index = 0        # points which media in idPlaylist is being played
-        # self.playlist_len = 0
 
         self.is_playing = False
         self.is_paused = False
@@ -68,62 +66,49 @@ class MediaPlayer(QObject):
         self.repeat_mode = False
         self.player_is_empty = True
 
-        self.endReached.connect(self.next)
-        self.playing.connect(self.__playingSlot)
-        self.paused.connect(self.__pausedSlot)
-        self.stopped.connect(self.__stoppedSlot)
-        self.endReached.connect(self.__stoppedSlot)
-        self.mediaChangedCallbackSignal.connect(self.__mediaChangedSlot)
-        self.endReachedCallbackSignal.connect(self.__endReachedSlot)
+        self.endReachedSignal.connect(self.next)
+        self.playingSignal.connect(self._playingSlot)
+        self.pausedSignal.connect(self._pausedSlot)
+        self.stoppedSignal.connect(self._stoppedSlot)
+        self.endReachedSignal.connect(self._stoppedSlot)
+        self.mediaChangedCallbackSignal.connect(self._mediaChangedSlot)
+        self.endReachedCallbackSignal.connect(self._endReachedSlot)
 
-        self.__setupEvents()
+        self._setupEvents()
 
         logger.debug(u"Created Woofer player instance")
 
-    def __setupEvents(self):
-        self.media_player_event_manager = self._media_player.event_manager()
-        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerOpening,
-        #                                              self.playerStateChanged)
-        # self.media_player_event_manager.event_attach(vlc.EventType.MediaPlayerBuffering,
-        #                                              self.playerStateChanged)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerPlaying,
-                                                     self.__playingCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerPaused,
-                                                     self.__pausedCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerStopped,
-                                                     self.__stoppedCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerForward,
-                                                     self.__forwardCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerBackward,
-                                                     self.__backwardCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerEndReached,
-                                                     self.__endReachedCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerEncounteredError,
-                                                     self.__errorCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerTimeChanged,
-                                                     self.__timeChangedCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerPositionChanged,
-                                                     self.__positionChangedCallback)
-        self.media_player_event_manager.event_attach(libvlc.EventType.MediaPlayerMediaChanged,
-                                                     self.__mediaChangedCallback)
+    def _setupEvents(self):
+        self._event_manager = self._media_player.event_manager()
+        # self._event_manager.event_attach(libvlc.EventType.MediaPlayerOpening, self.playerStateChanged)
+        # self._event_manager.event_attach(libvlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPlaying, self.__playingCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPaused, self.__pausedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerForward, self.__forwardCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerBackward, self.__backwardCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
 
     @pyqtSlot(list)
-    def addMedia(self, mList, restoring_session=False):
+    def addMedia(self, mlist, restoring_session=False):
         """
         Adds list of media objects to player media_list.
         Usually called as slot from parser thread, but could be called manually
         when last session is restored on application start.
         @param restoring_session: flag when method is called manually to restore playlist from saved session
-        @param mList: list of (unicode_path, media_object) or list of (unicode_path)
-        @type mList: list of (unicode, libvlc.Media) or list of (unicode)
+        @param mlist: list of (unicode_path, media_object) or list of (unicode_path)
+        @type mlist: list of (unicode, libvlc.Media) or list of (unicode)
         """
-
         # when restoring session, no parsed media files are available, but vlc takes both vlc.Media and mrl
         if restoring_session:
-            logger.debug(u"Adding media paths to media_list...")
+            logger.debug(u"Restoring session, adding media paths to _media_list...")
 
             self._media_list.lock()
-            for path in mList:
+            for path in mlist:
                 unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
                 # vlc will parse media automatically if needed (before playing)
                 self._media_list.add_media(byte_path)
@@ -135,26 +120,25 @@ class MediaPlayer(QObject):
             self._media_player.set_media(media)
             self.player_is_empty = False
             media.release()
-            logger.debug(u"Media added successfully")
+            logger.debug(u"All media paths restored.")
 
         else:
             export = []
 
             self._media_list.lock()
-            for path, media in mList:
+            for path, media in mlist:
                 self._media_list.add_media(media)
                 media.release()
 
                 self.shuffled_playlist.append(len(self.shuffled_playlist))        # new media is on the end of the list
-                # self.playlist_len += 1
                 export.append((path, media.get_duration()))
             self._media_list.unlock()
 
-            self.mediaAdded.emit(export, self.append_media)
+            self.mediaAddedSignal.emit(export, self.append_media)
 
             # set set_mode, set media and switch to append mode for next iteration
             if not self.append_media or self.player_is_empty:
-                path, media = mList[0]
+                path, media = mlist[0]
                 logger.debug(u"Setting current media %s", path)
                 self._media_player.set_media(media)
                 self.player_is_empty = False
@@ -169,15 +153,15 @@ class MediaPlayer(QObject):
         @param remove_index: index of removed item in media_list
         @type remove_index: int
         """
-        logger.debug(u"Removing media item in index: %s", remove_index)
+        logger.debug(u"Removing media item on index: %s", remove_index)
 
-        mustChangeSong = False
+        must_change_song = False
         restore_playing = self.is_playing
         current_index = self.shuffled_playlist[self.shuffled_playlist_current_index]
 
         # remove media from player if media is currently being played
         if remove_index == current_index:
-            mustChangeSong = True
+            must_change_song = True
             self._media_player.stop()
             self._media_player.set_media(None)
             self.player_is_empty = True
@@ -191,10 +175,10 @@ class MediaPlayer(QObject):
             logger.error(u"Unable to remove item from _media_list. "
                          u"Item is not in the list or _media_list is read only! "
                          u"Playlist len: %s, index: %s" % (len(self.shuffled_playlist), remove_index))
-            self.errorEncountered.emit(ErrorMessages.CRITICAL,
-                                       u"Unable remove item from _media_list. "
-                                       u"Item is not in the list or _media_list is read only!",
-                                       u"playlist len: %s, removed index: %s" % (len(self.shuffled_playlist), remove_index))
+            self.errorSignal.emit(ErrorMessages.CRITICAL,
+                                  u"Unable remove item from Woofer media list. "
+                                  u"Item is not in the list or the list is read only!",
+                                  u"playlist len: %s, removed index: %s" % (len(self.shuffled_playlist), remove_index))
 
         self._media_list.lock()
         new_playlist_len = self._media_list.count()
@@ -207,10 +191,9 @@ class MediaPlayer(QObject):
                 # faster way than iterate over whole array
                 self.shuffled_playlist[i:] = [x-1 for x in self.shuffled_playlist[i:]]
                 break
-        # self.playlist_len -= 1
 
         # change song if removed == played, but stop if there is no next song
-        if mustChangeSong:
+        if must_change_song:
             if remove_index < new_playlist_len:
                 logger.debug(u"Currently playlist media has been removed from playlist, selecting next one.")
                 if restore_playing:
@@ -233,7 +216,6 @@ class MediaPlayer(QObject):
         self.player_is_empty = True
 
         self.shuffled_playlist = []
-        # self.playlist_len = 0
         self.shuffled_playlist_current_index = 0
 
     def getMrl(self):
@@ -251,7 +233,7 @@ class MediaPlayer(QObject):
     def getMedia(self):
         """
         Get the media used by the media_player.
-        Media reference counter will +1 => media should be released after usage!
+        WARNING: Media reference counter will +1 => media should be released after usage!
         @return: the media associated with p_mi, or None if no media is associated.
         @rtype: libvlc.Media or None
         """
@@ -281,6 +263,7 @@ class MediaPlayer(QObject):
         @param item_playlist_id: id (index) of item in idPlaylist
         @type item_playlist_id: int
         """
+        # play given media (index) - find item in playlist
         if item_playlist_id is not None:
             logger.debug(u"Play method called with index: %s" % item_playlist_id)
             self._media_player.stop()
@@ -288,7 +271,7 @@ class MediaPlayer(QObject):
             self._media_player.set_media(play_media)
             self.player_is_empty = False
             play_media.release()
-            self.shuffled_playlist_current_index = self.shuffled_playlist.index(item_playlist_id)    # find item in playlist
+            self.shuffled_playlist_current_index = self.shuffled_playlist.index(item_playlist_id)
         else:
             logger.debug(u"Play method called")
 
@@ -383,7 +366,7 @@ class MediaPlayer(QObject):
         if not 0 <= value <= 100:
             raise ValueError(u"Volume must be in range <0, 100>")
 
-        logger.debug(u"Setting volume to value %s", value)
+        logger.debug(u"Volume set: %s", value)
         self._media_player.audio_set_volume(int(value))
 
     def getVolume(self):
@@ -399,11 +382,15 @@ class MediaPlayer(QObject):
         self._media_player.audio_set_mute(status)
 
     def isMuted(self):
+        """
+        Get current mute status.
+        @return: the mute status (boolean) if defined, -1 if undefined/unapplicable.
+        """
         return self._media_player.audio_get_mute()
 
     def setTime(self, new_time):
         """
-        Set the movie time (in ms). This has no effect if no media is being played.
+        Set the playback time (in ms). This has no effect if no media is being played.
         Not all formats and protocols support this. Rather use setPosition() method!
         Method returns False if media is not seekable.
         @param new_time: the movie time (in ms).
@@ -418,7 +405,7 @@ class MediaPlayer(QObject):
         total_time = self.totalTime()
         if 0 <= new_time <= total_time:
             self._media_player.set_time(int(new_time))
-            logger.debug(u"Media play set to new time: %s ms", new_time)
+            logger.debug(u"Playback time set: %s", new_time)
         else:
             raise ValueError(u"New time must be in range [0, %d]" % total_time)
 
@@ -426,7 +413,7 @@ class MediaPlayer(QObject):
 
     def setPosition(self, new_pos):
         """
-        Set movie position as percentage between 0 and 100. This has no effect if playback is not enabled.
+        Set playback position as percentage between 0 and 100. This has no effect if playback is not enabled.
         This might not work depending on the underlying input format and protocol.
         Method returns False if media is not seekable.
         @param new_pos: the position
@@ -434,12 +421,7 @@ class MediaPlayer(QObject):
         @rtype: bool
         @raise ValueError: if value not in range [0, 100]
         """
-        if not 0 <= new_pos <= 100:
-            raise ValueError(u"New position must be in range [0, 100]")
-
-        new_pos = 99 if new_pos == 100 else new_pos
-
-        logger.debug(u"Setting media to new position : %s", new_pos)
+        logger.debug(u"Playback position set: %s", new_pos)
         return self._media_player.set_position(new_pos / 100.0)
 
     def currentTime(self):
@@ -489,20 +471,19 @@ class MediaPlayer(QObject):
         @type state: bool
         """
         self.shuffle_mode = state
+        if not self.shuffled_playlist:      # playlist is empty
+            return
 
-        # playlist is not empty
-        if self.shuffled_playlist:
-            current_id = self.shuffled_playlist[self.shuffled_playlist_current_index]
+        current_id = self.shuffled_playlist[self.shuffled_playlist_current_index]
+        if state:
+            random.shuffle(self.shuffled_playlist)
+            self.shuffled_playlist.remove(current_id)
+            self.shuffled_playlist.insert(0, current_id)
+        else:
+            self.shuffled_playlist = sorted(self.shuffled_playlist)
+            self.shuffled_playlist_current_index = current_id         # id_playlist is range-type (sorted) array
 
-            if state:
-                random.shuffle(self.shuffled_playlist)
-                self.shuffled_playlist.remove(current_id)
-                self.shuffled_playlist.insert(0, current_id)
-                logger.debug(u"SHUFFLE playback mode turned ON")
-            else:
-                self.shuffled_playlist = sorted(self.shuffled_playlist)
-                self.shuffled_playlist_current_index = current_id                          # id_playlist is range-type (sorted) array
-                logger.debug(u"SHUFFLE playback mode turned OFF")
+        logger.debug(u"SHUFFLE mode: %s", state)
 
     def setRepeat(self, state):
         """
@@ -510,11 +491,7 @@ class MediaPlayer(QObject):
         @type state: bool
         """
         self.repeat_mode = state
-
-        if state:
-            logger.debug(u"REPEAT playback mode turned ON")
-        else:
-            logger.debug(u"REPEAT playback mode turned OFF")
+        logger.debug(u"REPEAT mode: %s", state)
 
     def initMediaAdding(self, append=True):
         """
@@ -522,6 +499,7 @@ class MediaPlayer(QObject):
         @param append: append mode flag
         @type append: bool
         """
+        logger.debug(u"Initializing media adding...")
         self.appending_mode = append
         self.append_media = append
 
@@ -531,21 +509,22 @@ class MediaPlayer(QObject):
         Called when media adding ends.
         If shuffle_mode set, newly added media are shuffled with unplayed media.
         """
+        logger.debug(u"Media adding finished.")
+        if self.shuffle_mode:
+            logger.debug(u"Shuffling newly added media...")
+            # shuffle newly added media with the rest, which have not been played yet
+            if self.appending_mode:
+                index = self.shuffled_playlist_current_index+1      # shuffle all from currently played
+                tmp_list = self.shuffled_playlist[index:]
+                random.shuffle(tmp_list)
+                self.shuffled_playlist[index:] = tmp_list
+            else:
+                self.setShuffle(True)       # implicit shuffle
 
-        # shuffle newly added media with the rest, which have not been played yet
-        if self.appending_mode and self.shuffle_mode:
-            logger.debug(u"Shuffling newly added media")
-            index = self.shuffled_playlist_current_index+1
-            tmp_list = self.shuffled_playlist[index:]
-            random.shuffle(tmp_list)
-            self.shuffled_playlist[index:] = tmp_list
-
-        elif not self.appending_mode and self.shuffle_mode:
-            logger.debug(u"Newly added media which has not been appended are not shuffled. Shuffling...")
-            self.setShuffle(True)
+    # ------------------------- CALLBACKS ------------------------------------------
 
     @pyqtSlot()
-    def __playingSlot(self):
+    def _playingSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
         so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
@@ -555,7 +534,7 @@ class MediaPlayer(QObject):
         self.is_stopped = False
 
     @pyqtSlot()
-    def __pausedSlot(self):
+    def _pausedSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
         so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
@@ -565,7 +544,7 @@ class MediaPlayer(QObject):
         self.is_stopped = False
 
     @pyqtSlot()
-    def __stoppedSlot(self):
+    def _stoppedSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
         so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
@@ -576,7 +555,7 @@ class MediaPlayer(QObject):
         self.is_stopped = True
 
     @pyqtSlot()
-    def __mediaChangedSlot(self):
+    def _mediaChangedSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
         so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
@@ -587,63 +566,61 @@ class MediaPlayer(QObject):
         self._media_list.unlock()
         currentMedia.release()
 
-        self.mediaChanged.emit(index)
+        self.mediaChangedSignal.emit(index)
 
     @pyqtSlot()
-    def __endReachedSlot(self):
+    def _endReachedSlot(self):
         """
         Slot is used as helper, because callback are called from vlc directly (from another thread),
         so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
         """
-        self.endReached.emit(self.repeat_mode)          # if repeat_mode then do not switch to next song
+        self.endReachedSignal.emit(self.repeat_mode)          # if repeat_mode then do not switch to next song
 
-    # ------------------------------------------------------------------------
     # WARNING: CALLBACKS CALLED DIRECTLY FROM ANOTHER THREAD (VLC THREAD) !!!!
-    # ------------------------------------------------------------------------
 
     def __timeChangedCallback(self, event):
         try:
             new_time = event.u.new_time
         except RuntimeError:
-            logger.warning("Media player callback called, but C++ object does not exist. "
-                           "If program is being closed, this is a possible behaviour.")
+            logger.warning(u"Media player callback called, but C++ object does not exist. "
+                           u"If program is being closed, this is a possible behaviour.")
         else:
-            self.timeChanged.emit(new_time)
+            self.timeChangedSignal.emit(new_time)
 
     def __positionChangedCallback(self, event):
         try:
             newPos = event.u.new_position
         except RuntimeError:
-            logger.warning("Media player callback called, but C++ object does not exist. "
-                           "If program is being closed, this is a possible behaviour.")
+            logger.warning(u"Media player callback called, but C++ object does not exist. "
+                           u"If program is being closed, this is a possible behaviour.")
         else:
             newPos = 0 if newPos > 1 else newPos
-            self.positionChanged.emit(newPos)
+            self.positionChangedSignal.emit(newPos)
 
     def __playingCallback(self, event):
-        logger.debug(u"Media player is playing")
-        self.playing.emit()
+        logger.debug(u"Player playing callback")
+        self.playingSignal.emit()
 
     def __pausedCallback(self, event):
-        logger.debug(u"Media player paused")
-        self.paused.emit()
+        logger.debug(u"Player paused callback")
+        self.pausedSignal.emit()
 
     def __stoppedCallback(self, event):
-        logger.debug(u"Media player is stopped")
-        self.stopped.emit()
+        logger.debug(u"Player stopped callback")
+        self.stoppedSignal.emit()
 
     def __forwardCallback(self, event):
-        logger.debug(u"Media player skipped forward")
+        logger.debug(u"Player next track callback")
 
     def __backwardCallback(self, event):
-        logger.debug(u"Media player skipped backward")
+        logger.debug(u"Player prev track callback")
 
     def __endReachedCallback(self, event):
-        logger.debug(u"Media reached end")
+        logger.debug(u"Player media end reached callback")
         self.endReachedCallbackSignal.emit()
 
     def __mediaChangedCallback(self, event):
-        logger.debug(u"Media changed")
+        logger.debug(u"Player media changed callback")
         self.mediaChangedCallbackSignal.emit()
 
     def __errorCallback(self, event):

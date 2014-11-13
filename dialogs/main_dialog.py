@@ -164,14 +164,14 @@ class MainApp(QMainWindow, main_form.MainForm):
         Player class (basically it is only the interface) lives in main thread.
         VlC player itself lives in separated threads!
         """
-        self.mediaPlayer.mediaAdded.connect(self.addToPlaylist)
-        self.mediaPlayer.playing.connect(self.playing)
-        self.mediaPlayer.paused.connect(self.paused)
-        self.mediaPlayer.stopped.connect(self.stopped)
-        self.mediaPlayer.timeChanged.connect(self.syncPlayTime)
-        self.mediaPlayer.positionChanged.connect(self.syncSeeker)
-        self.mediaPlayer.mediaChanged.connect(self.displayCurrentMedia)
-        self.mediaPlayer.errorEncountered.connect(self.displayErrorMsg)
+        self.mediaPlayer.mediaAddedSignal.connect(self.addToPlaylist)
+        self.mediaPlayer.playingSignal.connect(self.playing)
+        self.mediaPlayer.pausedSignal.connect(self.paused)
+        self.mediaPlayer.stoppedSignal.connect(self.stopped)
+        self.mediaPlayer.timeChangedSignal.connect(self.syncPlayTime)
+        self.mediaPlayer.positionChangedSignal.connect(self.syncSeeker)
+        self.mediaPlayer.mediaChangedSignal.connect(self.displayCurrentMedia)
+        self.mediaPlayer.errorSignal.connect(self.displayErrorMsg)
 
     def setupDiskTools(self):
         """
@@ -711,11 +711,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param sources: list of (path, duration)
         @type sources: list of (unicode, int)
         """
-        n = len(sources)
-        logger.debug(u"Adding '%s' sources to current playlist.", n)
-
         lastItemIndex = self.playlistTable.rowCount() if append else 0
-        self.playlistTable.setRowCount(lastItemIndex + n)
+        self.playlistTable.setRowCount(lastItemIndex + len(sources))
 
         i = 0
         for path, duration in sources:
