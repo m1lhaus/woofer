@@ -2,7 +2,8 @@
 
 """
 Disk components
-- Recursive disk browser for searching media files on folder tree.
+- Threaded recursive disk browser for searching media files in folder tree.
+- Threaded dir/file remover (sends files to Trash)
 """
 
 import os
@@ -19,63 +20,70 @@ logger.debug(u'Import ' + __name__)
 
 class RecursiveBrowser(QObject):
     """
-    Recursive disk browser for searching media files on folder tree.
-    Runs in separated thread!
+    Recursive disk browser for searching media files in folder tree.
     Data are transferred via Signal/Slot mechanism.
+    Runs in separated thread!
+    Worker method: RecursiveBrowser.scanFiles(unicode_path)
+
+    @param names_filter: Which files or file extensions we looking for.
+    @param follow_sym: Follow symbolic links. WARNING! Beware of cyclic symlinks!
+    @type names_filter: tuple of str
+    @type follow_sym: bool
     """
-    parseData = pyqtSignal(list)
 
-    SEND_LIMIT = 10     # cca 100ms blocks for parsing
+    parseDataSignal = pyqtSignal(list)
+    errorSignal = pyqtSignal(int, unicode, unicode)
 
-    def __init__(self, fileNamesFilter, followSym=False):
-        """
-        @param fileNamesFilter: Which files or file extensions we looking for.
-        @param followSym: Follow symbolic links. WARNING! Beware of cyclic symlinks!
-        @type fileNamesFilter: tuple of str
-        @type followSym: bool
-        """
+    def __init__(self, names_filter, follow_sym=False):
         super(RecursiveBrowser, self).__init__()
-        self.followSym = followSym
-        self.fileNamesFilter = tuple([ext.replace('*', '') for ext in fileNamesFilter])     # i.e. remove * from *.mp3
+        self.block_size = 5                                         # send limit / parsing this block takes about 50ms
+        self.follow_sym = follow_sym
+        self.names_filter = tuple([ext.replace('*', '') for ext in names_filter])           # i.e. remove * from *.mp3
+        self.iteratorFlags = QDirIterator.Subdirectories | QDirIterator.FollowSymlinks if follow_sym else QDirIterator.Subdirectories
 
-        logger.debug("Recursive browser initialized.")
+        logger.debug(u"Recursive disk browser initialized.")
 
     @pyqtSlot(unicode)
-    def scanFiles(self, targetDir):
+    def scanFiles(self, target_dir):
         """
-        Thread worker! Called asynchronously from main thread.
+        Thread worker! Called from main thread via signal/slot.
         The final data are sent to media parser in another thread.
-        @type targetDir: unicode
+        @type target_dir: unicode
         """
-        # if target dir is already a file
-        if targetDir.endswith(self.fileNamesFilter):
-            logger.debug(u"Scanned target dir is a file.")
-            self.parseData.emit([targetDir])
-            self.parseData.emit([])             # end flag for media parser
+        if not os.path.exists(target_dir):
+            logger.error(u"Path given to RecursiveDiskBrowser doesn't exist!")
+            self.errorSignal.emit(ErrorMessages.ERROR, u"Path given to disk scanner doesn't exist!", u"%s not found!" % target_dir)
+            self.parseDataSignal.emit([])             # end flag for media parser
             return
 
-        flags = QDirIterator.Subdirectories | QDirIterator.FollowSymlinks if self.followSym else QDirIterator.Subdirectories
-        dirIter = QDirIterator(targetDir, flags)
-        result = []
+        # if target dir is already a file
+        if target_dir.endswith(self.names_filter):
+            logger.debug(u"Scanned target dir is a file. Sending path and finish_parser flag.")
+            self.parseDataSignal.emit([target_dir])
+            self.parseDataSignal.emit([])             # end flag for media parser
+            return
+
         n = 0
+        result = []
+        dirIterator = QDirIterator(target_dir, self.iteratorFlags)
 
         logger.debug(u"Dir iterator initialized, starting recursive search and parsing.")
-        while dirIter.hasNext():
-            path = dirIter.next()
-            if path.endswith(self.fileNamesFilter):
+        while dirIterator.hasNext():
+            path = dirIterator.next()
+            if path.endswith(self.names_filter):
                 result.append(path)
 
                 n += 1
-                if n == self.SEND_LIMIT:
-                    self.parseData.emit(result)
+                if n == self.block_size:
+                    self.parseDataSignal.emit(result)
                     n = 0
                     result = []
 
         if result:
-            self.parseData.emit(result)
+            self.parseDataSignal.emit(result)
 
         logger.debug(u"Recursive search finished, sending finish_parser flag.")
-        self.parseData.emit([])
+        self.parseDataSignal.emit([])
 
     @pyqtSlot()
     def finish(self):
@@ -88,7 +96,9 @@ class RecursiveBrowser(QObject):
 
 class MoveToTrash(QObject):
     """
-    Asynchronous file remover - lives in own thread!
+    Threaded file remover - uses send2trash package.
+    Lives in own thread!
+    Worker method: MoveToTrash.remove()
     """
 
     finished = pyqtSignal(int, unicode, unicode)

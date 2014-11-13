@@ -179,7 +179,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Scanner and parser live in separated threads.
         """
         # asynchronous scanner
-        self.scanner = disk.RecursiveBrowser(fileNamesFilter=FileExt, followSym=False)
+        self.scanner = disk.RecursiveBrowser(names_filter=FileExt, follow_sym=False)
         self.scannerThread = QThread(self)
 
         # asynchronous parser
@@ -193,7 +193,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parser.finished.connect(self.clearProgress)
         self.parser.finished.connect(self.mediaPlayer.mediaAddingFinished)
         self.parser.parsed.connect(self.mediaPlayer.addMedia)
-        self.scanner.parseData.connect(self.parser.parseMedia)
+        self.scanner.parseDataSignal.connect(self.parser.parseMedia)
+        self.scanner.errorSignal.connect(self.displayErrorMsg)
         self.removeFileSignal.connect(self.fileRemover.remove)
         self.fileRemover.finished.connect(self.displayErrorMsg)
         self.scanner.moveToThread(self.scannerThread)
@@ -747,6 +748,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param text: main text
         @param details: description
         """
+        details = u"Details: <i>" + str(details) + u"</i>" if details else u""
+
         if er_type == ErrorMessages.INFO:
             icon = QPixmap(u":/icons/info.png").scaled(14, 14, transformMode=Qt.SmoothTransformation)
             self.stBarMsgIcon.setPixmap(icon)
