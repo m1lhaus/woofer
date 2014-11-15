@@ -58,10 +58,10 @@ class GlobalHKListener(QObject):
         terminates message listener.
         """
         if not self._registerHotkeys():
-            logger.warning(u"Unable to register all multimedia hotkeys, this global media hotkeys won't be available!")
+            logger.warning(u"Unable to register all multimedia hotkeys, global media hotkeys won't be available")
             self._unregisterHotkeys()
-            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Unable to register all multimedia hotkeys, "
-                                  u"global media hotkeys won't be available", u"Check log for more information.")
+            self.errorSignal.emit(tools.ErrorMessages.WARNING, u"Another media application already using multimedia "
+                                  u"hotkeys for playback control.", u"")
             return
 
         logger.debug(u"Starting windows key-down hook (listener) loop.")
@@ -93,7 +93,7 @@ class GlobalHKListener(QObject):
         logger.debug(u"Registering Windows media hotkeys...")
         for hk_id, (vk, vk_name) in self.HOTKEYS.items():
             if not ctypes.windll.user32.RegisterHotKey(None, hk_id, 0, vk):
-                logger.error(u"Unable to register hotkey id %s for key %s named %s", hk_id, vk, vk_name)
+                logger.warning(u"Unable to register hotkey id %s for key %s named %s", hk_id, vk, vk_name)
                 return False
 
         return True
