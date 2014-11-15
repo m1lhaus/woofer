@@ -8,6 +8,10 @@ import os
 import sys
 
 
+def is_win32_binary_dist():
+    return sys.argv[0].endswith(".exe")
+
+
 def check_binary_type(path):
     """
     Method reads PE header and get binary type (x32 vs x64)

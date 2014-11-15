@@ -14,6 +14,8 @@ import os
 import sys
 import datetime
 
+import tools
+
 
 class StreamToLogger(object):
     """
@@ -85,7 +87,7 @@ def setup_logging(mode):
     sys.stderr = StreamToLogger(1, logger, logging.ERROR)
 
     # if not win32gui application, add console handlers
-    if not sys.argv[0].endswith(".exe"):
+    if not tools.is_win32_binary_dist():
         # setup logging warning and errors to stderr
         console_err = logging.StreamHandler(stream=sys.__stderr__)      # write to original stderr, not to the logger
         console_err.setLevel(logging.WARNING)

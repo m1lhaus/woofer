@@ -7,13 +7,12 @@ Disk components
 """
 
 import os
-import sys
 import logging
 import send2trash
 
 from PyQt4.QtCore import *
 
-from tools import ErrorMessages
+import tools
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class RecursiveBrowser(QObject):
         """
         if not os.path.exists(target_dir):
             logger.error(u"Path given to RecursiveDiskBrowser doesn't exist!")
-            self.errorSignal.emit(ErrorMessages.ERROR, u"Path given to disk scanner doesn't exist!", u"%s not found!" % target_dir)
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Path given to disk scanner doesn't exist!", u"%s not found!" % target_dir)
             self.parseDataSignal.emit([])             # end flag for media parser
             return
 
@@ -119,7 +118,7 @@ class MoveToTrash(QObject):
             folder_or_file = u"folder"
         else:
             logger.error(u"Given path for removing '%s' does not exist!", path)
-            self.errorSignal.emit(ErrorMessages.ERROR, u"Given path for removing does not exist!",
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Given path for removing does not exist!",
                                   u"%s not found!" % path)
             return
         logger.debug(u"Removing %s '%s' from disk - sending to trash...", folder_or_file, path)
@@ -128,10 +127,10 @@ class MoveToTrash(QObject):
             send2trash.send2trash(path)
         except OSError, exception:
             logger.exception(u"Unable to send %s '%s' to trash!", folder_or_file, path)
-            self.errorSignal.emit(ErrorMessages.ERROR, u"Unable move to Trash path '%s'!" % path,
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Unable move to Trash path '%s'!" % path,
                                   u"Details: %s" % exception.message)
 
         else:
             logger.debug(u"%s send to Trash successfully.", folder_or_file.capitalize())
-            self.errorSignal.emit(ErrorMessages.INFO, u"%s '%s' successfully removed from disk" %
+            self.errorSignal.emit(tools.ErrorMessages.INFO, u"%s '%s' successfully removed from disk" %
                                  (folder_or_file.capitalize(), os.path.basename(path)), u"")

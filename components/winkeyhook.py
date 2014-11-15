@@ -9,7 +9,7 @@ import ctypes
 
 from PyQt4.QtCore import *
 
-from tools import ErrorMessages
+import tools
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class GlobalHKListener(QObject):
         if not self._registerHotkeys():
             logger.warning(u"Unable to register all multimedia hotkeys, this global media hotkeys won't be available!")
             self._unregisterHotkeys()
-            self.errorSignal.emit(ErrorMessages.ERROR, u"Unable to register all multimedia hotkeys, "
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Unable to register all multimedia hotkeys, "
                                   u"global media hotkeys won't be available", u"Check log for more information.")
             return
 

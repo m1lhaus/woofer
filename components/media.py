@@ -11,8 +11,8 @@ import random
 
 from PyQt4.QtCore import *
 
-from components import libvlc
-from tools import ErrorMessages, unicode2bytes
+import components.libvlc
+import tools
 
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class MediaPlayer(QObject):
     def __init__(self):
         super(MediaPlayer, self).__init__()
 
-        self.instance = libvlc.Instance()
+        self.instance = components.libvlc.Instance()
         """@type: vlc.Instance"""
         self._media_player = self.instance.media_player_new()
         """@type: vlc.MediaPlayer"""
@@ -79,18 +79,18 @@ class MediaPlayer(QObject):
 
     def _setupEvents(self):
         self._event_manager = self._media_player.event_manager()
-        # self._event_manager.event_attach(libvlc.EventType.MediaPlayerOpening, self.playerStateChanged)
-        # self._event_manager.event_attach(libvlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPlaying, self.__playingCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPaused, self.__pausedCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerForward, self.__forwardCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerBackward, self.__backwardCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
-        self._event_manager.event_attach(libvlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
+        # self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerOpening, self.playerStateChanged)
+        # self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerPlaying, self.__playingCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerPaused, self.__pausedCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerForward, self.__forwardCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerBackward, self.__backwardCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
+        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
 
     @pyqtSlot(list)
     def addMedia(self, mlist, restoring_session=False):
@@ -108,7 +108,7 @@ class MediaPlayer(QObject):
 
             self._media_list.lock()
             for path in mlist:
-                unicode_path, byte_path = unicode2bytes(path)       # fix Windows encoding issues
+                unicode_path, byte_path = tools.unicode2bytes(path)       # fix Windows encoding issues
                 # vlc will parse media automatically if needed (before playing)
                 self._media_list.add_media(byte_path)
 
@@ -174,7 +174,7 @@ class MediaPlayer(QObject):
             logger.error(u"Unable to remove item from _media_list. "
                          u"Item is not in the list or _media_list is read only! "
                          u"Playlist len: %s, index: %s" % (len(self.shuffled_playlist), remove_index))
-            self.errorSignal.emit(ErrorMessages.CRITICAL,
+            self.errorSignal.emit(tools.ErrorMessages.CRITICAL,
                                   u"Unable remove item from Woofer media list. "
                                   u"Item is not in the list or the list is read only!",
                                   u"playlist len: %s, removed index: %s" % (len(self.shuffled_playlist), remove_index))
@@ -641,7 +641,7 @@ class MediaParser(QObject):
 
     def __init__(self):
         super(MediaParser, self).__init__()
-        self.vlc_instance = libvlc.Instance()        # for parsing
+        self.vlc_instance = components.libvlc.Instance()        # for parsing
         self._mutex = QMutex()
         self._cancel = False
 

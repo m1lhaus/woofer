@@ -11,8 +11,8 @@ import argparse
 import os
 import logging
 
-from components import log
-
+import components.log
+import tools
 
 if sys.version_info < (2, 7) or sys.version_info >= (3, 0):
     raise Exception(u"Application requires Python 2.7!")
@@ -85,15 +85,12 @@ def foundLibVLC():
 
 
 def findCmdHelpFile():
-    cmd_args_file = None
-    exe = False
     if os.path.isfile('cmdargs.exe'):      # built exe dist
-        cmd_args_file = 'cmdargs.exe'
-        exe = True
+        return 'cmdargs.exe'
     elif os.path.isfile('cmdargs.py'):
-        cmd_args_file = 'cmdargs.py'
-
-    return cmd_args_file, exe
+        return 'cmdargs.py'
+    else:
+        raise Exception(u"Script cmdargs.py/exe was not found!")
 
 
 def displayAnotherInstanceError(error_str):
@@ -173,7 +170,7 @@ if __name__ == "__main__":
     app.setApplicationName(u"Woofer")
 
     try:
-        log.setup_logging(env)
+        components.log.setup_logging(env)
     except Exception as exception:
         displayLoggerError(unicode(str(exception), sys.getfilesystemencoding()))
         sys.exit(-1)
@@ -184,10 +181,10 @@ if __name__ == "__main__":
     # if -h/--help console argument is given, display help content
     if args.help:
         logger.debug(u"Help cmd arg given, opening cmd help file...")
-        cmd_args_file, exe = findCmdHelpFile()
+        cmd_args_file = findCmdHelpFile()
 
         # if not running built win32 dist
-        if not exe:
+        if not tools.is_win32_binary_dist():
             parser.print_help()
 
         # win32gui apps has no stdout/stderr, so cmd help has to be opened in new window
