@@ -78,7 +78,7 @@ def foundLibVLC():
     @rtype: bool
     """
     if components.libvlc.dll is not None:
-        logger.debug(u"Using libvlc.dll found at: %s", unicode(components.libvlc.plugin_path, sys.getfilesystemencoding()))
+        logger.debug(u"Using libvlc.dll found at: %s", unicode(str(components.libvlc.plugin_path), sys.getfilesystemencoding()))
         return True
     else:
         return False

@@ -76,6 +76,8 @@ class GlobalHKListener(QObject):
                    u"\nMessageName: " + str(self.MessageName) + \
                    u"\n"
 
+    errorSignal = pyqtSignal(int, unicode, unicode)
+
     mediaPlayKeyPressed = pyqtSignal()
     mediaStopKeyPressed = pyqtSignal()
     mediaNextTrackKeyPressed = pyqtSignal()
