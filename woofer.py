@@ -78,7 +78,7 @@ def foundLibVLC():
     @rtype: bool
     """
     if components.libvlc.dll is not None:
-        logger.debug(u"Using libvlc.dll found at: %s", components.libvlc.plugin_path)
+        logger.debug(u"Using libvlc.dll found at: %s", unicode(components.libvlc.plugin_path, sys.getfilesystemencoding()))
         return True
     else:
         return False
@@ -162,6 +162,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     env = 'DEBUG' if args.debug else 'PRODUCTION'
+
+    print tools.get_root_dir()
 
     # init Qt application
     app = QApplication(sys.argv)
