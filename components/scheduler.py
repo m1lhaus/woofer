@@ -11,6 +11,7 @@ import sys
 
 from PyQt4.QtCore import *
 
+import tools
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,7 @@ class LogCleaner(QObject):
 
     def __init__(self):
         super(LogCleaner, self).__init__()
-
-        self.log_dir = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'log')
+        self.log_dir = tools.LOG_DIR
         self.delay = 5 * (60 * 1000)                        # 5 minutes in ms
 
         logger.debug(u"LogCleaner initialized")

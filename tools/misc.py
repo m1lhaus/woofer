@@ -8,8 +8,11 @@ import os
 import sys
 
 
-def is_win32_binary_dist():
-    return sys.argv[0].endswith(".exe")
+# constants
+APP_ROOT_DIR = os.path.abspath(unicode(os.path.dirname(sys.argv[0]), sys.getfilesystemencoding()))
+LOG_DIR = os.path.join(APP_ROOT_DIR, u'log')
+DATA_DIR = os.path.join(APP_ROOT_DIR, u'data')
+IS_WIN32_EXE = sys.argv[0].endswith(".exe")
 
 
 def check_binary_type(path):

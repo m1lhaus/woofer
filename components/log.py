@@ -57,24 +57,20 @@ class InfoFilter(logging.Filter):
 
 
 def setup_logging(mode):
+    if not os.path.isdir(tools.LOG_DIR):
+        os.mkdir(tools.LOG_DIR)
 
-    root_dir = unicode(os.path.dirname(os.path.realpath(sys.argv[0])), sys.getfilesystemencoding())
-    log_dir = os.path.join(root_dir, u'log')
     date = datetime.datetime.now()
-
-    if not os.path.isdir(log_dir):
-        os.mkdir(log_dir)
-
-    msg_format = "%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
+    msg_format = u"%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
     console_formatter = logging.Formatter(msg_format)
 
     # --- BASIC CONFIGURATION ---
     if mode == "DEBUG":
-        log_path = os.path.join(log_dir, u"debug_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
+        log_path = os.path.join(tools.LOG_DIR, u"debug_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
         level = logging.DEBUG
     elif mode == "PRODUCTION":
         level = logging.WARNING
-        log_path = os.path.join(log_dir, u"production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
+        log_path = os.path.join(tools.LOG_DIR, u"production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
     else:
         raise NotImplementedError(u"Logging mode is not implemented!")
 
@@ -87,7 +83,7 @@ def setup_logging(mode):
     sys.stderr = StreamToLogger(1, logger, logging.ERROR)
 
     # if not win32gui application, add console handlers
-    if not tools.is_win32_binary_dist():
+    if not tools.IS_WIN32_EXE:
         # setup logging warning and errors to stderr
         console_err = logging.StreamHandler(stream=sys.__stderr__)      # write to original stderr, not to the logger
         console_err.setLevel(logging.WARNING)

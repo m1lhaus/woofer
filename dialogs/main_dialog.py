@@ -63,8 +63,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     def __init__(self, mode):
         super(MainApp, self).__init__()
-        self.appRootPath = unicode(os.path.dirname(sys.argv[0]), sys.getfilesystemencoding())
-        self.appDataPath = os.path.join(self.appRootPath, u'data')
+        self.appDataPath = tools.DATA_DIR
         self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.json')
         self.session_file = os.path.join(self.appDataPath, u'session.dat')
 
@@ -1038,7 +1037,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         aboutDialog.setWindowTitle(u"About Woofer player")
 
         if os.path.isfile(u'LICENSE.txt'):
-            path_to_licence = unicode(os.path.dirname(os.path.realpath(sys.argv[0])), sys.getfilesystemencoding())
+            path_to_licence = tools.APP_ROOT_DIR
             path_to_licence = path_to_licence.split(os.sep)
             path_to_licence = u"/".join(path_to_licence) + u"/LICENSE.txt"
             path_to_licence = u"file:///" + path_to_licence

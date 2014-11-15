@@ -115,7 +115,7 @@ def displayAnotherInstanceError(error_str):
 
 def displayLibVLCError(platform):
     if platform == 'nt':
-        logger.error(u"LibVLC dll not found, dll instance is None! Root path: %s" % os.path.dirname(os.path.realpath(sys.argv[0])))
+        logger.error(u"LibVLC dll not found, dll instance is None! Root path: %s" % tools.APP_ROOT_DIR)
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
         msgBox.setIcon(QMessageBox.Critical)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
     env = 'DEBUG' if args.debug else 'PRODUCTION'
 
-    print tools.get_root_dir()
+    print tools.APP_ROOT_DIR
 
     # init Qt application
     app = QApplication(sys.argv)
@@ -186,7 +186,7 @@ if __name__ == "__main__":
         cmd_args_file = findCmdHelpFile()
 
         # if not running built win32 dist
-        if not tools.is_win32_binary_dist():
+        if not tools.IS_WIN32_EXE:
             parser.print_help()
 
         # win32gui apps has no stdout/stderr, so cmd help has to be opened in new window
