@@ -22,12 +22,6 @@ from PyQt4.QtCore import *
 
 logger = logging.getLogger(__name__)
 
-# key ids
-MEDIA_PLAYPAUSE_KEY = '[269025044]'
-MEDIA_STOP_KEY = '[269025045]'
-MEDIA_PREV_KEY = '[269025046]'
-MEDIA_NEXT_KEY = '[269025047]'
-
 
 class GlobalHKListener(QObject):
     """This is the main class. Instantiate it, and you can hand it KeyDown and KeyUp (functions in your own code)
@@ -96,6 +90,13 @@ class GlobalHKListener(QObject):
             '^[a-z0-9]$|^minus$|^equal$|^bracketleft$|^bracketright$|^semicolon$|^backslash$|^apostrophe$|^comma$|^period$|^slash$|^grave$')
         self.logrelease = re.compile('.*')
         self.isspace = re.compile('^space$')
+
+        self.HOTKEY_ACTIONS = {
+            '[269025044]': self.mediaPlayKeyPressed,
+            '[269025045]': self.mediaStopKeyPressed,
+            '[269025047]': self.mediaNextTrackKeyPressed,
+            '[269025046]': self.mediaPrevTrackKeyPressed
+        }
 
         # which function will be called on appropriate event
         self.key_down_callback = self.on_keypress
@@ -297,17 +298,6 @@ class GlobalHKListener(QObject):
         Called when key_press event is caught.
         @type event: XHookKeyEvent
         """
-        key = event.Key
-
-        if key == MEDIA_PLAYPAUSE_KEY:
-            logger.debug(u"Global key Media_Play_Pause caught")
-            self.mediaPlayKeyPressed.emit()
-        elif key == MEDIA_STOP_KEY:
-            logger.debug(u"Global key Media_Stop caught")
-            self.mediaStopKeyPressed.emit()
-        elif key == MEDIA_PREV_KEY:
-            logger.debug(u"Global key Media_Play_Pause caught")
-            self.mediaPrevTrackKeyPressed.emit()
-        elif key == MEDIA_NEXT_KEY:
-            logger.debug(u"Global key Media_Play_Pause caught")
-            self.mediaNextTrackKeyPressed.emit()
+        keySignal = self.HOTKEY_ACTIONS.get(event.Key)
+        if keySignal:
+            keySignal.emit()
