@@ -102,7 +102,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.playlistTable.customContextMenuRequested.connect(self.playlistContextMenu)
         self.playlistTable.cellDoubleClicked.connect(self.playlistPlayNow)
         self.progressCancelBtn.clicked.connect(self.cancelAdding)
-        # self.mainTreeBrowser.doubleClicked.connect(self.sourceItemsBrowserDoubleClicked)
         self.mainTreeBrowser.activated.connect(self.sourceItemsBrowserActivated)
 
         self.errorSignal.connect(self.displayErrorMsg)
@@ -145,13 +144,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         Caught keys are mapped to signal and then forwarded to menubar actions.
         """
         self.hkHookThread = QThread(self)
-
-        # if os.name == 'nt' and not keyhook.GlobalHKListener.isAbleToRegisterHK():
-        #     logger.warning(u"Unable to use win32 RegisterHotKey() function, "
-        #                    u"switching to backup solution - registering Windows hook.")
-        #     self.hkHook = keyhook.WindowsKeyHook()
-        # else:
-
         self.hkHook = keyhook.GlobalHKListener()
         self.hkHook.moveToThread(self.hkHookThread)
         self.hkHook.mediaPlayKeyPressed.connect(self.mediaPlayPauseAction.trigger)
@@ -418,7 +410,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         logger.debug(u"Restoring items from playlist in mediaPlayer object...")
         self.mediaPlayer.shuffled_playlist = session_data['id_playlist']
         self.mediaPlayer.shuffled_playlist_current_index = session_data['playlist_pointer']
-        # self.mediaPlayer.playlist_len = len(self.mediaPlayer.shuffled_playlist)
 
         if paths_list:
             self.mediaPlayer.addMedia(paths_list, restoring_session=True)
@@ -439,7 +430,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         # save window position
         settings = QSettings()
         settings.setValue(u"gui/MainApp/geometry", self.saveGeometry())
-        settings.setValue(u"gui/MainApp/state", self.saveState())
 
     def saveSession(self):
         """
@@ -481,7 +471,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         session_data['playlist_table'] = table_content
         session_data['id_playlist'] = self.mediaPlayer.shuffled_playlist
         session_data['playlist_pointer'] = self.mediaPlayer.shuffled_playlist_current_index
-        # session_data['playlist_len'] = len(self.mediaPlayer.shuffled_playlist)
 
     @pyqtSlot('QModelIndex')
     def sourceItemsBrowserActivated(self, index):
