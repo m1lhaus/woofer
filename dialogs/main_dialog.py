@@ -225,8 +225,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             if exception.errno != errno.EEXIST:
                 logger.exception(u"Unable to create data folder on path: %s", self.appDataPath)
                 self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to create data folder.",
-                                      u"Error number: %s\n"
-                                      u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
+                                      u"%s" % str(exception).decode(sys.getfilesystemencoding()))
         else:
             logger.debug(u"Data folder didn't exist and has been created.")
 
@@ -244,15 +243,13 @@ class MainApp(QMainWindow, main_form.MainForm):
                     logger.exception(u"Error when creating new media library file.")
                     self.errorSignal.emit(tools.ErrorMessages.CRITICAL,
                                           u"Unable to create medialib file and write default data.",
-                                          u"Error number: %s\n"
-                                          u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
+                                          u"%s" % str(exception).decode(sys.getfilesystemencoding()))
                 else:
                     logger.debug(u"Media file has been created and initialized.")
             else:
                 logger.exception(u"Error when reading medialib file.")
                 self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
-                                      u"Error number: %s\n"
-                                      u"%s" % (exception.errno, unicode(exception.strerror, "utf-8")))
+                                      u"%s" % str(exception).decode(sys.getfilesystemencoding()))
 
     @pyqtSlot(int)
     def setupFileBrowser(self, rcode=None, initModel=False):
@@ -267,14 +264,13 @@ class MainApp(QMainWindow, main_form.MainForm):
                 mediaFolders = json.load(mediaFile)
         except IOError, exception:
             logger.exception(u"Error when reading medialib file.")
-            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
-                                                         u"Error number: %s\n"
-                                                         u"%s" % (exception.errno, exception.strerror))
+            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.", u"%s" %
+                                  str(exception).decode(sys.getfilesystemencoding()))
             raise
         except ValueError, exception:
             logger.exception(u"Unable to load and parse data from JSON file.")
             self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to load and parse data from medialib file.",
-                                                         u"Description: %s" % exception.message)
+                                  u"%s" % str(exception).decode(sys.getfilesystemencoding()))
             raise
 
         if initModel:
@@ -768,6 +764,9 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         elif er_type == tools.ErrorMessages.CRITICAL:
             msgBox = QMessageBox(self)
+            horizontalSpacer = QSpacerItem(400, 0, QSizePolicy.Minimum, QSizePolicy.Expanding)
+            layout = msgBox.layout()
+            layout.addItem(horizontalSpacer, layout.rowCount(), 0, 1, layout.columnCount())
             msgBox.setIcon(QMessageBox.Critical)
             msgBox.setWindowTitle(u"Critical error")
             msgBox.setText(text)
