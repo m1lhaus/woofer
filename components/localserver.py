@@ -82,7 +82,8 @@ class LocalServer(QObject):
     def exit(self):
         logger.debug(u"Disconnecting socket and closing server...")
         self.socket.disconnectFromServer()
-        self.socket.waitForDisconnected(self.timeout)
+        if self.socket.state() != QLocalSocket.UnconnectedState:
+            self.socket.waitForDisconnected(self.timeout)
         logger.debug(u"Socket state: %s", SocketStates[self.socket.state()])
         self.localServer.close()
 
