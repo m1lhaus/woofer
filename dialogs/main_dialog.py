@@ -468,6 +468,24 @@ class MainApp(QMainWindow, main_form.MainForm):
         session_data['id_playlist'] = self.mediaPlayer.shuffled_playlist
         session_data['playlist_pointer'] = self.mediaPlayer.shuffled_playlist_current_index
 
+    @pyqtSlot(str)
+    def messageFromAnotherInstance(self, message):
+        """
+        Called when another instance of Woofer is opened.
+        This instance finds out, that another instance is already running and sends its args to this instance.
+        @param message: command with optional args
+        @type message: str
+        """
+        logger.debug(u"Received message from another instance: %s", message)
+
+        if message.startswith("play"):
+            arg = message.replace("play ", "")
+        elif message.startswith("open"):
+            logger.debug(u"Setting application window on top")
+            self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+            self.activateWindow()
+            self.raise_()
+
     @pyqtSlot('QModelIndex')
     def sourceItemsBrowserActivated(self, index):
         if self.sourceType == tools.PlaybackSources.FILES:

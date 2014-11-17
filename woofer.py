@@ -50,6 +50,7 @@ if os.name == 'posix':
 
 
 import components.libvlc               # import for libvlc check
+import components.localserver
 from dialogs import main_dialog
 
 
@@ -167,9 +168,9 @@ if __name__ == "__main__":
 
     # init Qt application
     app = QApplication(sys.argv)
-    app.setOrganizationName(u"WooferPlayer")
-    app.setOrganizationDomain(u"wooferplayer.com")
-    app.setApplicationName(u"Woofer")
+    app.setOrganizationName("WooferPlayer")
+    app.setOrganizationDomain("wooferplayer.com")
+    app.setApplicationName("Woofer")
 
     try:
         components.log.setup_logging(env)
@@ -198,19 +199,21 @@ if __name__ == "__main__":
 
         sys.exit(0)
 
-    sharedMemoryLock, error_str = obtainSharedMemoryLock()
+    # start server and detect another instance
+    applicationServer = components.localserver.LocalServer("wooferplayer.com")
+    if applicationServer.another_instance_running:
+        # applicationServer.sendMessage(r"play 'D:\Dropbox\MP3\Ad'")
+        applicationServer.sendMessage(r"open")
 
-    # init check
-    if not sharedMemoryLock:
-        displayAnotherInstanceError(error_str)
-    elif not foundLibVLC():
-        displayLibVLCError(os.name)
     else:
-
-        # run the application
         mainApp = main_dialog.MainApp(env)
-        mainApp.show()
 
-        logger.debug(u"Starting MainThread loop...")
+        applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
+
+        mainApp.show()
         app.exec_()
-        logger.debug(u"MainThread loop stopped. Application has been closed successfully.")
+
+        logger.debug(u"MainThread loop stopped.")
+
+    applicationServer.exit()
+    logger.debug(u"Application has been closed successfully")
