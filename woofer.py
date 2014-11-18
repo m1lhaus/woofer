@@ -215,5 +215,7 @@ if __name__ == "__main__":
 
         logger.debug(u"MainThread loop stopped.")
 
-    applicationServer.exit()
-    logger.debug(u"Application has been closed successfully")
+    if not applicationServer.exit():
+        logger.error(u"Local server components are not closed properly!")
+
+    logger.debug(u"Application has been closed")
