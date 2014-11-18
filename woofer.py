@@ -120,6 +120,8 @@ def displayLoggerError(e_msg):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=u"Woofer player is free and open-source cross-platform music player.",
                                      add_help=False)
+    parser.add_argument('input', nargs='?', type=str,
+                        help='Media file path.')
     parser.add_argument('-d', "--debug", action='store_true',
                         help=u"debug/verbose mode")
     parser.add_argument('-h', "--help", action='store_true',
@@ -164,14 +166,14 @@ if __name__ == "__main__":
     # start server and detect another instance
     applicationServer = components.localserver.LocalServer("wooferplayer.com")
     if applicationServer.another_instance_running:
-        # applicationServer.sendMessage(r"play 'D:\Dropbox\MP3\Ad'")
-        applicationServer.sendMessage(r"open")
+        if args.input:
+            applicationServer.sendMessage(r"play %s" % args.input)
+        else:
+            applicationServer.sendMessage(r"open")
 
     else:
-        mainApp = main_dialog.MainApp(env)
-
+        mainApp = main_dialog.MainApp(env, args.input)
         applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
-
         mainApp.show()
         app.exec_()
 

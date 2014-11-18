@@ -16,6 +16,7 @@ Logic when Woofer is started:
 """
 
 import logging
+import sys
 
 from PyQt4.QtCore import *
 from PyQt4.QtNetwork import *
@@ -104,6 +105,9 @@ class LocalServer(QObject):
 
         logger.debug(u"New message is available, reading...")
         message = str(pendingClient.readAll())
+
+        # message must be decoded here, because PyQt somehow convert the str to unicode
+        message = message.decode(sys.getfilesystemencoding())
 
         self.messageReceivedSignal.emit(message)
 

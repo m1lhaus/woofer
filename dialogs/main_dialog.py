@@ -47,6 +47,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     - connects signals from dialogs widgets
 
     @param mode: DEBUG or PRODUCTION
+    @param play_path: input media/dir path given by user via console arg
     """
 
     errorSignal = pyqtSignal(int, unicode, unicode)        # (tools.Message.CRITICAL, main_text, description)
@@ -61,12 +62,12 @@ class MainApp(QMainWindow, main_form.MainForm):
     ERROR_MSG_DELAY = 20000
     QUEUED_SETTINGS_DELAY = 100
 
-    def __init__(self, mode):
+    def __init__(self, mode, play_path):
         super(MainApp, self).__init__()
         self.appDataPath = tools.DATA_DIR
         self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.json')
         self.session_file = os.path.join(self.appDataPath, u'session.dat')
-
+        self.input_path = play_path
         self.mediaPlayer = components.media.MediaPlayer()
 
         # setups all GUI components from form (design part)
@@ -351,29 +352,32 @@ class MainApp(QMainWindow, main_form.MainForm):
             logger.debug(u"No session file found, skipping")
             return
 
-        logger.debug(u"Loading session file...")
+        logger.debug(u"Loading session...")
 
-        try:
-            with open(self.session_file, 'rb') as f:
-                session_data = pickle.load(f)
-        except IOError:
-            logger.exception(u"Unable to load data from session file!")
-        else:
-            self.loadPlaylist(session_data)
+        # do not load playlist
+        # if not program started with input path argument (i.e. user double clicked on .mp3 file and woofer opened)
+        if not self.input_path:
+            try:
+                with open(self.session_file, 'rb') as f:
+                    session_data = pickle.load(f)
+            except IOError:
+                logger.exception(u"Unable to load data from session file!")
+            else:
+                self.loadPlaylist(session_data)
 
-            # load shuffle, repeat and volume
-            self.mediaPlayer.shuffle_mode = session_data['shuffle']
-            self.mediaPlayer.repeat_mode = session_data['repeat']
-            self.shuffleBtn.blockSignals(True)
-            self.shuffleBtn.setChecked(self.mediaPlayer.shuffle_mode)
-            self.shuffleBtn.blockSignals(False)
-            self.mediaShuffleAction.setChecked(self.mediaPlayer.shuffle_mode)
-            self.repeatBtn.blockSignals(True)
-            self.repeatBtn.setChecked(self.mediaPlayer.repeat_mode)
-            self.repeatBtn.blockSignals(False)
-            self.mediaRepeatAction.setChecked(self.mediaPlayer.repeat_mode)
+                # load shuffle, repeat and volume
+                self.mediaPlayer.shuffle_mode = session_data['shuffle']
+                self.mediaPlayer.repeat_mode = session_data['repeat']
+                self.shuffleBtn.blockSignals(True)
+                self.shuffleBtn.setChecked(self.mediaPlayer.shuffle_mode)
+                self.shuffleBtn.blockSignals(False)
+                self.mediaShuffleAction.setChecked(self.mediaPlayer.shuffle_mode)
+                self.repeatBtn.blockSignals(True)
+                self.repeatBtn.setChecked(self.mediaPlayer.repeat_mode)
+                self.repeatBtn.blockSignals(False)
+                self.mediaRepeatAction.setChecked(self.mediaPlayer.repeat_mode)
 
-            logger.debug(u"Session restored successfully")
+        logger.debug(u"Session restored successfully")
 
     def loadPlaylist(self, session_data):
         """
@@ -479,7 +483,10 @@ class MainApp(QMainWindow, main_form.MainForm):
         logger.debug(u"Received message from another instance: %s", message)
 
         if message.startswith("play"):
-            arg = message.replace("play ", "")
+            path = message.replace("play ", "")
+            # path = unicode(path, sys.getfilesystemencoding())
+            # logger.error("Recieved: %s", path)
+
         elif message.startswith("open"):
             logger.debug(u"Setting application window on top")
             if self.windowState() & Qt.WindowMinimized:         # if window is minimized -> un-minimize
@@ -564,27 +571,30 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         # PLAY NOW
         if choice is playNow:
-            self.mediaPlayer.clearMediaList()
-            self.mediaPlayer.initMediaAdding(append=False)
-            targetPath = fileInfo.absoluteFilePath()
-            self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-            self.displayProgress(u"Adding...")
+            # self.mediaPlayer.clearMediaList()
+            # self.mediaPlayer.initMediaAdding(append=False)
+            #
+            # targetPath = fileInfo.absoluteFilePath()
+            # self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
+            # self.displayProgress(u"Adding...")
+            self.playPath(fileInfo.absoluteFilePath(), append=False)
 
         # PLAY ALL
         elif choice is playAll:
-            self.mediaPlayer.clearMediaList()
-            self.mediaPlayer.initMediaAdding(append=False)
-            targetPath = fileInfo.absoluteFilePath()
-            self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-            self.displayProgress(u"Adding...")
+            # self.mediaPlayer.clearMediaList()
+            # self.mediaPlayer.initMediaAdding(append=False)
+            # targetPath = fileInfo.absoluteFilePath()
+            # self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
+            # self.displayProgress(u"Adding...")
+            self.playPath(fileInfo.absoluteFilePath(), append=False)
 
         # ADD TO PLAYLIST
         elif choice is addToPlayList:
-            targetPath = fileInfo.absoluteFilePath()
-            self.mediaPlayer.initMediaAdding(append=True)
-            # asynchronously recursively search for media files
-            self.scanFilesSignal.emit(targetPath)
-            self.displayProgress(u"Adding...")
+            # self.mediaPlayer.initMediaAdding(append=True)         # asynchronously recursively search for media files
+            # targetPath = fileInfo.absoluteFilePath()
+            # self.scanFilesSignal.emit(targetPath)
+            # self.displayProgress(u"Adding...")
+            self.playPath(fileInfo.absoluteFilePath(), append=True)
 
         # REMOVE FROM DISK
         elif choice is removeFromDisk:
@@ -971,6 +981,19 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         logger.debug(u"Removing to Trash #%s song named '%s' on path '%s'", index, fileName, filePath)
         self.removeFileSignal.emit(filePath)
+
+    def playPath(self, targetPath, append):
+        """
+        Initializes scanning, parsing and adding new media files from given path.
+        @type targetPath: unicode
+        @type append: bool
+        """
+        if not append:
+            self.mediaPlayer.clearMediaList()
+
+        self.mediaPlayer.initMediaAdding(append=append)
+        self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
+        self.displayProgress(u"Adding...")
 
     @pyqtSlot(bool)
     def toggleShuffle(self, checked):
