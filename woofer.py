@@ -57,22 +57,6 @@ from dialogs import main_dialog
 logger = logging.getLogger(__name__)
 
 
-def obtainSharedMemoryLock():
-    logger.debug(u"Checking if another instance is running...")
-
-    shareMemoryLock = QSharedMemory()
-    shareMemoryLock.setKey(u"wooferplayer.com")
-    if shareMemoryLock.attach(QSharedMemory.ReadOnly):
-        return None, ""
-
-    logger.debug(u"Trying to create shared memory segment for id 'wooferplayer.com'")
-    if not shareMemoryLock.create(1, QSharedMemory.ReadOnly):
-        return None, shareMemoryLock.errorString()
-
-    logger.debug(u"No other instance is running.")
-    return shareMemoryLock, ""
-
-
 def foundLibVLC():
     """
     Check if libvlc.py found valid dll.
@@ -92,26 +76,6 @@ def findCmdHelpFile():
         return 'cmdargs.py'
     else:
         raise Exception(u"Script cmdargs.py/exe was not found!")
-
-
-def displayAnotherInstanceError(error_str):
-    if not error_str:
-        logger.debug(u"Another instance of Woofer Player is running! Closing application.")
-        msgBox = QMessageBox()
-        msgBox.setIcon(QMessageBox.Warning)
-        msgBox.setWindowTitle(u"Another instance is running")
-        msgBox.setText(u"Another instance of Woofer player is running.")
-        msgBox.setInformativeText(u"If no instance of Woofer player is running, "
-                                  u"please contact us on www.wooferplayer.com")
-        msgBox.exec_()
-    else:
-        logger.error(u"Unable to create shared memory segment, reason: %s", error_str)
-        msgBox = QMessageBox()
-        msgBox.setIcon(QMessageBox.Critical)
-        msgBox.setWindowTitle(u"Initialization error")
-        msgBox.setText(u"Unable to create shared memory segment.\nReason: %s" % error_str)
-        msgBox.setInformativeText(u"Please contact us on www.wooferplayer.com for further information.")
-        msgBox.exec_()
 
 
 def displayLibVLCError(platform):
