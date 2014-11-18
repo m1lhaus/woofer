@@ -482,8 +482,9 @@ class MainApp(QMainWindow, main_form.MainForm):
             arg = message.replace("play ", "")
         elif message.startswith("open"):
             logger.debug(u"Setting application window on top")
-            self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
-            self.activateWindow()
+            if self.windowState() & Qt.WindowMinimized:         # if window is minimized -> un-minimize
+                self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+            self.activateWindow()                               # set window as active with focus
             self.raise_()
 
     @pyqtSlot('QModelIndex')
