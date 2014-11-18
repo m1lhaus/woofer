@@ -128,8 +128,6 @@ if __name__ == "__main__":
 
     env = 'DEBUG' if args.debug else 'PRODUCTION'
 
-    print tools.APP_ROOT_DIR
-
     # init Qt application
     app = QApplication(sys.argv)
     app.setOrganizationName("WooferPlayer")
