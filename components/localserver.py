@@ -114,11 +114,11 @@ class LocalServer(QObject):
         @rtype: bool
         """
         logger.debug(u"Disconnecting socket and closing server...")
+        self.localServer.close()
         self.socket.disconnectFromServer()
         if self.socket.state() != QLocalSocket.UnconnectedState:
             self.socket.waitForDisconnected(self.timeout)
-        self.localServer.close()
 
-        return self.socket.state() == QLocalSocket.UnconnectedState and not self.localServer.isListening()
+        return self.socket.state() != QLocalSocket.ConnectedState and not self.localServer.isListening()
 
 
