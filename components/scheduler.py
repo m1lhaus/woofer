@@ -7,7 +7,6 @@ Scheduler/maintenance modules.
 import logging
 import os
 import time
-import sys
 
 from PyQt4.QtCore import *
 
@@ -51,7 +50,7 @@ class LogCleaner(QObject):
         one_day = 86400
         time_past_limit = now - (7 * one_day)
         for ffile in os.listdir(self.log_dir):
-            fpath = unicode(os.path.join(self.log_dir, ffile), sys.getfilesystemencoding())
+            fpath = os.path.join(self.log_dir, ffile)
 
             # if file is older than X days, than remove the file
             if os.stat(fpath).st_mtime < time_past_limit:
