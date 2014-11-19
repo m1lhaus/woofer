@@ -171,6 +171,9 @@ if __name__ == "__main__":
         else:
             applicationServer.sendMessage(r"open")
 
+    elif not foundLibVLC():
+        displayLibVLCError(os.name)
+
     else:
         mainApp = main_dialog.MainApp(env, args.input)
         applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)

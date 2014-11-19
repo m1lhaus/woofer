@@ -120,7 +120,7 @@ def find_lib():
         python_bin_type = check_binary_type(sys.executable)
         cwd = os.path.dirname(os.path.realpath(sys.argv[0]))
 
-        plugin_path = os.path.join(cwd, 'libvlc', 'win')
+        plugin_path = os.path.join(cwd, 'libvlc')
         dll_path = os.path.join(plugin_path, 'libvlc.dll')
         if os.path.isdir(plugin_path) and os.path.isfile(dll_path):
             os.chdir(plugin_path)

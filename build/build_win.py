@@ -101,6 +101,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        raw_input("\nPress Enter key to exit...")
+
     print "Finished!"
-    raw_input("\nPress Enter key to exit...")
