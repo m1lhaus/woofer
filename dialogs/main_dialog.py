@@ -67,7 +67,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.appDataPath = tools.DATA_DIR
         self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.json')
         self.session_file = os.path.join(self.appDataPath, u'session.dat')
-        self.input_path = play_path
+        self.input_path = play_path.decode(sys.getfilesystemencoding()) if play_path else None
         self.mediaPlayer = components.media.MediaPlayer()
 
         # setups all GUI components from form (design part)
@@ -85,10 +85,13 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.setupSystemHook()
         self.setupScheduledTasks()
 
+        # play given file path as console arg if any
+        if self.input_path:
+            self.playPath(self.input_path, append=False)
+
         # restore session/settings
         self.loadSettings()
         QTimer.singleShot(self.QUEUED_SETTINGS_DELAY, self.loadSettingsQueued)
-
         logger.debug(u"Main application dialog initialized")
 
     def setupGUISignals(self):
@@ -484,6 +487,12 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         if message.startswith("play"):
             path = message.replace("play ", "")
+            logger.error(path)
+            logger.error(type(path))
+            if os.path.exists(path):
+                self.playPath(path, append=False)
+            else:
+                logger.error(u"From another instance received path which do not exist!")
             # path = unicode(path, sys.getfilesystemencoding())
             # logger.error("Recieved: %s", path)
 
