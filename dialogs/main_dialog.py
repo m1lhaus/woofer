@@ -460,20 +460,25 @@ class MainApp(QMainWindow, main_form.MainForm):
         n_cols = self.playlistTable.columnCount()
         n_rows = self.playlistTable.rowCount()
 
-        # array is transposed ... [ [1st col], [2nd col], etc ] for easier manipulation when loading data back
-        table_content = [[None for x in range(n_rows)] for x in range(n_cols)]
-        for row in range(self.playlistTable.rowCount()):
-            for column in range(self.playlistTable.columnCount()):
-                item = self.playlistTable.item(row, column)
+        if len(self.mediaPlayer.shuffled_playlist) == n_rows:
+            # array is transposed ... [ [1st col], [2nd col], etc ] for easier manipulation when loading data back
+            table_content = [[None for x in range(n_rows)] for x in range(n_cols)]
+            for row in range(self.playlistTable.rowCount()):
+                for column in range(self.playlistTable.columnCount()):
+                    item = self.playlistTable.item(row, column)
 
-                if item is not None:
-                    table_content[column][row] = self.playlistTable.item(row, column).text()
-                else:
-                    table_content[column][row] = None
+                    if item is not None:
+                        table_content[column][row] = self.playlistTable.item(row, column).text()
+                    else:
+                        table_content[column][row] = None
 
-        session_data['playlist_table'] = table_content
-        session_data['id_playlist'] = self.mediaPlayer.shuffled_playlist
-        session_data['playlist_pointer'] = self.mediaPlayer.shuffled_playlist_current_index
+            session_data['playlist_table'] = table_content
+            session_data['id_playlist'] = self.mediaPlayer.shuffled_playlist
+            session_data['playlist_pointer'] = self.mediaPlayer.shuffled_playlist_current_index
+
+        else:
+            # woofer may crash during some playlist operation, so records may be inconsistent
+            logger.error(u"Playlist (gui) and _media_list are not are not the same length!")
 
     @pyqtSlot(str)
     def messageFromAnotherInstance(self, message):
