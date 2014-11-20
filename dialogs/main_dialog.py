@@ -460,7 +460,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         n_cols = self.playlistTable.columnCount()
         n_rows = self.playlistTable.rowCount()
 
-        if len(self.mediaPlayer.shuffled_playlist) == n_rows:
+        if len(self.mediaPlayer.shuffled_playlist) == n_rows == self.mediaPlayer._media_list.count() and \
+                                0 <= self.mediaPlayer.shuffled_playlist_current_index < len(self.mediaPlayer.shuffled_playlist):
             # array is transposed ... [ [1st col], [2nd col], etc ] for easier manipulation when loading data back
             table_content = [[None for x in range(n_rows)] for x in range(n_cols)]
             for row in range(self.playlistTable.rowCount()):

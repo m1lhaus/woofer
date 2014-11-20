@@ -12,7 +12,7 @@ import random
 
 from PyQt4.QtCore import *
 
-import components.libvlc
+from components import libvlc
 import tools
 
 
@@ -44,13 +44,12 @@ class MediaPlayer(QObject):
 
     def __init__(self):
         super(MediaPlayer, self).__init__()
-
-        self.instance = components.libvlc.Instance()
-        """@type: vlc.Instance"""
+        self.instance = libvlc.Instance()
+        """@type: libvlc.Instance"""
         self._media_player = self.instance.media_player_new()
-        """@type: vlc.MediaPlayer"""
+        """@type: libvlc.MediaPlayer"""
         self._media_list = self.instance.media_list_new()
-        """@type: vlc.MediaList"""
+        """@type: libvlc.MediaList"""
         logger.debug(u"Core instances of VLC player created")
 
         self.tick_rate = 1000                           # in ms
@@ -82,18 +81,18 @@ class MediaPlayer(QObject):
 
     def _setupEvents(self):
         self._event_manager = self._media_player.event_manager()
-        # self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerOpening, self.playerStateChanged)
-        # self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerPlaying, self.__playingCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerPaused, self.__pausedCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerForward, self.__forwardCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerBackward, self.__backwardCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
-        self._event_manager.event_attach(components.libvlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
+        # self._event_manager.event_attach(libvlc.EventType.MediaPlayerOpening, self.playerStateChanged)
+        # self._event_manager.event_attach(libvlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPlaying, self.__playingCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPaused, self.__pausedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerForward, self.__forwardCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerBackward, self.__backwardCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerEndReached, self.__endReachedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerEncounteredError, self.__errorCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
 
     @pyqtSlot(list)
     def addMedia(self, mlist, restoring_session=False):
@@ -208,6 +207,10 @@ class MediaPlayer(QObject):
             else:
                 self.shuffled_playlist_current_index = 0
                 logger.debug(u"Last item from playlist has been removed. Playing remains stopped.")
+
+        # items are now shifted one position down
+        elif remove_error < current_index:
+            self.shuffled_playlist_current_index -= 1
 
     def clearMediaList(self):
         """
@@ -648,7 +651,7 @@ class MediaParser(QObject):
 
     def __init__(self):
         super(MediaParser, self).__init__()
-        self.vlc_instance = components.libvlc.Instance()        # for parsing
+        self.vlc_instance = libvlc.Instance()        # for parsing
         self._mutex = QMutex()
         self._cancel = False
 
