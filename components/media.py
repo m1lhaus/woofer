@@ -6,6 +6,7 @@ Media components
 - Radio player
 """
 
+import os
 import logging
 import random
 
@@ -53,8 +54,10 @@ class MediaPlayer(QObject):
         logger.debug(u"Core instances of VLC player created")
 
         self.tick_rate = 1000                           # in ms
-        self.shuffled_playlist = []
-        self.shuffled_playlist_current_index = 0        # points which media in idPlaylist is being played
+        self.media_list = []                            # path to media file is stored in _media_list but is
+                                                        # vlc translates the path to its form
+        self.shuffled_playlist = []                     # items are represented by its index in _media_list
+        self.shuffled_playlist_current_index = 0        # points which media in shuffled_playlist is being played
 
         self.is_playing = False
         self.is_paused = False
@@ -111,6 +114,8 @@ class MediaPlayer(QObject):
                 unicode_path, byte_path = tools.unicode2bytes(path)       # fix Windows encoding issues
                 # vlc will parse media automatically if needed (before playing)
                 self._media_list.add_media(byte_path)
+                self.media_list.append(os.path.normpath(path))
+                # normpath to preserve win/unix compatibility when restoring session
 
             # set previous current media now as current
             media = self._media_list.item_at_index(self.shuffled_playlist[self.shuffled_playlist_current_index])
@@ -128,7 +133,7 @@ class MediaPlayer(QObject):
             for path, media in mlist:
                 self._media_list.add_media(media)
                 media.release()
-
+                self.media_list.append(path)
                 self.shuffled_playlist.append(len(self.shuffled_playlist))        # new media is on the end of the list
                 export.append((path, media.get_duration()))
             self._media_list.unlock()
@@ -169,6 +174,7 @@ class MediaPlayer(QObject):
         self._media_list.lock()
         remove_error = self._media_list.remove_index(remove_index) == -1
         self._media_list.unlock()
+        del self.media_list[remove_index]
 
         if remove_error:
             logger.error(u"Unable to remove item from _media_list. "
@@ -212,6 +218,7 @@ class MediaPlayer(QObject):
         self._media_list.release()                              # delete old media list
         self._media_list = self.instance.media_list_new()       # create new and empty list
         self._media_player.set_media(None)
+        self.media_list = []
         self.player_is_empty = True
 
         self.shuffled_playlist = []

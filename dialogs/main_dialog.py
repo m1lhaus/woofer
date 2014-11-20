@@ -411,8 +411,8 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.playlistTable.setItem(row, column, item)
 
         logger.debug(u"Restoring items from playlist in mediaPlayer object...")
-        self.mediaPlayer.shuffled_playlist = session_data['id_playlist']
-        self.mediaPlayer.shuffled_playlist_current_index = session_data['playlist_pointer']
+        self.mediaPlayer.shuffled_playlist = session_data['shuffled_playlist']
+        self.mediaPlayer.shuffled_playlist_current_index = session_data['shuffled_playlist_current_index']
 
         if paths_list:
             self.mediaPlayer.addMedia(paths_list, restoring_session=True)
@@ -473,12 +473,15 @@ class MainApp(QMainWindow, main_form.MainForm):
                         table_content[column][row] = None
 
             session_data['playlist_table'] = table_content
-            session_data['id_playlist'] = self.mediaPlayer.shuffled_playlist
-            session_data['playlist_pointer'] = self.mediaPlayer.shuffled_playlist_current_index
+            session_data['shuffled_playlist'] = self.mediaPlayer.shuffled_playlist
+            session_data['shuffled_playlist_current_index'] = self.mediaPlayer.shuffled_playlist_current_index
 
         else:
             # woofer may crash during some playlist operation, so records may be inconsistent
             logger.error(u"Playlist (gui) and _media_list are not are not the same length!")
+            session_data['playlist_table'] = []
+            session_data['shuffled_playlist'] = []
+            session_data['shuffled_playlist_current_index'] = 0
 
     @pyqtSlot(str)
     def messageFromAnotherInstance(self, message):
@@ -613,8 +616,13 @@ class MainApp(QMainWindow, main_form.MainForm):
         # REMOVE FROM DISK
         elif choice is removeFromDisk:
             path = fileInfo.absoluteFilePath()
-            logger.debug(u"Removing path '%s' to Trash", path)
-            self.removeFileSignal.emit(path)
+            path = os.path.normpath(path)
+            if path in self.mediaPlayer.media_list:
+                # implicitly removes media from media player
+                self.playlistRemFromDisk(self.mediaPlayer.media_list.index(path))
+            else:
+                logger.debug(u"Removing path '%s' to Trash", path)
+                self.removeFileSignal.emit(path)
 
     @pyqtSlot('QPointF')
     def playlistContextMenu(self, pos):

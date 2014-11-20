@@ -71,7 +71,7 @@ class RecursiveBrowser(QObject):
         while dirIterator.hasNext():
             path = dirIterator.next()
             if path.endswith(self.names_filter):
-                result.append(path)
+                result.append(os.path.normpath(path))
 
                 n += 1
                 if n == self.block_size:
