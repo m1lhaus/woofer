@@ -186,3 +186,4 @@ if __name__ == "__main__":
         logger.error(u"Local server components are not closed properly!")
 
     logger.debug(u"Application has been closed")
+    logging.shutdown()
