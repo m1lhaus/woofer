@@ -103,7 +103,8 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception:
+    except Exception as e:
+        print >> sys.stderr, str(e).decode(sys.getfilesystemencoding())
         raw_input("\nPress Enter key to exit...")
 
     print "Finished!"
