@@ -32,26 +32,21 @@ else:
     sip.setapi('QVariant', 2)
 
 try:
-    import send2trash
-except ImportError, e:
-    raise Exception(u"%s! Send2Trash package is required!" % e.message)
-
-try:
     from PyQt4.QtCore import *
     from PyQt4.QtGui import *
 except ImportError, e:
     raise Exception(u"%s! PyQt4 library is required!" % e.message)
+
+try:
+    import send2trash
+except ImportError, e:
+    raise Exception(u"%s! Send2Trash package is required!" % e.message)
 
 if os.name == 'posix':
     try:
         import Xlib
     except ImportError, e:
         raise Exception(u"%s! Python-Xlib libraries are required on Linux platform!" % e.message)
-
-
-import components.libvlc               # import for libvlc check
-import components.localserver
-from dialogs import main_dialog
 
 
 logger = logging.getLogger(__name__)
@@ -70,10 +65,10 @@ def foundLibVLC():
 
 
 def findCmdHelpFile():
-    if os.path.isfile('cmdargs.exe'):      # built exe dist
-        return 'cmdargs.exe'
-    elif os.path.isfile('cmdargs.py'):
-        return 'cmdargs.py'
+    if os.path.isfile(os.path.join(tools.APP_ROOT_DIR, 'cmdargs.exe')):      # built exe dist
+        return os.path.join(tools.APP_ROOT_DIR, 'cmdargs.exe')
+    elif os.path.isfile(os.path.join(tools.APP_ROOT_DIR, 'cmdargs.py')):
+        return os.path.join(tools.APP_ROOT_DIR, 'cmdargs.py')
     else:
         raise Exception(u"Script cmdargs.py/exe was not found!")
 
@@ -136,6 +131,7 @@ if __name__ == "__main__":
     app.setOrganizationDomain("wooferplayer.com")
     app.setApplicationName("Woofer")
 
+    # init logging module
     try:
         components.log.setup_logging(env)
     except Exception as exception:
@@ -161,9 +157,11 @@ if __name__ == "__main__":
         else:
             logger.error(u"File cmdargs.exe/cmdargs.py not found!")
 
-        sys.exit(0)
+        logging.shutdown()
+        sys.exit()
 
     # start server and detect another instance
+    import components.localserver
     applicationServer = components.localserver.LocalServer("wooferplayer.com")
     if applicationServer.another_instance_running:
         if args.input:
@@ -171,16 +169,25 @@ if __name__ == "__main__":
         else:
             applicationServer.sendMessage(r"open")
 
-    elif not foundLibVLC():
+        logging.shutdown()
+        sys.exit()
+
+    # init LibVLC binaries
+    import components.libvlc               # import for libvlc check
+    if not foundLibVLC():
         displayLibVLCError(os.name)
+        logging.shutdown()
+        sys.exit()
 
-    else:
-        mainApp = main_dialog.MainApp(env, args.input)
-        applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
-        mainApp.show()
-        app.exec_()
+    # start gui application
+    import dialogs.main_dialog
+    logger.debug(u"Initializing gui application and all components...")
+    mainApp = dialogs.main_dialog.MainApp(env, args.input)
+    applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
+    mainApp.show()
+    app.exec_()
 
-        logger.debug(u"MainThread loop stopped.")
+    logger.debug(u"MainThread loop stopped.")
 
     if not applicationServer.exit():
         logger.error(u"Local server components are not closed properly!")
