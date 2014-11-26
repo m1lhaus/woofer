@@ -504,6 +504,7 @@ class MainForm(object):
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
+        self.statusbar.setFixedHeight(24)
         MainWindow.setStatusBar(self.statusbar)
         self.progressBar = QProgressBar(self)
         self.progressLabel = QLabel(self)

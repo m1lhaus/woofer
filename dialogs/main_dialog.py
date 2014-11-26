@@ -780,7 +780,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parser.stop(True)
 
     @pyqtSlot(int, unicode, unicode)
-    def displayErrorMsg(self, er_type, text, details=u""):
+    def displayErrorMsg(self, er_type, text, details=u" "):
         """
         Called to display warnings and errors.
         @param er_type: error type (Message enum)
