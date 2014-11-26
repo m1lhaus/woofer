@@ -25,6 +25,7 @@ class MediaSeeker(QSlider):
         super(MediaSeeker, self).__init__(parent)
         self.setMinimum(0)
         self.setMaximum(99)
+        self.setEnabled(False)
         self.setOrientation(Qt.Horizontal)
 
     def mousePressEvent(self, event):

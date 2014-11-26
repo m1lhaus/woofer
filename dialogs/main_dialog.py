@@ -898,6 +898,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         icon = QIcon()
         icon.addPixmap(QPixmap(u":/icons/media-pause.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
+        self.seekerSlider.setEnabled(True)
         self.mediaPlayPauseAction.setIcon(icon)
         self.mediaPlayPauseAction.setText(u"Pause")
 
@@ -918,6 +919,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.seekerSlider.blockSignals(True)        # prevent syncing
         self.seekerSlider.setValue(0)
         self.seekerSlider.blockSignals(False)
+        self.seekerSlider.setEnabled(False)
 
         icon = QIcon()
         icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
