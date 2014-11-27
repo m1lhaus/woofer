@@ -41,6 +41,7 @@ class MediaPlayer(QObject):
     # so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
     mediaChangedCallbackSignal = pyqtSignal()
     endReachedCallbackSignal = pyqtSignal()
+    errorCallbackSignal = pyqtSignal()
 
     def __init__(self):
         super(MediaPlayer, self).__init__()
@@ -74,6 +75,7 @@ class MediaPlayer(QObject):
         self.endReachedSignal.connect(self._stoppedSlot)
         self.mediaChangedCallbackSignal.connect(self._mediaChangedSlot)
         self.endReachedCallbackSignal.connect(self._endReachedSlot)
+        self.errorCallbackSignal.connect(self._errorSlot)
 
         self._setupEvents()
 
@@ -284,7 +286,10 @@ class MediaPlayer(QObject):
         else:
             logger.debug(u"Play method called")
 
-        self._media_player.play()
+        if self._media_player.play() == -1:
+            current_media_path = self.media_list[self.shuffled_playlist[self.shuffled_playlist_current_index]]
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Error occurred when trying to play media file",
+                                  u"Media: %s" % current_media_path)
 
     @pyqtSlot()
     def pause(self):
@@ -585,6 +590,13 @@ class MediaPlayer(QObject):
         """
         self.endReachedSignal.emit(self.repeat_mode)          # if repeat_mode then do not switch to next song
 
+    @pyqtSlot()
+    def _errorSlot(self):
+        logger.warning(u"Media encountered error")
+        current_media_path = self.media_list[self.shuffled_playlist[self.shuffled_playlist_current_index]]
+        self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Error occurred when trying to play media file",
+                              u"Playing %s failed!" % current_media_path)
+
     # WARNING: CALLBACKS CALLED DIRECTLY FROM ANOTHER THREAD (VLC THREAD) !!!!
 
     def __timeChangedCallback(self, event):
@@ -633,7 +645,7 @@ class MediaPlayer(QObject):
         self.mediaChangedCallbackSignal.emit()
 
     def __errorCallback(self, event):
-        logger.warning(u"Media encountered error")
+        self.errorCallbackSignal.emit()
 
 
 class MediaParser(QObject):
