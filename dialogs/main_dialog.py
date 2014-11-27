@@ -400,15 +400,22 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.playlistTable.setRowCount(n_rows)
         self.playlistTable.setColumnCount(n_cols)
 
-        # array is transposed ... [ [1st col], [2nd col], etc ]
+        column_with_path = self.playlistTable.columnCount() - 1
         for row in range(n_rows):
             for column in range(n_cols):
-                cell_data = table_content[column][row]
-                if not cell_data:       # empty or None cell -> skip
-                    continue
+                cell_data = table_content[column][row]      # 2D array is saved as transposed
+                if cell_data:       # empty or None cell -> skip
+                    # if given track doesn't exist, set whole row italic and gray
+                    if column == column_with_path and not os.path.exists(cell_data):
+                        for i in (0, 2):        # title and duration items
+                            title_item = self.playlistTable.item(row, i)
+                            font = title_item.font()
+                            font.setItalic(True)
+                            title_item.setFont(font)
+                            title_item.setForeground(QBrush(Qt.gray))
 
-                item = QTableWidgetItem(cell_data)
-                self.playlistTable.setItem(row, column, item)
+                    item = QTableWidgetItem(cell_data)
+                    self.playlistTable.setItem(row, column, item)
 
         logger.debug(u"Restoring items from playlist in mediaPlayer object...")
         self.mediaPlayer.shuffled_playlist = session_data['shuffled_playlist']
