@@ -10,6 +10,7 @@ import os
 import subprocess
 import re
 import json
+import datetime
 
 
 build_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -48,9 +49,10 @@ if __name__ == "__main__":
     version, commits, revision = get_git_version_and_hash()
 
     data = {'author': u"Milan Herbig",
-            'email': u"milanherbig<at>gmail.com",
+            'email': u"milanherbig(at)gmail.com",
             'version': version,
             'commits': commits,
-            'revision': revision}
+            'revision': revision,
+            'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}
 
     write_version_file(data)
