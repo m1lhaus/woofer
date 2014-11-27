@@ -34,6 +34,7 @@ MERGE((a, "woofer", "woofer.exe"),
 a.binaries = [x for x in a.binaries if not x[0].startswith("shell32")]  # shell32.dll is part of Windows
 a.datas += extra_datas('libvlc')
 a.datas += extra_datas('LICENSE.txt')
+a.datas += extra_datas('build.info')
 
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
