@@ -656,32 +656,15 @@ class MediaParser(QObject):
     Worker method: MediaParser.parseMedia()
     """
 
-    # TODO: rewrite !
-
     finishedSignal = pyqtSignal()
     dataParsedSignal = pyqtSignal(list)
 
     def __init__(self):
         super(MediaParser, self).__init__()
         self.vlc_instance = libvlc.Instance()        # for parsing
-        self._mutex = QMutex()
-        self._cancel = False
+        self.stop = False
 
         logger.debug(u"Media Parser initialized.")
-
-    def stop(self, value=None):
-        """
-        Return or set stopped flag, which cancel parsing.
-        Thread safe method!
-        @type value: bool or None
-        @rtype: bool
-        """
-        self._mutex.lock()
-        if value is not None:
-            self._cancel = value
-        self._mutex.unlock()
-
-        return self._cancel
 
     @pyqtSlot(list)
     def parseMedia(self, sources):
@@ -693,12 +676,11 @@ class MediaParser(QObject):
         # END FLAG RECEIVED
         if not sources:
             logger.debug(u"Parser finished, end flag received.")
-            self.stop(False)            # reset stop flag
-
+            self.stop = False           # reset stop flag
             self.finishedSignal.emit()
 
         # PARSE MEDIA FILES
-        elif not self.stop():
+        elif not self.stop:
             media_list = []
             for unicode_path in sources:
                 byte_path = unicode_path.encode("utf8")

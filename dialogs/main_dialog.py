@@ -784,7 +784,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     @pyqtSlot()
     def cancelAdding(self):
         logger.debug(u"Canceling adding new files to playlist (parsing).")
-        self.parser.stop(True)
+        self.parser.stop = True
 
     @pyqtSlot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u" "):
