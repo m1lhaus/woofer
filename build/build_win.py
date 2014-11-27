@@ -12,11 +12,10 @@ import os
 import subprocess
 import platform
 import shutil
+import json
 
 
-VERSION = "0.7.0"                   # todo: get version and revision from GIT
 ZIP_ENABLED = False
-
 PRJ_SPEC_FILE = "woofer.spec"
 PYINSTALLER_EXE_NAME = "pyinstaller"
 
@@ -29,7 +28,6 @@ print "Working directory set to: ", os.getcwd()
 
 
 def which(program):
-
     # apped .exe extension on Windows
     if os.name == 'nt' and not program.endswith('.exe'):
         program += ".exe"
@@ -51,38 +49,64 @@ def which(program):
     return ""
 
 
-def main():
-    print "Trying to find PyInstaller executable in system PATH..."
+def get_build_data():
+    subprocess.call([sys.executable, os.path.join(build_dir, "update_version.py")])           # update version/build data
 
+    build_info_file = os.path.join(root_dir, u"build.info")
+    if not os.path.isfile(build_info_file):
+        print >> sys.stderr, "Unable to locate build.info file!"
+        return None
+
+    with open(build_info_file, 'r') as f:
+        build_data = json.load(f)               # dict
+
+    return build_data
+
+
+def get_pyinstaller_exe():
+    print "Trying to find PyInstaller executable in system PATH..."
     pyinstaller_exe = which(PYINSTALLER_EXE_NAME)
     if not pyinstaller_exe:
         raise Exception("PyInstaller executable not found in system PATH!")
     else:
         print "PyInstaller executable found at:", pyinstaller_exe
 
-    spec_file = os.path.join(root_dir, "build", PRJ_SPEC_FILE)
-    dist_path = os.path.join(root_dir, "dist", "woofer")
+    return pyinstaller_exe
+
+
+def get_project_spec_file():
+    spec_file = os.path.join(build_dir, PRJ_SPEC_FILE)
+
     if not os.path.isfile(spec_file):
         raise Exception("Unable to locate spec file at: %s" % spec_file)
     else:
         print "Pyinstaller spec file found at:", spec_file
 
-    print "Building dist..."
-    print "=" * 100
+    return spec_file
 
+
+def main():
+    build_data = get_build_data()
+    pyinstaller_exe = get_pyinstaller_exe()
+    spec_file = get_project_spec_file()
+    dist_path = os.path.join(root_dir, "dist", "woofer")
+    version_long = "%s.%s-%s" % (build_data['version'], build_data['commits'], build_data['revision'])
+    version_short = "%s.%s" % (build_data['version'], build_data['commits'])
+
+    print "Building distribution..."
+    print "=" * 100
     process = subprocess.Popen([pyinstaller_exe, spec_file, '-y', '--clean'], stdout=sys.stdout, stderr=sys.stderr)
     retcode = process.wait()
-
     print "=" * 100
+
     if retcode != 0:
         raise Exception("Building finished with error code: %s!!!" % retcode)
 
-    new_dist_path = os.path.join(root_dir, "build", "release", "woofer_%s_v%s"
-                                 % (platform.architecture()[0], VERSION))
+    # move built distribution to release folder
+    new_dist_path = os.path.join(build_dir, "release", "woofer_%s_v%s" % (platform.architecture()[0], version_long))
     if os.path.isdir(new_dist_path):
         shutil.rmtree(new_dist_path)
     shutil.move(dist_path, new_dist_path)
-
     dist_path = new_dist_path
 
     print "Dist package successfully built to:", dist_path
