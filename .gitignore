@@ -1,5 +1,6 @@
 .idea/
-build/
+build/release
+build/woofer
 dist/
 log/
 data/
