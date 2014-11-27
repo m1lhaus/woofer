@@ -4,6 +4,7 @@ build/woofer
 dist/
 log/
 data/
+build.info
 libvlc/win/
 foo/
 *.pyc
