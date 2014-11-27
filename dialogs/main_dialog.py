@@ -1090,8 +1090,8 @@ class MainApp(QMainWindow, main_form.MainForm):
             build_info_file = os.path.join(tools.APP_ROOT_DIR, u"build.info")
             if not os.path.isfile(build_info_file):
                 logger.error("Unable to locate build.info file!")
-                self.displayErrorMsg(tools.ErrorMessages.ERROR, u"Unable to locate build.info file!", u" ")
-                return None
+                self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Unable to locate build.info file!", u"")
+                return {}
 
             with open(build_info_file, 'r') as f:
                 build_data = json.load(f)               # dict
@@ -1150,7 +1150,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         from components import libvlc
         libvlc_version = libvlc.bytes_to_str(libvlc.libvlc_get_version())
         pyversion = u"%s.%s.%s" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
-        version = build_data.get('version') + '.' + build_data.get('commits')
+        version = "%s.%s" % (build_data.get('version'), build_data.get('commits'))
         rev = build_data.get('revision')
         build_date = build_data.get('date')
         detailtext = u"<hr><br/>" \
