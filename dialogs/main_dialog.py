@@ -1086,20 +1086,36 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot()
     def openAboutDialog(self):
-        logger.debug(u"Opening 'About' dialog")
-        aboutDialog = QDialog(self)
-        aboutDialog.setWindowFlags(aboutDialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        aboutDialog.setWindowTitle(u"About Woofer player")
+        def load_build_info():
+            build_info_file = os.path.join(tools.APP_ROOT_DIR, u"build.info")
+            if not os.path.isfile(build_info_file):
+                logger.error("Unable to locate build.info file!")
+                self.displayErrorMsg(tools.ErrorMessages.ERROR, u"Unable to locate build.info file!", u" ")
+                return None
 
-        if os.path.isfile(u'LICENSE.txt'):
-            path_to_licence = tools.APP_ROOT_DIR
-            path_to_licence = path_to_licence.split(os.sep)
-            path_to_licence = u"/".join(path_to_licence) + u"/LICENSE.txt"
-            path_to_licence = u"file:///" + path_to_licence
-        else:
-            logger.error(u"LICENSE.txt file was not found in woofer root dir!")
-            path_to_licence = u"http://www.gnu.org/licenses/gpl-2.0.html"
+            with open(build_info_file, 'r') as f:
+                build_data = json.load(f)               # dict
 
+            return build_data
+
+        def find_licence_file():
+            if os.path.isfile(u'LICENSE.txt'):
+                path_to_licence = tools.APP_ROOT_DIR
+                path_to_licence = path_to_licence.split(os.sep)
+                path_to_licence = u"/".join(path_to_licence) + u"/LICENSE.txt"
+                path_to_licence = u"file:///" + path_to_licence
+            else:
+                logger.error(u"LICENSE.txt file was not found in woofer root dir!")
+                path_to_licence = u"http://www.gnu.org/licenses/gpl-2.0.html"
+
+            return path_to_licence
+
+        logger.debug(u"Open 'About' dialog called")
+        path_to_licence = find_licence_file()
+        build_data = load_build_info()
+
+        author = build_data.get('author')
+        email = build_data.get('email')
         videolan_url = u"http://www.videolan.org/index.cs.html"
         woofer_url = u"http://www.wooferplayer.com"
         github_url = u"https://github.com/m1lhaus/woofer"
@@ -1107,12 +1123,12 @@ class MainApp(QMainWindow, main_form.MainForm):
                    u"that plays most multimedia files, CDs, DVDs and also various online streams. " \
                    u"Whole written in Python and Qt provides easy, reliable, " \
                    u"and high quality playback thanks to LibVLC library developed by " \
-                   u"<a href='%s'>VideoLAN community</a>.<br/>" \
+                   u"<a href='{0}'>VideoLAN community</a>.<br/>" \
                    u"<br/>" \
-                   u"Created by: Milan Herbig &lt; milanherbig at gmail.com &gt;<br/>" \
-                   u"Web: <a href='%s'>www.wooferplayer.com</a><br/>" \
-                   u"Source: <a href='%s'>GitHub repository</a> &lt; <a href='%s'>LICENCE GPL v2</a> &gt;"\
-                   % (videolan_url, woofer_url, github_url, path_to_licence)
+                   u"Created by: {4} &lt; {5} &gt;<br/>" \
+                   u"Web: <a href='{1}'>www.wooferplayer.com</a><br/>" \
+                   u"Source: <a href='{2}'>GitHub repository</a> &lt; <a href='{3}'>LICENCE GPL v2</a> &gt;".format(
+                   videolan_url, woofer_url, github_url, path_to_licence, author, email)
 
         maintextLabel = QLabel()
         maintextLabel.setTextFormat(Qt.RichText)
@@ -1134,10 +1150,14 @@ class MainApp(QMainWindow, main_form.MainForm):
         from components import libvlc
         libvlc_version = libvlc.bytes_to_str(libvlc.libvlc_get_version())
         pyversion = u"%s.%s.%s" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
+        version = build_data.get('version') + '.' + build_data.get('commits')
+        rev = build_data.get('revision')
+        build_date = build_data.get('date')
         detailtext = u"<hr><br/>" \
                      u"<strong>Build information:</strong><br/>" \
-                     u"Version: 0.7.0 | Python: %s | PyQt: %s | Qt: %s<br />" \
-                     u"LibVLC version: %s" % (pyversion, PYQT_VERSION_STR, QT_VERSION_STR, libvlc_version)
+                     u"Version: {4} | Revision: {5} | Build date: {6}<br />" \
+                     u"Python: {0} | PyQt: {1} | Qt: {2} | LibVLC version: {3}".format(
+                     pyversion, PYQT_VERSION_STR, QT_VERSION_STR, libvlc_version, version, rev, build_date)
 
         detailtextLabel = QLabel()
         detailtextLabel.setTextFormat(Qt.RichText)
@@ -1150,6 +1170,10 @@ class MainApp(QMainWindow, main_form.MainForm):
         detailtextLayout.addWidget(detailtextLabel)
 
         # ------------------------------
+
+        aboutDialog = QDialog(self)
+        aboutDialog.setWindowFlags(aboutDialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        aboutDialog.setWindowTitle(u"About Woofer player")
 
         topLayout = QVBoxLayout()
         topLayout.setMargin(15)
