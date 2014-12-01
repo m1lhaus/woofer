@@ -363,14 +363,14 @@ class MainApp(QMainWindow, main_form.MainForm):
             try:
                 with open(self.session_file, 'rb') as f:
                     session_data = pickle.load(f)
-            except IOError:
+            except Exception:
                 logger.exception(u"Unable to load data from session file!")
             else:
                 self.loadPlaylist(session_data)
 
                 # load shuffle, repeat and volume
-                self.mediaPlayer.shuffle_mode = session_data['shuffle']
-                self.mediaPlayer.repeat_mode = session_data['repeat']
+                self.mediaPlayer.shuffle_mode = session_data.get('shuffle', False)
+                self.mediaPlayer.repeat_mode = session_data.get('repeat', False)
                 self.shuffleBtn.blockSignals(True)
                 self.shuffleBtn.setChecked(self.mediaPlayer.shuffle_mode)
                 self.shuffleBtn.blockSignals(False)
@@ -387,12 +387,15 @@ class MainApp(QMainWindow, main_form.MainForm):
         Loads and sets saved playlist from last session (from disk)
         @param session_data: data from disk are stored in this dict file
         """
-        table_content = session_data['playlist_table']              # playlistTable content
-        if not table_content:               # playlist is empty
+        table_content = session_data.get('playlist_table', [])              # playlistTable content
+        if not table_content:                                               # playlist is empty
             return
 
         n_cols = len(table_content)
         n_rows = len(table_content[0])
+        if n_rows == 0:
+            logger.debug(u"No playlist to restore")
+            return
 
         paths_list = table_content[-1]
 
@@ -418,15 +421,19 @@ class MainApp(QMainWindow, main_form.MainForm):
                     self.playlistTable.setItem(row, column, item)
 
         logger.debug(u"Restoring items from playlist in mediaPlayer object...")
-        self.mediaPlayer.shuffled_playlist = session_data['shuffled_playlist']
-        self.mediaPlayer.shuffled_playlist_current_index = session_data['shuffled_playlist_current_index']
+        self.mediaPlayer.shuffled_playlist = session_data.get('shuffled_playlist', [])
+        self.mediaPlayer.shuffled_playlist_current_index = session_data.get('shuffled_playlist_current_index', 0)
 
-        if paths_list:
+        if paths_list and len(self.mediaPlayer.shuffled_playlist) == len(paths_list):
             self.mediaPlayer.addMedia(paths_list, restoring_session=True)
 
             # set current media in table as current item and scroll to the item
             self.playlistTable.setCurrentCell(self.mediaPlayer.shuffled_playlist[self.mediaPlayer.shuffled_playlist_current_index], 0)
             self.playlistTable.scrollToItem(self.playlistTable.currentItem(), QAbstractItemView.PositionAtCenter)
+        else:
+            logger.error(u"Error when loading/restoring playlist: "
+                         u"paths_list and shuffled_playlist are not the same length")
+            self.clearPlaylist()
 
     def saveSettings(self):
         """
@@ -467,8 +474,10 @@ class MainApp(QMainWindow, main_form.MainForm):
         n_cols = self.playlistTable.columnCount()
         n_rows = self.playlistTable.rowCount()
 
-        if len(self.mediaPlayer.shuffled_playlist) == n_rows == self.mediaPlayer._media_list.count() and \
-                                0 <= self.mediaPlayer.shuffled_playlist_current_index < len(self.mediaPlayer.shuffled_playlist):
+        n_shuf_play = len(self.mediaPlayer.shuffled_playlist)
+        n_media_list = self.mediaPlayer._media_list.count()     # access to protected for sanity-check purposes only
+        shuf_play_index = self.mediaPlayer.shuffled_playlist_current_index
+        if (n_shuf_play == n_rows == n_media_list) and (shuf_play_index == 0 or 0 < shuf_play_index < n_shuf_play):
             # array is transposed ... [ [1st col], [2nd col], etc ] for easier manipulation when loading data back
             table_content = [[None for x in range(n_rows)] for x in range(n_cols)]
             for row in range(self.playlistTable.rowCount()):
