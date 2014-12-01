@@ -34,6 +34,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
                 self.mediaFolders = json.load(mediaFile)
+                assert isinstance(self.mediaFolders, list)
         except IOError:
             logger.exception(u"Error when reading media file data from disk")
             QMessageBox(QMessageBox.Critical, u"IO Error", u"Error when reading media file data from disk!").exec_()
@@ -57,13 +58,14 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         self.buttonBox.rejected.connect(self.reject)
         self.addBtn.clicked.connect(self.addFolder)
         self.removeBtn.clicked.connect(self.removeFolder)
+        self.folderList.itemDoubleClicked.connect(self.editFolder)
 
     @pyqtSlot()
-    def addFolder(self):
+    def addFolder(self, edit=False):
         """
         When 'Add' button clicked, system folder dialog is opened and new directory is added
         """
-        logger.debug(u"Opening system file dialog.")
+        logger.debug(u"Opening system file dialog for adding.")
 
         settings = QSettings()
         start_folder = settings.value(u"gui/LibraryDialog/lastVisited", None)
@@ -72,16 +74,38 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         if not start_folder or not os.path.isdir(start_folder):
             start_folder = QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
 
-        newFolder = QFileDialog.getExistingDirectory(directory=start_folder)
-        if newFolder:
-            logger.debug(u"Selected directory: %s", newFolder)
-            newFolder = os.path.normpath(newFolder)
-            self.mediaFolders.append(newFolder)
-            self.folderList.addItem(newFolder)
+        new_folder = QFileDialog.getExistingDirectory(directory=start_folder)
+        if new_folder:
+            logger.debug(u"Selected directory: %s", new_folder)
+            new_folder = os.path.normpath(new_folder)
+            self.mediaFolders.append(new_folder)
+            self.folderList.addItem(new_folder)
             self.anyChanges = True
 
             # save last visited dirrectory
-            settings.setValue(u"gui/LibraryDialog/lastVisited", os.path.dirname(newFolder))
+            settings.setValue(u"gui/LibraryDialog/lastVisited", os.path.dirname(new_folder))
+
+    @pyqtSlot('QListWidgetItem')
+    def editFolder(self, item):
+        """
+        When item (folder) is doubleclicked, system folder dialog is opened and clicked  directory is edited
+        @type item: QListWidgetItem
+        """
+        logger.debug(u"Opening system file dialog for editing.")
+
+        old_folder = os.path.normpath(item.text())
+        new_folder = QFileDialog.getExistingDirectory(directory=old_folder)
+
+        if new_folder:
+            logger.debug(u"Selected directory: %s", new_folder)
+            new_folder = os.path.normpath(new_folder)
+            self.mediaFolders[self.mediaFolders.index(old_folder)] = new_folder
+            item.setText(new_folder)
+            self.anyChanges = True
+
+            # save last visited dirrectory
+            settings = QSettings()
+            settings.setValue(u"gui/LibraryDialog/lastVisited", os.path.dirname(new_folder))
 
     @pyqtSlot()
     def removeFolder(self):
