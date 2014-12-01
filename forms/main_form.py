@@ -159,8 +159,8 @@ class MainTreeBrowserTreeView(QTreeView):
 
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
-            expandedItems = settings.value(u"gui/mtbtw/expanded/files", [])
-            rootFolder = settings.value(u"gui/mtbtw/root/files", u'/')
+            expandedItems = settings.value(u"gui/MainTreeBrowserTreeView/expanded/files", [])
+            rootFolder = settings.value(u"gui/MainTreeBrowserTreeView/root/files", u'/')
             model = self.model()
 
             # find and expand restored paths from settings storage
@@ -219,8 +219,8 @@ class MainTreeBrowserTreeView(QTreeView):
                 expandedItems = self._expandedItems
                 currentRootFolder = u'/'                 # ... == MyComputer == root
 
-            settings.setValue(u"gui/mtbtw/expanded/files", expandedItems)
-            settings.setValue(u"gui/mtbtw/root/files", currentRootFolder)
+            settings.setValue(u"gui/MainTreeBrowserTreeView/expanded/files", expandedItems)
+            settings.setValue(u"gui/MainTreeBrowserTreeView/root/files", currentRootFolder)
 
         # PLAYLISTS mode
         elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
