@@ -82,7 +82,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
             self.folderList.addItem(new_folder)
             self.anyChanges = True
 
-            # save last visited dirrectory
+            # save last visited directory
             settings.setValue(u"gui/LibraryDialog/lastVisited", os.path.dirname(new_folder))
 
     @pyqtSlot('QListWidgetItem')
@@ -103,7 +103,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
             item.setText(new_folder)
             self.anyChanges = True
 
-            # save last visited dirrectory
+            # save last visited directory
             settings = QSettings()
             settings.setValue(u"gui/LibraryDialog/lastVisited", os.path.dirname(new_folder))
 
