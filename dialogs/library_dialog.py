@@ -64,15 +64,24 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         When 'Add' button clicked, system folder dialog is opened and new directory is added
         """
         logger.debug(u"Opening system file dialog.")
-        homeFolder = QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
-        newFolder = QFileDialog.getExistingDirectory(self, directory=homeFolder)
 
+        settings = QSettings()
+        start_folder = settings.value(u"gui/LibraryDialog/lastVisited", None)
+
+        # use last visited directory or home directory if last used does not exist
+        if not start_folder or not os.path.isdir(start_folder):
+            start_folder = QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
+
+        newFolder = QFileDialog.getExistingDirectory(directory=start_folder)
         if newFolder:
             logger.debug(u"Selected directory: %s", newFolder)
             newFolder = os.path.normpath(newFolder)
             self.mediaFolders.append(newFolder)
             self.folderList.addItem(newFolder)
             self.anyChanges = True
+
+            # save last visited dirrectory
+            settings.setValue(u"gui/LibraryDialog/lastVisited", os.path.dirname(newFolder))
 
     @pyqtSlot()
     def removeFolder(self):
