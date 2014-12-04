@@ -329,7 +329,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         # restore window position
         settings = QSettings()
-        windowGeometry = settings.value(u"gui/MainApp/geometry")
+        windowGeometry = settings.value(u"gui/MainApp/geometry", self.saveGeometry())
         if windowGeometry:
             self.restoreGeometry(windowGeometry)
 
