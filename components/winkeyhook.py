@@ -20,6 +20,7 @@ class GlobalHKListener(QObject):
     If registering fails, WindowsKeyHook class should be used instead!
     """
     errorSignal = pyqtSignal(int, unicode, unicode)
+    retrySignal = pyqtSignal()
 
     mediaPlayKeyPressed = pyqtSignal()
     mediaStopKeyPressed = pyqtSignal()
@@ -28,7 +29,11 @@ class GlobalHKListener(QObject):
 
     def __init__(self):
         super(GlobalHKListener, self).__init__()
-        self._stop = False
+        self.stop = False
+        self.registered = False
+
+        self.retryTimer = QTimer(self)
+        self.retryDelay = 5000
 
         self.WM_HOTKEY = 0x0312
         self.WM_TIMER = 0x0113
@@ -47,6 +52,9 @@ class GlobalHKListener(QObject):
             4: self.mediaPrevTrackKeyPressed
         }
 
+        self.retryTimer.timeout.connect(self._retry_registration)
+        self.retrySignal.connect(self.start_listening, Qt.QueuedConnection)
+
         logger.debug(u"Windows global hotkey listener initialized.")
 
     @pyqtSlot()
@@ -57,51 +65,77 @@ class GlobalHKListener(QObject):
         When thread.quit() method is invoked, system-wide quit(0) message is sent to worker which also
         terminates message listener.
         """
-        if not self._registerHotkeys():
-            logger.warning(u"Unable to register all multimedia hotkeys, global media hotkeys won't be available")
+        if not self.registered and not self._registerHotkeys():
+            logger.warning(u"Unable to register all multimedia hotkeys, unregistering and retrying every %d sec",
+                           self.retryDelay/1000)
             self._unregisterHotkeys()
-            self.errorSignal.emit(tools.ErrorMessages.WARNING, u"Another media application already using multimedia "
-                                  u"hotkeys for playback control.", u"")
-            return
+            self.retryTimer.start(self.retryDelay)
+            self.errorSignal.emit(tools.ErrorMessages.WARNING,
+                                  u"Another media application already using multimedia hotkeys for playback control.",
+                                  u"")
+        else:
+            # start listening
+            logger.debug(u"Starting windows key-down hook (listener) loop.")
+            try:
+                msg = ctypes.wintypes.MSG()
 
-        logger.debug(u"Starting windows key-down hook (listener) loop.")
-        try:
-            msg = ctypes.wintypes.MSG()
+                # GetMessageA() is blocking function - it waits until some message is received
+                # so timer posts its WM_TIMER every 100ms and wakes GetMessageA() function
+                timerId = ctypes.windll.user32.SetTimer(None, None, 100, None)
 
-            # GetMessageA() is blocking function - it waits until some message is received
-            # so timer posts its WM_TIMER every 100ms and wakes GetMessageA() function
-            timerId = ctypes.windll.user32.SetTimer(None, None, 100, None)
+                # handles the WM_HOTKEY messages and pass everything else along.
+                while not self.stop and ctypes.windll.user32.GetMessageA(ctypes.byref(msg), None, 0, 0) != 0:
+                    if msg.message == self.WM_HOTKEY:
+                        # process -> call handler
+                        keySignal = self.HOTKEY_ACTIONS.get(msg.wParam)
+                        if keySignal:
+                            keySignal.emit()
 
-            # handles the WM_HOTKEY messages and pass everything else along.
-            while not self._stop and ctypes.windll.user32.GetMessageA(ctypes.byref(msg), None, 0, 0) != 0:
-                if msg.message == self.WM_HOTKEY:
-                    # process -> call handler
-                    keySignal = self.HOTKEY_ACTIONS.get(msg.wParam)
-                    if keySignal:
-                        keySignal.emit()
+                ctypes.windll.user32.KillTimer(None, timerId)
+                ctypes.windll.user32.TranslateMessage(ctypes.byref(msg))
+                ctypes.windll.user32.DispatchMessageA(ctypes.byref(msg))
 
-            ctypes.windll.user32.KillTimer(None, timerId)
-            ctypes.windll.user32.TranslateMessage(ctypes.byref(msg))
-            ctypes.windll.user32.DispatchMessageA(ctypes.byref(msg))
+            finally:
+                self._unregisterHotkeys()
 
-        finally:
-            self._unregisterHotkeys()
-
-        logger.debug(u"Main hotkey listener loop ended.")
+            logger.debug(u"Main hotkey listener loop ended.")
 
     def _registerHotkeys(self):
-        logger.debug(u"Registering Windows media hotkeys...")
+        """
+        Call Win32 API to register global shortcut (hotkey) for current thread id.
+        Only this (worker) thread is then notified when shortcut is executed.
+        @return: success
+        @rtype: bool
+        """
         for hk_id, (vk, vk_name) in self.HOTKEYS.items():
             if not ctypes.windll.user32.RegisterHotKey(None, hk_id, 0, vk):
-                logger.warning(u"Unable to register hotkey id %s for key %s named %s", hk_id, vk, vk_name)
                 return False
+        self.registered = True
 
         return True
 
     def _unregisterHotkeys(self):
-        logger.debug(u"Un-registering Windows media hotkeys...")
+        """
+        Call Win32 API to unregister global shortcut (hotkey) for current thread id.
+        """
         for hk_id in self.HOTKEYS.keys():
             ctypes.windll.user32.UnregisterHotKey(None, hk_id)
+
+        self.registered = False
+
+    @pyqtSlot()
+    def _retry_registration(self):
+        """
+        If first hotkey registration failed, this slot is called every %(retry_delay) sec
+        to retry hotkey registration. Retry timer is stopped on success and listener executed.
+        """
+        if self._registerHotkeys():
+            self.retryTimer.stop()
+            self.errorSignal.emit(tools.ErrorMessages.INFO,
+                                  u"Multimedia hotkeys are now available for playback control.", u"")
+            self.retrySignal.emit()
+        else:
+            self._unregisterHotkeys()
 
     def stop_listening(self):
         """
@@ -109,4 +143,4 @@ class GlobalHKListener(QObject):
         Worker loop (listener) will be terminated automatically when quit message is sent.
         """
         logger.debug(u"Stopping hotkey listener...")
-        self._stop = True
+        self.stop = True
