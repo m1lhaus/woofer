@@ -37,20 +37,25 @@ class LocalServer(QObject):
     Local server is used to communicate between another instances
     of Woofer player launched by user via LocalSockets.
 
-    @param application_name: server name (must be kind of unique)
-    @type application_name: str
+    @param name: server name (must be kind of unique)
+    @type name: str
     """
+
+    SERVER = 0
+    CLIENT = 1
 
     messageReceivedSignal = pyqtSignal(str)
 
-    def __init__(self, application_name):
+    def __init__(self, name):
         super(LocalServer, self).__init__()
 
         self.timeout = 3000
-        self.server_name = application_name
+        self.server_name = name
         self.socket = QLocalSocket(self)
         self.localServer = QLocalServer(self)
+
         self.another_instance_running = not self.start()
+        self.mode = LocalServer.CLIENT if self.another_instance_running else LocalServer.SERVER
 
         logger.debug(u"Application local server initialized")
 

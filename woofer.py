@@ -158,8 +158,8 @@ if __name__ == "__main__":
         sys.exit()
 
     # start server and detect another instance
-    import components.localserver
-    applicationServer = components.localserver.LocalServer("wooferplayer.com")
+    import components.network
+    applicationServer = components.network.LocalServer("wooferplayer.com")
     if applicationServer.another_instance_running:
         if args.input:
             applicationServer.sendMessage(r"play %s" % args.input)      # play input file immediately
