@@ -107,7 +107,7 @@ def displayLoggerError(e_msg):
         msgBox.setIcon(QMessageBox.Critical)
         msgBox.setWindowTitle(u"Critical error")
         msgBox.setText(u"Initialization of logger component failed. "
-                       u"The application doesn't seem to have write permissions.")
+                       u"The application probably doesn't have write permissions.")
         msgBox.setInformativeText(u"Details:\n" + e_msg)
         msgBox.exec_()
 
@@ -151,13 +151,10 @@ if __name__ == "__main__":
             parser.print_help()
 
         # win32gui apps has no stdout/stderr, so cmd help has to be opened in new window
-        elif cmd_args_file:
+        else:
             os.startfile(cmd_args_file)         # opens console application window with help
 
-        else:
-            logger.error(u"File cmdargs.exe/cmdargs.py not found!")
-
-        logging.shutdown()
+        logging.shutdown()                      # quit application
         sys.exit()
 
     # start server and detect another instance
@@ -165,18 +162,25 @@ if __name__ == "__main__":
     applicationServer = components.localserver.LocalServer("wooferplayer.com")
     if applicationServer.another_instance_running:
         if args.input:
-            applicationServer.sendMessage(r"play %s" % args.input)
+            applicationServer.sendMessage(r"play %s" % args.input)      # play input file immediately
         else:
-            applicationServer.sendMessage(r"open")
+            applicationServer.sendMessage(r"open")                      # raise application on top
 
-        logging.shutdown()
+        if not applicationServer.exit():
+            logger.error(u"Local server components are not closed properly!")
+
+        logging.shutdown()              # quit application
         sys.exit()
 
     # init LibVLC binaries
-    import components.libvlc               # import for libvlc check
+    import components.libvlc            # import for libvlc check
     if not foundLibVLC():
         displayLibVLCError(os.name)
-        logging.shutdown()
+
+        if not applicationServer.exit():
+            logger.error(u"Local server components are not closed properly!")
+
+        logging.shutdown()              # quit application
         sys.exit()
 
     # start gui application
