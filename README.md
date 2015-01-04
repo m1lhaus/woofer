@@ -36,7 +36,7 @@ For Windows there will be available binary distribution soon. Meanwhile you can 
 
 ### Binaries (Windows)
 
-TODO
+Latest binary version for Windows can be found in [release section](https://github.com/m1lhaus/woofer/releases). This is a standalone version, no other libraries or VLC is required!
 
 ### Run from source (Linux and Windows)
 
