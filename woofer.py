@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # init Qt application
     app = QApplication(sys.argv)
     app.setOrganizationName("WooferPlayer")
-    app.setOrganizationDomain("wooferplayer.com")
+    app.setOrganizationDomain("com.woofer.player")
     app.setApplicationName("Woofer")
 
     # init logging module
@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     # start server and detect another instance
     import components.network
-    applicationServer = components.network.LocalServer("wooferplayer.com")
+    applicationServer = components.network.LocalServer("com.woofer.player")
     if applicationServer.another_instance_running:
         if args.input:
             applicationServer.sendMessage(r"play %s" % args.input)      # play input file immediately
