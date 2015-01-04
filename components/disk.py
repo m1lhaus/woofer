@@ -57,7 +57,7 @@ class RecursiveBrowser(QObject):
             return
 
         # if target dir is already a file
-        if target_dir.endswith(self.names_filter):
+        if target_dir[-4:].lower().endswith(self.names_filter):
             logger.debug(u"Scanned target dir is a file. Sending path and finish_parser flag.")
             self.parseDataSignal.emit([target_dir])
             self.parseDataSignal.emit([])             # end flag for media parser
@@ -70,7 +70,7 @@ class RecursiveBrowser(QObject):
         logger.debug(u"Dir iterator initialized, starting recursive search and parsing.")
         while dirIterator.hasNext():
             path = dirIterator.next()
-            if path.endswith(self.names_filter):
+            if path[-4:].lower().endswith(self.names_filter):
                 result.append(os.path.normpath(path))
 
                 n += 1
