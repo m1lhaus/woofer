@@ -50,7 +50,7 @@ Refer to requirements for all needed packages to run Woofer. Don't forget to ins
 
 Now when you have all packages installed and LibVLC core libraries prepared, you can run `.\build\build_win.py`. Result will be stored in `.\build\release` directory.
 
-## Future functions
+## Future work
 
 - multiple selection
 - automatic application updates
