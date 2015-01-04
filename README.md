@@ -32,13 +32,13 @@ Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quit
 
 ## Download
 
-For Windows there will be available binary distribution soon. Meanwhile you can run Woofer like any other Python application by `woofer.py`.
+For Windows there are available binary distributions. On Linux you can run Woofer like any other Python application by `woofer.py`. Linux binary distribution will come later.
 
-### Binaries (Windows)
+### Binaries
 
-Latest binary version for Windows can be found in [release section](https://github.com/m1lhaus/woofer/releases). This is a standalone version, no other libraries or VLC is required!
+Latest binary version for Windows can be found in [release section](https://github.com/m1lhaus/woofer/releases). This is a standalone version, no other libraries or VLC is needed!
 
-### Run from source (Linux and Windows)
+### Run from source
 
 Refer to requirements for all needed packages to run Woofer. Both for Windows and Linux there are available suitable binaries (PyQt, etc.). No need to build anything from source. Unfortunately you also need VLC Media player installed (core libraries). Note that all these libraries are shipped with Woofer binary distribution.
 
@@ -46,7 +46,7 @@ Finally run `woofer.py` or `woofer.py --debug` in debug mode.
 
 ### Build from source (Windows)
 
-Refer to requirements for all needed packages to run Woofer. Don't forget to install and add PyInstaller to your PATH. You also need to provide VLC libraries to build standalone distribution. Download and extract VLC Media player (ZIP package) to `.\libvlc` folder. Not all VLC files are needed. To delete unused files, run Woofer. Woofer will now find VLC binaries in `.\libvlc` folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete `.\libvlc` folder, only used files held by OS will remain (dirty but simple solution).
+Refer to requirements for all needed packages to run Woofer. Don't forget to install and add PyInstaller to your PATH. You also need to provide VLC libraries to build standalone distribution. Download and extract VLC Media player (ZIP package) to `.\libvlc` folder. Not all VLC files are needed. To delete unused files, run Woofer. Woofer will now locate VLC binaries in `.\libvlc` folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete `.\libvlc` folder, only used files held by OS will remain (dirty but simple solution).
 
 Now when you have all packages installed and LibVLC core libraries prepared, you can run `.\build\build_win.py`. Result will be stored in `.\build\release` directory.
 
