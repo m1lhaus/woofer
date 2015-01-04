@@ -5,6 +5,6 @@ dist/
 log/
 data/
 build.info
-libvlc/win/
+libvlc/
 foo/
 *.pyc
