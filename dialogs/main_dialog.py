@@ -1142,7 +1142,6 @@ class MainApp(QMainWindow, main_form.MainForm):
                    u"<a href='{0}'>VideoLAN community</a>.<br/>" \
                    u"<br/>" \
                    u"Created by: {4} &lt; {5} &gt;<br/>" \
-                   u"Web: <a href='{1}'>www.wooferplayer.com</a><br/>" \
                    u"Source: <a href='{2}'>GitHub repository</a> &lt; <a href='{3}'>LICENCE GPL v2</a> &gt;".format(
                    videolan_url, woofer_url, github_url, path_to_licence, author, email)
 
