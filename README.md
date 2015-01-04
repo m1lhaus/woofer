@@ -35,7 +35,7 @@ Most recent code is always available here on Github. Python code is readable, we
 
 Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quite easy. But, I will stick with Python 2.7 because there is no reliable bug-free alternative to PyInstaller for Python 3.
 
-## Future functions
+## Future work
 
 - multiple selection
 - automatic application updates
