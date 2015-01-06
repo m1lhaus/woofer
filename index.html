@@ -1,130 +1,180 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Woofer player by m1lhaus</title>
+    <meta content="chrome=1" http-equiv="X-UA-Compatible">
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Woofer player by m1lhaus</title>
+    <link href="stylesheets/styles.css" rel="stylesheet">
+    <link href="stylesheets/pygment_trac.css" rel="stylesheet">
+    <script src="javascripts/jquery-1.11.2.min.js"></script>
+    <meta content="width=device-width, initial-scale=1, user-scalable=no" name="viewport">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-  </head>
-  <body>
+</head>
+
+<body>
     <div class="wrapper">
-      <header>
-        <h1>Woofer player</h1>
-        <p>woofer,media,player,multi-platform,mp3,audio</p>
+        <header>
+            <h1>Woofer player</h1>
+            <p>It's free, it's open-source, it's Woofer!</p>
 
-        <p class="view"><a href="https://github.com/m1lhaus/woofer">View the Project on GitHub <small>m1lhaus/woofer</small></a></p>
+            
+            <p class="view"><a href="https://github.com/m1lhaus/woofer">View the Project on GitHub <small>m1lhaus/woofer</small></a></p>
+            
+            
+            <script type="text/javascript">
+                $(document).ready(function () {
+                    GetLatestReleaseInfo();
+                });
 
+                function GetLatestReleaseInfo() {
+                    $.getJSON("https://api.github.com/repos/m1lhaus/woofer/releases").done(function (json) {
+                        var release = json[0];
+                        var asset = release.assets[0];
+                        var downloadURL = "https://github.com/m1lhaus/woofer/releases/download/" + release.tag_name + "/" + asset.name;
+                        var downloadCount = 0;
+                        for (var i = 0; i < release.assets.length; i++) {
+                            downloadCount += release.assets[i].download_count;
+                        }
+                        
+                        document.getElementById("windows").innerHTML = '<a href="' + downloadURL + '" class="binaries">Windows <strong>ZIP File</strong></a>';
+                        document.getElementById("linux32").innerHTML = '<a href="' + downloadURL + '">Linux x86<strong>TAR Ball</strong></a>';
+                        document.getElementById("linux64").innerHTML = '<a href="' + downloadURL + '">Linux x64<strong>TAR Ball</strong></a>';
 
-        <ul>
-          <li><a href="https://github.com/m1lhaus/woofer/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/m1lhaus/woofer/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/m1lhaus/woofer">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h1>
-<a id="woofer-player" class="anchor" href="#woofer-player" aria-hidden="true"><span class="octicon octicon-link"></span></a>Woofer player</h1>
+                    });      
+                }
+            </script>
+            <div class="buttons">
+                
+                <div class="left">
+                    <p class="btn_title">Download binaries:</p>
+                    <div class="download">
+                        <div id="windows"></div>
+                        <div id="linux32"></div>
+                        <div id="linux64"></div>
+                    </div>
+                </div>
+                
+                <div class="right">
+                    <p class="btn_title">Download sources:</p>
+                    <div class="download">
+                        <div><a href="https://github.com/m1lhaus/woofer/zipball/master">Download <strong>ZIP File</strong></a></div>
+                        <div><a href="https://github.com/m1lhaus/woofer/tarball/master">Download <strong>TAR Ball</strong></a></div>
+                        <div><a href="https://github.com/m1lhaus/woofer">View On <strong>GitHub</strong></a></div>
+                    </div>
+                </div>
+            </div>
+        
+        </header>
 
-<p><img height="100px" align="right" src="http://raw.githubusercontent.com/m1lhaus/woofer/master/icons/app_icon.png">Woofer player is <strong>free open-source cross-platform</strong> music player that plays most multimedia files, CDs, DVDs and also various online streams <em>(future)</em>. Whole written in Python and Qt provides easy, reliable, and high quality playback thanks to <strong>LibVLC library</strong> developed by <a href="http://www.videolan.org/vlc/libvlc.html">VideoLAN community</a>.</p>
+        <section>
+            <h1>What is Woofer player?</h1>
 
-<h2>
-<a id="main-features" class="anchor" href="#main-features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Main features</h2>
+            <p><img align="right" height="150" src="https://raw.githubusercontent.com/m1lhaus/woofer/master/icons/app_icon.png">Woofer player is <strong>free open-source cross-platform music player</strong> that plays most multimedia files, CDs, DVDs and also various online streams <em>(future)</em>. Whole written in Python and Qt provides easy, reliable, and high quality playback thanks to <strong>LibVLC library</strong> developed by <a href="http://www.videolan.org/vlc/libvlc.html">VideoLAN community</a>.</p>
 
-<ul>
-<li>
-<strong>Wide media support:</strong> Woofer will play all audio what <a href="http://www.videolan.org/vlc/features.php?cat=audio">VLC Media player</a> can play.</li>
-<li>
-<strong>Folder based:</strong> Your music is not ordered by album or interpret name, but only by its folder structure (on disk).</li>
-<li>
-<strong>Multi-platform:</strong> Currently supports both Windows (XP and higher) and Linux (tested on Ubuntu distros).</li>
-<li>
-<strong>Fully portable:</strong> No installation needed. Woofer will play right from your pen drive. </li>
-<li>more will be coming ...</li>
-</ul>
+            <h2><a class="anchor" href="#main-features" id="main-features"><span class="octicon octicon-link"></span></a>Main features</h2>
 
-<h2>
-<a id="cross-platform" class="anchor" href="#cross-platform" aria-hidden="true"><span class="octicon octicon-link"></span></a>Cross-platform</h2>
+            <ul>
+                <li>
+                    <strong>Wide media support:</strong> Woofer will play all audio what <a href="http://www.videolan.org/vlc/features.php?cat=audio">VLC Media player</a> can play.
+                </li>
 
-<p>Thanks to Python, Qt and LibVLC, Woofer is developed to run on multiple operating systems. <strong>Windows, Linux and Mac OS</strong> platforms are supported. Currently Woofer is being tested only on Windows and Linux distribution, because I don't have any Mac OS device to test and debug. </p>
+                <li><strong>Folder based:</strong> Your music is not ordered by album or interpret name, but only by its folder structure (on disk).</li>
 
-<div align="center"><img src="http://raw.githubusercontent.com/m1lhaus/woofer/master/doc/img/woofer-mp.jpg"></div>
+                <li><strong>Multi-platform:</strong> Currently supports both Windows (XP and higher) and Linux (tested on Ubuntu distros).</li>
 
-<h2>
-<a id="open-source" class="anchor" href="#open-source" aria-hidden="true"><span class="octicon octicon-link"></span></a>Open-source</h2>
+                <li><strong>Fully portable:</strong> No installation needed. Woofer will play right from your pen drive.</li>
 
-<p>Most recent code is always available here on Github. Python code is readable, well documented and self-explanatory. Feel free to join or fork the project. Woofer is published under <strong>GPL v2 license</strong>.</p>
+                <li>more will be coming ...</li>
+            </ul>
 
-<p><strong>Used packages (Requirements):</strong></p>
+            <h2><a class="anchor" href="#cross-platform" id="cross-platform"><span class="octicon octicon-link"></span></a>Cross-platform</h2>
 
-<ul>
-<li><a href="https://www.python.org/downloads/">Python 2.7</a></li>
-<li>
-<a href="http://www.riverbankcomputing.co.uk/software/pyqt/download">PyQt4</a> (Qt 4.8)</li>
-<li><a href="https://wiki.videolan.org/Python_bindings/">LibVLC Python wrapper</a></li>
-<li>
-<a href="https://github.com/pyinstaller/pyinstaller/wiki">PyInstaller</a> (only for build)</li>
-<li>Python packages - <a href="https://pypi.python.org/pypi/Send2Trash">Send2Trash</a>, <a href="http://python-xlib.sourceforge.net/">Python-XLib</a> (only for Linux)</li>
-</ul>
+            <p>Thanks to Python, Qt and LibVLC, Woofer is developed to run on multiple operating systems. <strong>Windows, Linux and Mac OS</strong> platforms are supported. Currently Woofer is being tested only on Windows and Linux distribution, because I don't have any Mac OS device to test and debug.</p>
 
-<p>Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quite easy. But, I will stick with Python 2.7 because there is no reliable bug-free alternative to PyInstaller for Python 3.</p>
+            <div style="text-align: center"><img src="https://raw.githubusercontent.com/m1lhaus/woofer/master/doc/img/woofer-mp.jpg"></div>
 
-<h2>
-<a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download</h2>
+            <h2><a class="anchor" href="#open-source" id="open-source"><span class="octicon octicon-link"></span></a>Open-source</h2>
 
-<p>For Windows there are available binary distributions. On Linux you can run Woofer like any other Python application by <code>woofer.py</code>. Linux binary distribution will come later.</p>
+            <p>Most recent code is always available here on Github. Python code is readable, well documented and self-explanatory. Feel free to join or fork the project. Woofer is published under <strong>GPL v2 license</strong>.</p>
 
-<h3>
-<a id="binaries" class="anchor" href="#binaries" aria-hidden="true"><span class="octicon octicon-link"></span></a>Binaries</h3>
+            <p><strong>Used packages (Requirements):</strong></p>
 
-<p>Latest binary version for Windows can be found in <a href="https://github.com/m1lhaus/woofer/releases">release section</a>. This is a standalone version, no other libraries or VLC is needed!</p>
+            <ul>
+                <li>
+                    <a href="https://www.python.org/downloads/">Python 2.7</a>
+                </li>
 
-<h3>
-<a id="run-from-source" class="anchor" href="#run-from-source" aria-hidden="true"><span class="octicon octicon-link"></span></a>Run from source</h3>
+                <li>
+                    <a href="http://www.riverbankcomputing.co.uk/software/pyqt/download">PyQt4</a> (Qt 4.8)
+                </li>
 
-<p>Refer to requirements for all needed packages to run Woofer. Both for Windows and Linux there are available suitable binaries (PyQt, etc.). No need to build anything from source. Unfortunately you also need VLC Media player installed (core libraries). Note that all these libraries are shipped with Woofer binary distribution.</p>
+                <li>
+                    <a href="https://wiki.videolan.org/Python_bindings/">LibVLC Python wrapper</a>
+                </li>
 
-<p>Finally run <code>woofer.py</code> or <code>woofer.py --debug</code> in debug mode. </p>
+                <li>
+                    <a href="https://github.com/pyinstaller/pyinstaller/wiki">PyInstaller</a> (only for build)
+                </li>
 
-<h3>
-<a id="build-from-source-windows" class="anchor" href="#build-from-source-windows" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build from source (Windows)</h3>
+                <li>Python packages - <a href="https://pypi.python.org/pypi/Send2Trash">Send2Trash</a>, <a href="http://python-xlib.sourceforge.net/">Python-XLib</a> (only for Linux)
+                </li>
+            </ul>
 
-<p>Refer to requirements for all needed packages to run Woofer. Don't forget to install and add PyInstaller to your PATH. You also need to provide VLC libraries to build standalone distribution. Download and extract VLC Media player (ZIP package) to <code>.\libvlc</code> folder. Not all VLC files are needed. To delete unused files, run Woofer. Woofer will now locate VLC binaries in <code>.\libvlc</code> folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete <code>.\libvlc</code> folder, only used files held by OS will remain (dirty but simple solution).</p>
+            <p>Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quite easy. But, I will stick with Python 2.7 because there is no reliable bug-free alternative to PyInstaller for Python 3.</p>
 
-<p>Now when you have all packages installed and LibVLC core libraries prepared, you can run <code>.\build\build_win.py</code>. Result will be stored in <code>.\build\release</code> directory.</p>
+            <h2><a class="anchor" href="#download" id="download"><span class="octicon octicon-link"></span></a>Download</h2>
 
-<h2>
-<a id="future-work" class="anchor" href="#future-work" aria-hidden="true"><span class="octicon octicon-link"></span></a>Future work</h2>
+            <p>For Windows there are available binary distributions. On Linux you can run Woofer like any other Python application by <code>woofer.py</code>. Linux binary distribution will come later.</p>
 
-<ul>
-<li>multiple selection</li>
-<li>automatic application updates</li>
-<li>Linux binary distribution</li>
-<li>save/load playlists</li>
-<li>media streaming (live broadcasts)</li>
-</ul>
-      </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/m1lhaus">m1lhaus</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
+            <h3><a class="anchor" href="#binaries" id="binaries"><span class="octicon octicon-link"></span></a>Binaries</h3>
+
+            <p>Latest binary version for Windows can be found in <a href="https://github.com/m1lhaus/woofer/releases">release section</a>. This is a standalone version, no other libraries or VLC is needed!</p>
+
+            <h3><a class="anchor" href="#run-from-source" id="run-from-source"><span class="octicon octicon-link"></span></a>Run from source</h3>
+
+            <p>Refer to requirements for all needed packages to run Woofer. Both for Windows and Linux there are available suitable binaries (PyQt, etc.). No need to build anything from source. Unfortunately you also need VLC Media player installed (core libraries). Note that all these libraries are shipped with Woofer binary distribution.</p>
+
+            <p>Finally run <code>woofer.py</code> or <code>woofer.py --debug</code> in debug mode.</p>
+
+            <h3><a class="anchor" href="#build-from-source-windows" id="build-from-source-windows"><span class="octicon octicon-link"></span></a>Build from source (Windows)</h3>
+
+            <p>Refer to requirements for all needed packages to run Woofer. Don't forget to install and add PyInstaller to your PATH. You also need to provide VLC libraries to build standalone distribution. Download and extract VLC Media player (ZIP package) to <code>.\libvlc</code> folder. Not all VLC files are needed. To delete unused files, run Woofer. Woofer will now locate VLC binaries in <code>.\libvlc</code> folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete <code>.\libvlc</code> folder, only used files held by OS will remain (dirty but simple solution).</p>
+
+            <p>Now when you have all packages installed and LibVLC core libraries prepared, you can run <code>.\build\build_win.py</code>. Result will be stored in <code>.\build\release</code> directory.</p>
+
+            <h2><a class="anchor" href="#future-work" id="future-work"><span class="octicon octicon-link"></span></a>Future work</h2>
+
+            <ul>
+                <li>multiple selection</li>
+
+                <li>automatic application updates</li>
+
+                <li>Linux binary distribution</li>
+
+                <li>save/load playlists</li>
+
+                <li>media streaming (live broadcasts)</li>
+            </ul>
+        </section>
+
+        <footer>
+            <p>This project is maintained by <a href="https://github.com/m1lhaus">m1lhaus</a></p>
+
+            <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+        </footer>
     </div>
-    <script src="javascripts/scale.fix.js"></script>
-              <script type="text/javascript">
-            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+    <script src="javascripts/scale.fix.js"></script> <script type="text/javascript">
+        var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-          </script>
-          <script type="text/javascript">
-            try {
+    </script> 
+    <script type="text/javascript">
+        try {
               var pageTracker = _gat._getTracker("UA-58291606-1");
             pageTracker._trackPageview();
             } catch(err) {}
-          </script>
-
-  </body>
+    </script>
+</body>
 </html>
