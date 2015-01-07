@@ -20,17 +20,18 @@ os.chdir(root_dir)
 
 def get_git_version_and_hash():
     full_version_info = subprocess.check_output(['git', 'describe', '--tags', '--long'])
-    pattern = re.compile('v([0-9].[0-9]+)-([0-9]+)-(.+)')
+    pattern = re.compile('v([^-]+)-?([^-]+)?-([0-9]+)-(.+)')
     matchObj = pattern.match(full_version_info)
-    if matchObj and len(matchObj.groups()) == 3:
+    if matchObj:
         version = matchObj.group(1)
-        commits = matchObj.group(2)
-        revision = matchObj.group(3)
+        vlabel = matchObj.group(2)
+        commits = matchObj.group(3)
+        revision = matchObj.group(4)
     else:
         raise Exception("Unable to parse retrieved git version info! "
                         "Expected something like this: 'v0.7-0-ge502b4a', but given %s" % full_version_info)
 
-    return version, commits, revision
+    return version + '-' + vlabel, commits, revision
 
 
 def get_git_revision_hash():
@@ -50,6 +51,7 @@ if __name__ == "__main__":
 
     data = {'author': u"Milan Herbig",
             'email': u"milanherbig(at)gmail.com",
+            'web': u"http://m1lhaus.github.io/woofer",
             'version': version,
             'commits': commits,
             'revision': revision,

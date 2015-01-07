@@ -90,7 +90,7 @@ def main():
     pyinstaller_exe = get_pyinstaller_exe()
     spec_file = get_project_spec_file()
     dist_path = os.path.join(root_dir, "dist", "woofer")
-    version_long = "%s.%s-%s" % (build_data['version'], build_data['commits'], build_data['revision'])
+    version_long = "%s-rev%s-%s" % (build_data['version'], build_data['commits'], build_data['revision'])
     version_short = "%s.%s" % (build_data['version'], build_data['commits'])
 
     print "Building distribution..."
