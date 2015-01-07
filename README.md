@@ -52,8 +52,8 @@ Now when you have all packages installed and LibVLC core libraries prepared, you
 
 ## Future work
 
-- multiple selection
-- automatic application updates
+- multiple selection in playlist
 - Linux binary distribution
 - save/load playlists
+- automatic application updates
 - media streaming (live broadcasts)
