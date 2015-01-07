@@ -57,18 +57,44 @@ blockquote {
     font-style:italic
 }
 
-code,pre {
-    font-family:Monaco,Bitstream Vera Sans Mono,Lucida Console,Terminal;
-    color:#333;
-    font-size:12px
+pre, code {
+    font:12px Menlo, Monaco, "DejaVu Sans Mono", "Bitstream Vera Sans Mono",monospace;
 }
 
 pre {
-    padding:8px 15px;
-    background:#f8f8f8;
-    border-radius:5px;
-    border:1px solid #e5e5e5;
-    overflow-x:auto
+	 margin:1em 0;
+	 font-size:12px;
+	 background-color:#eee;
+	 border:1px solid #ddd;
+	 padding:5px;
+	 line-height:1.5em;
+	 color:#444;
+	 overflow:auto;
+	 -webkit-box-shadow:rgba(0,0,0,0.07) 0 1px 2px inset;
+	 -webkit-border-radius:3px;
+	 -moz-border-radius:3px;border-radius:3px;
+}
+
+pre code {
+	 padding:0;
+	 font-size:12px;
+	 background-color:#eee;
+	 border:none;
+}
+
+code {
+	 font-size:12px;
+	 background-color:#f8f8ff;
+	 color:#444;
+	 padding: 1px 4px 1px 4px ;
+	 border:1px solid #dedede;
+     -webkit-box-shadow:rgba(0,0,0,0.07) 0 1px 2px inset;
+	 -webkit-border-radius:3px;
+	 -moz-border-radius:3px;border-radius:3px;
+}
+
+a code, a:link code, a:visited code {
+    color:#4183c4;
 }
 
 table {
@@ -236,6 +262,21 @@ footer {
     margin-bottom: 10px;
 }
 
+p.view {
+/*    display: block;*/
+    background: url(../img/github-icon.png) no-repeat;
+    background-size: 32px 32px;
+    height: 32px;
+    padding-left: 40px;
+
+}
+
+/* REMOVE */
+#linux32, #linux64, #linux32 strong, #linux64 strong, #linux32 a, #linux64 a {
+    color: #999;
+}
+/* ------ */
+
 @media print,screen and (max-width: 960px) {
     div.wrapper {
         width:auto;
@@ -257,10 +298,6 @@ footer {
         border-width:1px 0;
         padding:20px 0;
         margin:0 0 20px
-    }
-
-    header a small {
-        display:inline
     }
 
     .buttons {
