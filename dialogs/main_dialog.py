@@ -1133,7 +1133,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         author = build_data.get('author')
         email = build_data.get('email')
         videolan_url = u"http://www.videolan.org/index.cs.html"
-        woofer_url = u"http://www.wooferplayer.com"
+        woofer_url = u"http://m1lhaus.github.io/woofer"
         github_url = u"https://github.com/m1lhaus/woofer"
         maintext = u"Woofer player is <strong>free and open-source cross-platform</strong> music player " \
                    u"that plays most multimedia files, CDs, DVDs and also various online streams. " \
@@ -1142,6 +1142,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                    u"<a href='{0}'>VideoLAN community</a>.<br/>" \
                    u"<br/>" \
                    u"Created by: {4} &lt; {5} &gt;<br/>" \
+                   u"Web: <a href='{1}'>m1lhaus.github.io/woofer</a><br/>" \
                    u"Source: <a href='{2}'>GitHub repository</a> &lt; <a href='{3}'>LICENCE GPL v2</a> &gt;".format(
                    videolan_url, woofer_url, github_url, path_to_licence, author, email)
 

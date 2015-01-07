@@ -82,7 +82,7 @@ def displayLibVLCError(platform):
         msgBox.setWindowTitle(u"Critical error")
         msgBox.setText(u"Woofer player was unable to find core playback DLL libraries!")
         msgBox.setInformativeText(u"If you are using distributed binary package, "
-                                  u"please report this issue on www.wooferplayer.com immediately. "
+                                  u"please report this issue on http://m1lhaus.github.io/woofer immediately. "
                                   u"You can try to install "
                                   u"<a href='http://www.videolan.org/vlc/#download'>VLC media player</a> "
                                   u"as temporary workaround. Woofer player can use their libraries.")
