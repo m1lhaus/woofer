@@ -211,7 +211,7 @@ class MediaPlayer(QObject):
                 logger.debug(u"Last item from playlist has been removed. Playing remains stopped.")
 
         # items are now shifted one position down
-        elif remove_error < current_index:
+        elif remove_index < current_index:
             self.shuffled_playlist_current_index -= 1
 
     def clearMediaList(self):
