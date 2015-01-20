@@ -643,14 +643,15 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot('QPointF')
     def playlistContextMenu(self, pos):
-        item = self.playlistTable.itemAt(pos)
-        if not item:
+        selected_rows = [sel_index.row() for sel_index in self.playlistTable.selectionModel().selectedRows()]
+        if not selected_rows:
             return
 
         logger.debug(u"Opening playlist context menu.")
         menu = QMenu(self.playlistTable)
         playNowAction = QAction(QIcon(u":/icons/play-now.png"), u"Play now", menu)
         playNowAction.setShortcut(QKeySequence(Qt.Key_Enter))
+        playNowAction.setEnabled(True if len(selected_rows) == 1 else False)
         remFromPlaylistAction = QAction(u"Remove from playlist", menu)
         remFromPlaylistAction.setShortcut(QKeySequence(Qt.Key_Delete))
         remFromDiskAction = QAction(QIcon(u":/icons/delete.png"), u"Remove from disk", menu)
@@ -663,13 +664,14 @@ class MainApp(QMainWindow, main_form.MainForm):
         removeMenu.addActions([remFromPlaylistAction, remFromDiskAction])
         choice = menu.exec_(self.playlistTable.viewport().mapToGlobal(pos))
 
-        index = self.playlistTable.row(item)
         if choice is playNowAction:
-            self.playlistPlayNow(index)
+            self.playlistPlayNow(row=selected_rows[0])
         elif choice is remFromPlaylistAction:
-            self.playlistRemFromPlaylist(index)
+            selected_rows = sorted(selected_rows, reverse=True)
+            self.playlistRemFromPlaylist(selected_rows)
         elif choice is remFromDiskAction:
-            self.playlistRemFromDisk(index)
+            selected_rows = sorted(selected_rows, reverse=True)
+            self.playlistRemFromDisk(selected_rows)
 
     @pyqtSlot()
     def changeSource(self, source_id=None):
@@ -991,37 +993,45 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaPlayer.play(index)
 
     @pyqtSlot()
-    def playlistRemFromPlaylist(self, row=None):
+    def playlistRemFromPlaylist(self, rows=None):
         """
-        Removes song from playlist table and from player (media_list).
-        @param row: row number in playlist table
+        Removes songs from playlist table and from player (media_list).
+        @param rows: row numbers in playlist table
         """
-        index = self.playlistTable.currentRow() if row is None else row
-        if index == -1:
+        if rows is None:
+            rows = [sel_index.row() for sel_index in self.playlistTable.selectionModel().selectedRows()]
+            rows = sorted(rows, reverse=True)
+
+        if not rows:
             return
 
-        fileName = os.path.basename(self.playlistTable.item(index, self.playlistTable.columnCount()-1).text())
-        logger.debug(u"Removing from playlist #%s song named '%s'", index, fileName)
+        for row in rows:
+            fileName = os.path.basename(self.playlistTable.item(row, self.playlistTable.columnCount()-1).text())
+            logger.debug(u"Removing from playlist #%s song named '%s'", row, fileName)
 
-        self.mediaPlayer.removeItem(index)
-        self.playlistTable.removeRow(index)
+            self.mediaPlayer.removeItem(row)
+            self.playlistTable.removeRow(row)
 
     @pyqtSlot()
-    def playlistRemFromDisk(self, row=None):
+    def playlistRemFromDisk(self, rows=None):
         """
-        Removes song from playlist table, from player (media_list) and from disk if possible.
-        @param row: row number in playlist table
+        Removes songs from playlist table, from player (media_list) and from disk if possible.
+        @param rows: row numbers in playlist table
         """
-        index = self.playlistTable.currentRow() if row is None else row
-        if index == -1:
+        if rows is None:
+            rows = [sel_index.row() for sel_index in self.playlistTable.selectionModel().selectedRows()]
+            rows = sorted(rows, reverse=True)
+
+        if not rows:
             return
 
-        filePath = self.playlistTable.item(index, self.playlistTable.columnCount()-1).text()
-        fileName = os.path.basename(filePath)
-        self.playlistRemFromPlaylist(index)
+        for row in rows:
+            filePath = self.playlistTable.item(row, self.playlistTable.columnCount()-1).text()
+            fileName = os.path.basename(filePath)
+            self.playlistRemFromPlaylist((row,))
 
-        logger.debug(u"Removing to Trash #%s song named '%s' on path '%s'", index, fileName, filePath)
-        self.removeFileSignal.emit(filePath)
+            logger.debug(u"Removing to Trash #%s song named '%s' on path '%s'", row, fileName, filePath)
+            self.removeFileSignal.emit(filePath)
 
     def playPath(self, targetPath, append):
         """

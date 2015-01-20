@@ -101,7 +101,7 @@ class PlaylistTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setTabKeyNavigation(False)
         self.setAlternatingRowColors(True)
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setGridStyle(Qt.DotLine)
         self.setColumnCount(4)
