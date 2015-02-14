@@ -44,11 +44,27 @@ Refer to requirements for all needed packages to run Woofer. Both for Windows an
 
 Finally run `woofer.py` or `woofer.py --debug` in debug mode. 
 
-### Build from source (Windows)
+###How to make standalone binary distribution (Windows)
 
-Refer to requirements for all needed packages to run Woofer. Don't forget to install and add PyInstaller to your PATH. You also need to provide VLC libraries to build standalone distribution. Download and extract VLC Media player (ZIP package) to `.\libvlc` folder. Not all VLC files are needed. To delete unused files, run Woofer. Woofer will now locate VLC binaries in `.\libvlc` folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete `.\libvlc` folder, only used files held by OS will remain (dirty but simple solution).
+To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller package and add binary to PATH. Before you run build script, you need to edit PyInstaller runtime hook for PyQt4, because PyInstaller doesn't consider setting PyQt (Sip) API to v2. So edit file at `%Python-dir%\Lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_qt4plugins.py` and add these `setapi()` lines:
 
-Now when you have all packages installed and LibVLC core libraries prepared, you can run `.\build\build_win.py`. Result will be stored in `.\build\release` directory.
+	...
+	import sip
+	# set PyQt API to v2
+	sip.setapi('QDate', 2)
+	sip.setapi('QDateTime', 2)
+	sip.setapi('QString', 2)
+	sip.setapi('QTextStream', 2)
+	sip.setapi('QTime', 2)
+	sip.setapi('QUrl', 2)
+	sip.setapi('QVariant', 2) 
+	...   
+
+*Note that from now whenever PyInstaller will package any PyQt4 script, it will set API v2 as default!* 
+
+You also need to provide VLC libraries to build standalone distribution. Woofer has been tested with VLC 2.1x libraries, but any newer version should be fine. Download and extract VLC Media player (ZIP package) to `.\libvlc` folder. Of course not all VLC files are needed. To delete unnecessary files, run Woofer. Woofer should now locate our local VLC binaries in `.\libvlc` folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete `.\libvlc` folder, only necessary files held by OS will remain (dirty but simple solution).
+
+Now when you have all packages installed and LibVLC core libraries prepared, you can run `.\build\build_win.py` script. Result will be stored in `.\build\release` directory.
 
 ## Future work
 
