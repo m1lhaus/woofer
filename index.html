@@ -124,11 +124,24 @@
 
             <p>Finally run <code>woofer.py</code> or <code>woofer.py --debug</code> in debug mode.</p>
 
-            <h3><a class="anchor" href="#build-from-source-windows" id="build-from-source-windows"><span class="octicon octicon-link"></span></a>Build from source (Windows)</h3>
+            <h3><a class="anchor" href="#build-from-source-windows" id="build-from-source-windows"><span class="octicon octicon-link"></span></a>How to make standalone binary distribution (Windows)</h3>
 
-            <p>Refer to requirements for all needed packages to run Woofer. Don't forget to install and add PyInstaller to your PATH. You also need to provide VLC libraries to build standalone distribution. Download and extract VLC Media player (ZIP package) to <code>.\libvlc</code> folder. Not all VLC files are needed. To delete unused files, run Woofer. Woofer will now locate VLC binaries in <code>.\libvlc</code> folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete <code>.\libvlc</code> folder, only used files held by OS will remain (dirty but simple solution).</p>
-
-            <p>Now when you have all packages installed and LibVLC core libraries prepared, you can run <code>.\build\build_win.py</code>. Result will be stored in <code>.\build\release</code> directory.</p>
+            <p>To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller package and add binary to PATH. Before you run build script, you need to edit PyInstaller runtime hook for PyQt4, because PyInstaller doesn&#39;t consider setting PyQt (Sip) API to v2. So edit file at <code>%Python-dir%\Lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_qt4plugins.py</code> and add these <code>setapi()</code> lines:</p>
+                <pre><code>...
+import sip
+# set PyQt API to v2
+sip.setapi(&#39;QDate&#39;, 2)
+sip.setapi(&#39;QDateTime&#39;, 2)
+sip.setapi(&#39;QString&#39;, 2)
+sip.setapi(&#39;QTextStream&#39;, 2)
+sip.setapi(&#39;QTime&#39;, 2)
+sip.setapi(&#39;QUrl&#39;, 2)
+sip.setapi(&#39;QVariant&#39;, 2) 
+...   
+</code></pre>
+            <p><em>Note that from now whenever PyInstaller will package any PyQt4 script, it will set API v2 as default!</em> </p>
+            <p>You also need to provide VLC libraries to build standalone distribution. Woofer has been tested with VLC 2.1x libraries, but any newer version should be fine. Download and extract VLC Media player (ZIP package) to <code>.\libvlc</code> folder. Of course not all VLC files are needed. To delete unnecessary files, run Woofer. Woofer should now locate our local VLC binaries in <code>.\libvlc</code> folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete <code>.\libvlc</code> folder, only necessary files held by OS will remain (dirty but simple solution).</p>
+            <p>Now when you have all packages installed and LibVLC core libraries prepared, you can run <code>.\build\build_win.py</code> script. Result will be stored in <code>.\build\release</code> directory.</p>
 
             <h2><a class="anchor" href="#future-work" id="future-work"><span class="octicon octicon-link"></span></a>Future work</h2>
 
