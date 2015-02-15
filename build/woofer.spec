@@ -23,10 +23,10 @@ def extra_datas(mydir):
 ###########################################
 
 a = Analysis(['woofer.py'],
-             pathex=['d:\\Programovani\\Woofer-dev\\build'])
+             pathex=['build'])
 
 b = Analysis(['cmdargs.py'],
-             pathex=['d:\\Programovani\\Woofer-dev\\build'])
+             pathex=['build'])
 
 MERGE((a, "woofer", "woofer.exe"),
       (b, "cmdargs", 'cmdargs.exe'))
@@ -45,7 +45,7 @@ exe = EXE(pyz,
           strip=None,
           upx=False,
           console=False,
-          icon='.\\icons\woofer.ico')
+          icon=os.path.join("icons", "woofer.ico"))
 
 pyzB = PYZ(b.pure)
 exeB = EXE(pyzB,
@@ -56,7 +56,7 @@ exeB = EXE(pyzB,
           strip=None,
           upx=False,
           console=True,
-          icon='.\\icons\cmdargs.ico')
+          icon=os.path.join("icons", "cmdargs.ico"))
 
 
 coll = COLLECT(exe, exeB,
