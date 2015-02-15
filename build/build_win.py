@@ -16,7 +16,7 @@ import json
 
 
 ZIP_ENABLED = False
-PRJ_SPEC_FILE = "woofer.spec"
+PRJ_SPEC_FILE = "woofer_win.spec"
 PYINSTALLER_EXE_NAME = "pyinstaller"
 
 
