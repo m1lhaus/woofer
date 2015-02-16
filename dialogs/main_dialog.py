@@ -1207,7 +1207,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         topLayout.addLayout(detailtextLayout)
         aboutDialog.setLayout(topLayout)
 
-        aboutDialog.setFixedWidth(480)
+        aboutDialog.setFixedWidth(550)
         aboutDialog.setFixedHeight(aboutDialog.sizeHint().height())
         aboutDialog.exec_()
         logger.debug(u"'About' dialog closed")
