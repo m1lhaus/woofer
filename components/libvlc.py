@@ -106,12 +106,29 @@ def find_lib():
 
     #########    LINUX    ###############
     if sys.platform.startswith('linux'):
-        path_to_lib = find_library('vlc')
-        if path_to_lib is not None:
+        cwd = os.path.dirname(os.path.realpath(sys.argv[0]))
+        dll_path = os.path.join(cwd, 'libvlc.so.5')
+        libvlc_found = False
+
+        if os.path.isfile(dll_path):
+            cwd_back = os.getcwd()
+            os.chdir(cwd)
             try:
-                dll = ctypes.CDLL(path_to_lib)
-            except OSError:  # may fail
                 dll = ctypes.CDLL('libvlc.so.5')
+                libvlc_found = True
+            except Exception, e:
+                print >> sys.stderr, u"libvlc.py :: Unable to load packed libvlc.so.5 in '%s'. Error: %s" % \
+                                     (plugin_path, unicode(str(e), sys.getfilesystemencoding()))
+            os.chdir(cwd_back)
+
+        # backup solution
+        if not libvlc_found:
+            path_to_lib = find_library('vlc')
+            if path_to_lib is not None:
+                try:
+                    dll = ctypes.CDLL(path_to_lib)
+                except OSError:  # may fail
+                    dll = ctypes.CDLL('libvlc.so.5')
 
     #########    WINDOWS    ###############
     elif sys.platform.startswith('win'):
