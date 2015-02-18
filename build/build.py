@@ -13,18 +13,22 @@ import subprocess
 import platform
 import shutil
 import json
+from tools.misc import check_binary_type
+
+# - WINDOWS
+VLC_LIBVLC_PATH = "C:\\Program Files (x86)\\VideoLAN\\VLC\\libvlc.dll"
+VLC_LIBVLCCORE_PATH = "C:\\Program Files (x86)\\VideoLAN\VLC\\libvlccore.dll"
+VLC_PLUGINS_PATH = "C:\\Program Files (x86)\\VideoLAN\\VLC\\plugins"
+
+#  - LINUX
+# VLC_LIBVLC_PATH = "/usr/lib/libvlc.so.5"
+# VLC_LIBVLCCORE_PATH = "/usr/lib/libvlccore.so.7"
+# VLC_PLUGINS_PATH = "/usr/lib/vlc/plugins"
 
 
 ZIP_ENABLED = False
-PRJ_SPEC_FILE = "woofer_win.spec"
+PRJ_SPEC_FILE = "windows.spec" if os.name == "nt" else "linux.spec"
 PYINSTALLER_EXE_NAME = "pyinstaller"
-
-
-build_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-root_dir = os.path.dirname(build_dir)
-os.chdir(root_dir)
-print "Root directory set to: ", os.path.abspath(root_dir)
-print "Working directory set to: ", os.getcwd()
 
 
 def which(program):
@@ -49,10 +53,10 @@ def which(program):
     return ""
 
 
-def get_build_data():
+def get_build_info():
     subprocess.call([sys.executable, os.path.join(build_dir, "update_version.py")])           # update version/build data
 
-    build_info_file = os.path.join(root_dir, u"build.info")
+    build_info_file = os.path.join(root_dir, "build.info")
     if not os.path.isfile(build_info_file):
         print >> sys.stderr, "Unable to locate build.info file!"
         return None
@@ -85,8 +89,20 @@ def get_project_spec_file():
     return spec_file
 
 
+def copy_dependencies(dst):
+    shutil.copy(os.path.join(root_dir, 'LICENSE.txt'), dst)
+    shutil.copy(os.path.join(root_dir, 'build.info'), dst)
+
+    # VLC dependencies
+    plugins_dst = os.path.join(dst, "libvlc", "plugins") if os.name == "nt" else os.path.join(dst, "vlc", "plugins")
+    vlclibs_dst = os.path.join(dst, "libvlc") if os.name == "nt" else dst
+    shutil.copytree(VLC_PLUGINS_PATH, plugins_dst)
+    shutil.copy(os.path.join(root_dir, VLC_LIBVLC_PATH), vlclibs_dst)
+    shutil.copy(os.path.join(root_dir, VLC_LIBVLCCORE_PATH), vlclibs_dst)
+
+
 def main():
-    build_data = get_build_data()
+    build_data = get_build_info()
     pyinstaller_exe = get_pyinstaller_exe()
     spec_file = get_project_spec_file()
     dist_path = os.path.join(root_dir, "dist", "woofer")
@@ -95,7 +111,7 @@ def main():
 
     print "Building distribution..."
     print "=" * 100
-    process = subprocess.Popen([pyinstaller_exe, spec_file, '-y', '--clean'], stdout=sys.stdout, stderr=sys.stderr)
+    process = subprocess.Popen([pyinstaller_exe, spec_file, '-y', '--clean'])
     retcode = process.wait()
     print "=" * 100
 
@@ -103,13 +119,16 @@ def main():
         raise Exception("Building finished with error code: %s!!!" % retcode)
 
     # move built distribution to release folder
-    new_dist_path = os.path.join(build_dir, "release", "woofer_%s_v%s" % (platform.architecture()[0], version_long))
+    new_dist_path = os.path.join(build_dir, "release", "woofer_%s_%s_v%s" %
+                                 (PRJ_SPEC_FILE[:3], platform.architecture()[0], version_long))
     if os.path.isdir(new_dist_path):
         shutil.rmtree(new_dist_path)
     shutil.move(dist_path, new_dist_path)
     dist_path = new_dist_path
 
-    print "Dist package successfully built to:", dist_path
+    copy_dependencies(new_dist_path)
+
+    print "Distribution package successfully built to:", dist_path
 
     if ZIP_ENABLED:
         decision = raw_input("Are you want to ZIP built dist folder? (y/n) ")
@@ -125,10 +144,25 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print >> sys.stderr, str(e).decode(sys.getfilesystemencoding())
-        raw_input("\nPress Enter key to exit...")
+    if not os.path.isfile(VLC_LIBVLC_PATH):
+        raise Exception("VLC libvlc library cannot be found at '%s'!" % VLC_LIBVLC_PATH)
 
-    print "Finished!"
+    if not os.path.isfile(VLC_LIBVLCCORE_PATH):
+        raise Exception("VLC libvlccore library cannot be found at '%s'!" % VLC_LIBVLCCORE_PATH)
+
+    if not os.path.isdir(VLC_PLUGINS_PATH):
+        raise Exception("VLC plugins folder cannot be found at '%s'!" % VLC_PLUGINS_PATH)
+
+    if os.name == 'nt' and check_binary_type(VLC_LIBVLC_PATH) != check_binary_type(sys.executable):
+        raise Exception("VLC libvlc library does NOT match machine (python) type: %s vs %s" %
+                        (check_binary_type(VLC_LIBVLC_PATH), check_binary_type(sys.executable)))
+
+    build_dir = os.path.dirname(os.path.realpath(sys.argv[0])).decode(sys.getfilesystemencoding())
+    root_dir = os.path.dirname(build_dir)
+    os.chdir(root_dir)
+    print "Root directory set to: ", os.path.abspath(root_dir)
+    print "Working directory set to: ", os.getcwd()
+
+    main()
+
+    print "Finished successfully!"

@@ -9,11 +9,6 @@ b = Analysis(['cmdargs.py'],
 MERGE((a, "woofer", "woofer"),
       (b, "cmdargs", 'cmdargs'))
 
-import pickle
-
-with open("binaries", 'wb') as fobject:
-    pickle.dump(a.binaries, fobject)
-
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
