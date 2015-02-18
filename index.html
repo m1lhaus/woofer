@@ -39,8 +39,8 @@
                         }
                         
                         document.getElementById("windows").innerHTML = '<a href="' + downloadURL + '" class="binaries">Windows <strong>ZIP File</strong></a>';
-                        document.getElementById("linux32").innerHTML = '<a href="#">Linux x86<strong>TAR Ball</strong></a>';
-                        document.getElementById("linux64").innerHTML = '<a href="#">Linux x64<strong>TAR Ball</strong></a>';
+                        document.getElementById("sourcezip").innerHTML = '<a href="https://github.com/m1lhaus/woofer/zipball/master">Sources<strong>ZIP File</strong></a>';
+                        document.getElementById("sourcetar").innerHTML = '<a href="https://github.com/m1lhaus/woofer/tarball/master">Sources<strong>TAR Ball</strong></a>';
 
                     });      
                 }
@@ -49,15 +49,15 @@
             
             <div class="buttons">
                 <div class="left">
-                    <p class="btn_title">Download binaries:</p>
+                    <p class="btn_title">Download:</p>
                     <div class="download">
                         <!--     To be filled by javascript       -->
                         <div id="windows"></div>
-                        <div id="linux32"></div>
-                        <div id="linux64"></div>
+                        <div id="sourcezip"></div>
+                        <div id="sourcetar"></div>
                     </div>
                 </div>
-                
+                <!--
                 <div class="right">
                     <p class="btn_title">Download sources:</p>
                     <div class="download">
@@ -65,7 +65,7 @@
                         <div><a href="https://github.com/m1lhaus/woofer/tarball/master">Download <strong>TAR Ball</strong></a></div>
                         <div><a href="https://github.com/m1lhaus/woofer">View On <strong>GitHub</strong></a></div>
                     </div>
-                </div>
+                </div>-->
             </div>
             <div>
                 <span style="font-size:17px;">Other releases:</span><br/>
