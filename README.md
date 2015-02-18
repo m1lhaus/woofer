@@ -32,21 +32,21 @@ Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quit
 
 ## Download
 
-For Windows there are available binary distributions. On Linux you can run Woofer like any other Python application by `woofer.py`. Linux binary distribution will come later.
+For Windows there are available binary distributions. On Linux you can run Woofer like any other Python application by `woofer.py` or you can build your own binary distribution, which however will depend on your distribution (distribution branch). Because there are so many Linux distributions and even most popular Ubuntu-based distributions have major version differences (new compiler, etc.), no pre-build Woofer binaries will be available. 
 
-### Binaries
+### Binaries (Windows)
 
 Latest binary version for Windows can be found in [release section](https://github.com/m1lhaus/woofer/releases). This is a standalone version, no other libraries or VLC is needed!
 
-### Run from source
+### Run from source (Windows/Linux)
 
 Refer to requirements for all needed packages to run Woofer. Both for Windows and Linux there are available suitable binaries (PyQt, etc.). No need to build anything from source. Unfortunately you also need VLC Media player installed (core libraries). Note that all these libraries are shipped with Woofer binary distribution.
 
 Finally run `woofer.py` or `woofer.py --debug` in debug mode. 
 
-###How to make standalone binary distribution (Windows)
+###How to make standalone binary distribution (Windows/Linux)
 
-To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller package and add binary to PATH. Before you run build script, you need to edit PyInstaller runtime hook for PyQt4, because PyInstaller doesn't consider setting PyQt (Sip) API to v2. So edit file at `%Python-dir%\Lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_qt4plugins.py` and add these `setapi()` lines:
+To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller (latest) package and add binary to PATH. Before you run build script, you need to edit PyInstaller runtime hook for PyQt4, because PyInstaller doesn't consider setting PyQt (Sip) API to v2. So edit file at `%Python-dir%\Lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_qt4plugins.py` and add these `setapi()` lines:
 
 	...
 	import sip
@@ -60,15 +60,12 @@ To create standalone binary distribution, install all listed requirements packag
 	sip.setapi('QVariant', 2) 
 	...   
 
-*Note that from now whenever PyInstaller will package any PyQt4 script, it will set API v2 as default!* 
+*On Linux, the file will be likely in `.../dist-packages/...` folder. Note that from now on whenever PyInstaller will package any PyQt4 script, it will set API v2 as default!* 
 
-You also need to provide VLC libraries to build standalone distribution. Woofer has been tested with VLC 2.1x libraries, but any newer version should be fine. Download and extract VLC Media player (ZIP package) to `.\libvlc` folder. Of course not all VLC files are needed. To delete unnecessary files, run Woofer. Woofer should now locate our local VLC binaries in `.\libvlc` folder and loads them into memory. Now all needed .dll files are held by operating system, so when you try to delete `.\libvlc` folder, only necessary files held by OS will remain (dirty but simple solution).
-
-Now when you have all packages installed and LibVLC core libraries prepared, you can run `.\build\build_win.py` script. Result will be stored in `.\build\release` directory.
+You also need to provide VLC libraries to build standalone distribution. Woofer has been tested with VLC 2.1x libraries, but any newer version should be fine. Download and extract or install VLC Media player. You need to provide paths to `libvlc.dll`, `libvlccore.dll` and `./plugins` folder in `build.py` script. All these files should be located in VLC root/installation directory. When you have all packages installed and VLC core files linked, you can run `.\build\build.py` script. Result will be stored in `.\build\release` directory.
 
 ## Future work
 
-- Linux binary distribution
 - save/load playlists
 - automatic application updates
 - media streaming (live broadcasts)
