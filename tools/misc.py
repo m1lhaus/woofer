@@ -22,7 +22,7 @@ def check_binary_type(path):
     @return:
     """
     if not os.path.isfile(path):
-        return None
+        raise Exception("Given path '%s' not found!" % path)
 
     import struct
 
