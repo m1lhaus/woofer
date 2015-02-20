@@ -16,10 +16,14 @@ Logic when Woofer is started:
 """
 
 import logging
+import urllib2
+import os
 import sys
 
 from PyQt4.QtCore import *
 from PyQt4.QtNetwork import *
+
+import tools
 
 
 logger = logging.getLogger(__name__)
@@ -129,5 +133,83 @@ class LocalServer(QObject):
             self.socket.waitForDisconnected(self.timeout)
 
         return self.socket.state() != QLocalSocket.ConnectedState and not self.localServer.isListening()
+
+
+class Downloader(QObject):
+
+    DOWNLOADING = 1
+    COMPLETED = 2
+    PAUSED = 3
+    ERROR = 4
+
+    completedSignal = pyqtSignal()
+    blockDownloadedSignal = pyqtSignal(int)
+    errorSignal = pyqtSignal(int, unicode, unicode)
+
+    def __init__(self):
+        super(Downloader, self).__init__()
+
+        self.url = None
+        self.progress = None
+        self.status = None
+        self.file_name = None
+        self.download_dir = ""
+        self.file_size = None
+        self.url_object = None
+        self.size_downloaded = 0
+        self.is_paused = False
+        self.is_downloading = False
+
+        logger.debug("Downloader class initialized")
+
+    def startDownload(self, url, download_dir="", start=None):
+        self.is_paused = False
+        self.url = url
+        self.file_name = url.split("/")[-1]
+        self.download_dir = download_dir
+        if not os.path.isdir(self.download_dir):
+            os.makedirs(self.download_dir)
+
+        if start is not None:
+            logger.debug("Resuming downloading file '%s' from '%s' to '%s' ..." % (self.file_name, self.url, self.download_dir))
+            req = urllib2.Request(url)
+            req.headers["Range"] = "bytes=%s-%s" % (start, self.file_size)
+            self.url_object = urllib2.urlopen(req)
+            self.size_downloaded = start
+        else:
+            logger.debug("Starting downloading file '%s' from '%s' to '%s' ..." % (self.file_name, self.url, self.download_dir))
+            self.url_object = urllib2.urlopen(url)
+            self.size_downloaded = 0
+
+        self.file_size = int(self.url_object.info()["Content-Length"])
+        block_sz = 8192
+
+        try:
+            ffile = os.path.join(self.download_dir, self.file_name)
+            with open(ffile, "ab") as fobject:
+                while True:
+                    buffer = self.url_object.read(block_sz)
+                    if not buffer:
+                        self.status = Downloader.COMPLETED
+                        break
+                    fobject.write(buffer)
+                    self.size_downloaded += len(buffer)
+                    self.status = Downloader.DOWNLOADING
+                    if self.is_paused:
+                        break
+
+            self.completedSignal.emit()
+
+        except IOError:
+            logger.exception(u"Unable to write downloaded data to file '%s'!" % ffile)
+            self.status = Downloader.ERROR
+            self.errorSignal(tools.ErrorMessages.ERROR, u"Error when writing write downloaded data", u"File: '%s'" % ffile)
+
+    def pauseDownload(self):
+        self.is_paused = True
+
+    def resumeDownload(self):
+        self.is_paused = False
+        self.startDownload(self.url, self.download_dir, self.size_downloaded)
 
 
