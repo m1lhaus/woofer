@@ -149,9 +149,6 @@ def find_lib():
                 print >> sys.stderr, u"libvlc.py :: Unable to load packed libvlc.dll in '%s'. WindowsError [%s]: %s" % \
                                      (plugin_path, e.errno, unicode(e.strerror, sys.getfilesystemencoding()))
             os.chdir(cwd)
-        else:
-            print >> sys.stderr, u"libvlc.py :: Unable to load packed libvlc.dll in '%s'. " \
-                                 u"File or folder doesn't exist!" % plugin_path
 
         # try backup solution - look for VLC media player dll
         if not libvlc_found:
