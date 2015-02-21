@@ -142,9 +142,11 @@ class Downloader(QObject):
     PAUSED = 3
     ERROR = 4
 
-    completedSignal = pyqtSignal(int, unicode)
-    blockDownloadedSignal = pyqtSignal(int)
     errorSignal = pyqtSignal(int, unicode, unicode)
+
+    blockDownloadedSignal = pyqtSignal(int, int)
+    downloaderStartedSignal = pyqtSignal(int)               # total size
+    downloaderFinishedSignal = pyqtSignal(int, unicode)     # file path
 
     def __init__(self, url, download_dir=""):
         super(Downloader, self).__init__()
@@ -182,32 +184,55 @@ class Downloader(QObject):
             file_mode = 'wb'
 
         self.file_size = int(self.url_object.info()["Content-Length"])
-        block_sz = 8192
+        block_size = 8192
+        num_blocks = int(self.file_size / block_size)
+        one_percent = int(0.01 * num_blocks)
 
         try:
             ffile = os.path.join(self.download_dir, self.file_name)
             with open(ffile, file_mode) as fobject:
                 logger.debug(u"Starting to read data from server ...")
                 self.status = Downloader.DOWNLOADING
+                self.downloaderStartedSignal.emit(self.file_size)           # update GUI
+
+                i = 1
                 while True:
-                    buffer = self.url_object.read(block_sz)
-                    if not buffer:
+                    data = self.url_object.read(block_size)
+                    if not data:
                         logger.debug(u"Reading from server finished")
                         self.status = Downloader.COMPLETED
                         break
-                    fobject.write(buffer)
-                    self.size_downloaded += len(buffer)
+
+                    # write downloaded data
+                    fobject.write(data)
+                    self.size_downloaded += len(data)
 
                     if self.is_paused:
                         logger.debug(u"Downloading jop has been interrupted!")
                         self.status = Downloader.PAUSED
                         break
+
+                    # to update download status in GUI (prevent signal/slot overhead)
+                    if i == one_percent:
+                        self.blockDownloadedSignal.emit(self.size_downloaded, self.file_size)
+                        i = 1
+                    else:
+                        i += 1
+
         except IOError:
             logger.exception(u"Unable to write downloaded data to file '%s'!" % ffile)
             self.status = Downloader.ERROR
             self.errorSignal(tools.ErrorMessages.ERROR, u"Error when writing write downloaded data", u"File: '%s'" % ffile)
 
-        self.completedSignal.emit(self.status, ffile)
+        except urllib2.HTTPError, urllib2.URLError:
+            logger.exception(u"Error when connecting to the server and downloading the file!")
+            self.status = Downloader.ERROR
+
+        except Exception:
+            logger.exception(u"Unexpected error when downloading the file from server!")
+            self.status = Downloader.ERROR
+
+        self.downloaderFinishedSignal.emit(self.status, ffile)
 
     def pauseDownload(self):
         logger.debug(u"Stopping downloader ...")

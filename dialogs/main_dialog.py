@@ -223,6 +223,10 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.updater.moveToThread(self.updaterThread)
         self.updaterThread.started.connect(self.updater.start)
 
+        self.updater.updaterStartedSignal.connect(self.startDownloadingUpdate)
+        self.updater.updateStatusSignal.connect(self.updateDownloaderStatus)
+        self.updater.updaterFinishedSignal.connect(self.endDownloadingUpdate)
+
         self.updaterThread.start()
 
     def checkPaths(self):
@@ -1218,6 +1222,21 @@ class MainApp(QMainWindow, main_form.MainForm):
         aboutDialog.setFixedHeight(aboutDialog.sizeHint().height())
         aboutDialog.exec_()
         logger.debug(u"'About' dialog closed")
+
+    @pyqtSlot(int)
+    def startDownloadingUpdate(self, total_size):
+        logger.debug(u"Updater started, initializing GUI download status")
+        self.downloadStatusLabel = QLabel(u"0 B / " + tools.misc.bytes_to_str(total_size), self)
+        self.statusbar.addPermanentWidget(self.downloadStatusLabel)
+
+    @pyqtSlot(int, int)
+    def updateDownloaderStatus(self, already_down, total_size):
+        self.downloadStatusLabel.setText(tools.misc.bytes_to_str(already_down) + u" / " + tools.misc.bytes_to_str(total_size))
+
+    @pyqtSlot(int, unicode)
+    def endDownloadingUpdate(self, status, file_path):
+        logger.debug(u"Updater finished, updating GUI download status")
+        self.downloadStatusLabel.setText(u"Ready for update")
 
     def closeEvent(self, event):
         """

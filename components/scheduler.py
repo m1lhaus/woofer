@@ -69,10 +69,14 @@ class LogCleaner(QObject):
 
 class Updater(QObject):
 
+    updaterStartedSignal = pyqtSignal(int)                      # total size
+    updateStatusSignal = pyqtSignal(int, int)                   # downloaded size, total size
+    updaterFinishedSignal = pyqtSignal(int, unicode)            # status, file path
+
     def __init__(self):
         super(Updater, self).__init__()
 
-        self.delay = 1 * (1 * 1000)                        # 5 minutes in ms
+        self.delay = 1 * (1 * 1000)
         self.download_dir = u""         # QDir.toNativeSeparators(QDir.tempPath())
 
         self.downloader = None
@@ -97,7 +101,7 @@ class Updater(QObject):
         self.downloader.moveToThread(self.downloaderThread)
 
         self.downloaderThread.started.connect(self.downloader.startDownload)
-        self.downloader.completedSignal.connect(self.parseReleaseInfo)
+        self.downloader.downloaderFinishedSignal.connect(self.parseReleaseInfo)
 
         self.downloaderThread.start()
 
@@ -159,13 +163,15 @@ class Updater(QObject):
         self.downloader.moveToThread(self.downloaderThread)
 
         self.downloaderThread.started.connect(self.downloader.startDownload)
-        self.downloader.completedSignal.connect(self.scheduleApplicationUpdate)
+        self.downloader.blockDownloadedSignal.connect(self.updateStatusSignal.emit)                  # propagate to GUI
+        self.downloader.downloaderFinishedSignal.connect(self.scheduleApplicationUpdate)
+        self.downloader.downloaderFinishedSignal.connect(self.updaterFinishedSignal.emit)            # propagate to GUI
+        self.downloader.downloaderStartedSignal.connect(self.updaterStartedSignal.emit)              # propagate to GUI
 
         self.downloaderThread.start()
 
         # else:
         #     logger.debug(u"No newer version found")
-
 
     @pyqtSlot(int, unicode)
     def scheduleApplicationUpdate(self):
@@ -174,3 +180,9 @@ class Updater(QObject):
         self.downloaderThread.wait(3000)        # terminate delay
 
         print "called"
+
+    # @pyqtSlot(int, int)
+    # def statusUpdate(self, downloaded_size, target_size):
+    #     print downloaded_size, target_size
+    #
+    #     self.updateStatusSignal()

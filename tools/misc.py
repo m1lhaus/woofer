@@ -74,6 +74,20 @@ def unicode2bytes(string):
     return unicode_str, byte_str
 
 
+def bytes_to_str(size):
+    """
+    Converts file size in bytes to human readable form. (i.e. '895 KB')
+    @type size: int
+    @rtype: unicode
+    """
+    size_name = (u" B", u" KB", u" MB", u" GB")
+    p = 1
+    while (size / 1024**p) > 1 and p <= 3:
+        p += 1
+
+    return unicode(round(size / 1024.0**(p-1), 2)) + size_name[p-1]
+
+
 class ErrorMessages(object):
     """
     Error messages enums.
