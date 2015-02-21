@@ -55,6 +55,6 @@ if __name__ == "__main__":
             'version': version,
             'commits': commits,
             'revision': revision,
-            'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}
+            'date': datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")}
 
     write_version_file(data)
