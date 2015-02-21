@@ -213,10 +213,17 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         self.logCleaner = components.scheduler.LogCleaner()
         self.logCleanerThread = QThread(self)
-        self.logCleanerThread.started.connect(self.logCleaner.start)
         self.logCleaner.moveToThread(self.logCleanerThread)
+        self.logCleanerThread.started.connect(self.logCleaner.start)
 
         self.logCleanerThread.start()
+
+        self.updaterThread = QThread(self)
+        self.updater = components.scheduler.Updater()
+        self.updater.moveToThread(self.updaterThread)
+        self.updaterThread.started.connect(self.updater.start)
+
+        self.updaterThread.start()
 
     def checkPaths(self):
         """
@@ -1220,18 +1227,21 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         terminate_delay = 3000
         self.hkHook.stop_listening()
+        self.updater.stop()             # stop downloading if any
 
         self.scannerThread.quit()
         self.parserThread.quit()
         self.logCleanerThread.quit()
         self.fileRemoverThread.quit()
         self.hkHookThread.quit()
+        self.updaterThread.quit()
 
         self.scannerThread.wait(terminate_delay)
         self.parserThread.wait(terminate_delay)
         self.logCleanerThread.wait(terminate_delay)
         self.fileRemoverThread.wait(terminate_delay)
         self.hkHookThread.wait(terminate_delay)
+        self.updaterThread.wait(terminate_delay)
 
         if self.hkHookThread.isRunning():
             logger.error(u"hkHookThread still running after timeout! Thread will be terminated.")
