@@ -24,14 +24,15 @@ def get_git_version_and_hash():
     matchObj = pattern.match(full_version_info)
     if matchObj:
         version = matchObj.group(1)
-        vlabel = matchObj.group(2)
+        vlabel = matchObj.group(2) or ""
         commits = matchObj.group(3)
         revision = matchObj.group(4)
     else:
         raise Exception("Unable to parse retrieved git version info! "
                         "Expected something like this: 'v0.7-0-ge502b4a', but given %s" % full_version_info)
 
-    return version + '-' + vlabel, commits, revision
+    vlabel = "-" + vlabel if vlabel else vlabel
+    return version + vlabel, commits, revision
 
 
 def get_git_revision_hash():
