@@ -90,7 +90,7 @@ class Updater(QObject):
     def stop(self):
         logger.debug(u"Stopping updater ...")
         if self.downloader:
-            self.downloader.pauseDownload()
+            self.downloader.stopDownload()
 
     @pyqtSlot()
     def downloadReleaseInfo(self):

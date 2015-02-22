@@ -20,6 +20,7 @@ from dialogs import library_dialog
 import components.disk
 import components.media
 import components.scheduler
+import components.network
 import tools
 
 if os.name == "nt":
@@ -1236,7 +1237,10 @@ class MainApp(QMainWindow, main_form.MainForm):
     @pyqtSlot(int, unicode)
     def endDownloadingUpdate(self, status, file_path):
         logger.debug(u"Updater finished, updating GUI download status")
-        self.downloadStatusLabel.setText(u"Ready for update")
+        if status == components.network.Downloader.COMPLETED:
+            self.downloadStatusLabel.setText(u"Ready for update")
+        else:
+            pass
 
     def closeEvent(self, event):
         """

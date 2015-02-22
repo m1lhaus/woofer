@@ -1,22 +1,8 @@
 # -*- coding: utf-8 -*-
 
-"""
-Local server launched when application is started.
-This server is used to communicate between another instances of Woofer player launched by user.
-
-Logic when Woofer is started:
-- init server
-    - try connect to server if exists
-        - yes
-            - send command and optional console args
-            - close app
-        - no
-            - start local server and start listening
-            - continue and start Woofer player
-"""
-
 import logging
 import urllib2
+import ssl
 import os
 import sys
 
@@ -38,8 +24,18 @@ SocketStates = {
 
 class LocalServer(QObject):
     """
-    Local server is used to communicate between another instances
-    of Woofer player launched by user via LocalSockets.
+    Local server launched when application is started.
+    This server is used to communicate between another instances of Woofer player launched by user via LocalSockets.
+
+    Logic when Woofer is started:
+    - init server
+        - try connect to server if exists
+            - yes
+                - send command and optional console args
+                - close app
+            - no
+                - start local server and start listening
+                - continue and start Woofer player
 
     @param name: server name (must be kind of unique)
     @type name: str
@@ -136,10 +132,17 @@ class LocalServer(QObject):
 
 
 class Downloader(QObject):
+    """
+    Downloader component with does, what would you expect. It downloads the file.
+    Class is built to run in separated thread!
+
+    @param url: URL to target file (HTTPS supported)
+    @param download_dir: where to stored downloaded file
+    """
 
     DOWNLOADING = 1
     COMPLETED = 2
-    PAUSED = 3
+    STOPPED = 3
     ERROR = 4
 
     errorSignal = pyqtSignal(int, unicode, unicode)
@@ -152,94 +155,96 @@ class Downloader(QObject):
         super(Downloader, self).__init__()
 
         self.url = url
-        self.progress = None
-        self.status = None
         self.file_name = url.split("/")[-1]
         self.download_dir = os.path.abspath(download_dir)
-        self.file_size = None
-        self.url_object = None
-        self.size_downloaded = 0
-        self.is_paused = False
 
-        logger.debug("Downloader class initialized")
+        self.status = None
+        self.stop = False
+
+        logger.debug(u"Downloader class initialized")
 
     @pyqtSlot()
-    def startDownload(self, start=None):
-        self.is_paused = False
+    def startDownload(self):
+        """
+        Thread worker.
+        Method will start downloading the file from given URL.
+        """
+        self.stop = False
 
         if not os.path.isdir(self.download_dir):
             os.makedirs(self.download_dir)
 
-        if start is not None:
-            logger.debug("Resuming downloading file '%s' from '%s' to '%s' ..." % (self.file_name, self.url, self.download_dir))
-            req = urllib2.Request(self.url)
-            req.headers["Range"] = "bytes=%s-%s" % (start, self.file_size)
-            file_mode = 'ab'
-            self.url_object = urllib2.urlopen(req)
-            self.size_downloaded = start
-        else:
-            logger.debug("Starting downloading file '%s' from '%s' to '%s' ..." % (self.file_name, self.url, self.download_dir))
-            self.url_object = urllib2.urlopen(self.url)
-            self.size_downloaded = 0
-            file_mode = 'wb'
+        logger.debug(u"Starting downloading file '%s' from '%s' to '%s' ..." % 
+                     (self.file_name, self.url, self.download_dir))
 
-        self.file_size = int(self.url_object.info()["Content-Length"])
-        block_size = 8192
-        num_blocks = int(self.file_size / block_size)
-        one_percent = int(0.01 * num_blocks)
+        dest_filename = os.path.join(self.download_dir, self.file_name)
+        size_downloaded = 0
 
         try:
-            ffile = os.path.join(self.download_dir, self.file_name)
-            with open(ffile, file_mode) as fobject:
+            context = ssl._create_unverified_context()                  # CA validation sometimes fails, so disable it
+            url_object = urllib2.urlopen(self.url, context=context)
+            total_size = int(url_object.info()["Content-Length"])
+            num_blocks = int(total_size / 8192)
+            one_percent = int(0.01 * num_blocks)                    # how many blocks are 1% from total_size
+
+            with open(dest_filename, 'wb') as fobject:
                 logger.debug(u"Starting to read data from server ...")
                 self.status = Downloader.DOWNLOADING
-                self.downloaderStartedSignal.emit(self.file_size)           # update GUI
+                self.downloaderStartedSignal.emit(total_size)           # update GUI
 
                 i = 1
                 while True:
-                    data = self.url_object.read(block_size)
+                    data = url_object.read(8192)
                     if not data:
-                        logger.debug(u"Reading from server finished")
+                        logger.debug(u"Reading from server finished OK")
                         self.status = Downloader.COMPLETED
                         break
 
-                    # write downloaded data
+                    # write downloaded data to disk
                     fobject.write(data)
-                    self.size_downloaded += len(data)
+                    size_downloaded += len(data)
 
-                    if self.is_paused:
+                    if self.stop:
                         logger.debug(u"Downloading jop has been interrupted!")
-                        self.status = Downloader.PAUSED
+                        self.status = Downloader.STOPPED
                         break
 
-                    # to update download status in GUI (prevent signal/slot overhead)
+                    # to update download status in GUI and also prevent signal/slot overhead
                     if i == one_percent:
-                        self.blockDownloadedSignal.emit(self.size_downloaded, self.file_size)
+                        self.blockDownloadedSignal.emit(size_downloaded, total_size)
                         i = 1
                     else:
                         i += 1
 
-        except IOError:
-            logger.exception(u"Unable to write downloaded data to file '%s'!" % ffile)
-            self.status = Downloader.ERROR
-            self.errorSignal(tools.ErrorMessages.ERROR, u"Error when writing write downloaded data", u"File: '%s'" % ffile)
-
         except urllib2.HTTPError, urllib2.URLError:
             logger.exception(u"Error when connecting to the server and downloading the file!")
             self.status = Downloader.ERROR
+            self.errorSignal.emit(tools.ErrorMessages.ERROR,
+                             u"Error when connecting to the server and downloading the update!",
+                             u"URL: '%s'" % self.url)
+
+        except IOError:
+            logger.exception(u"Unable to write downloaded data to file '%s'!" % dest_filename)
+            self.status = Downloader.ERROR
+            self.errorSignal.emit(tools.ErrorMessages.ERROR,
+                             u"Error when writing downloaded update file!",
+                             u"File: '%s'" % dest_filename)
 
         except Exception:
-            logger.exception(u"Unexpected error when downloading the file from server!")
+            logger.exception(u"Unexpected error when downloading the update from server!")
             self.status = Downloader.ERROR
+            self.errorSignal.emit(tools.ErrorMessages.ERROR,
+                             u"Unexpected error when downloading the update from server!",
+                             u"")
 
-        self.downloaderFinishedSignal.emit(self.status, ffile)
+        self.downloaderFinishedSignal.emit(self.status, dest_filename)
 
-    def pauseDownload(self):
+    def stopDownload(self):
+        """
+        Method to immediately stop downloading.
+        WARNING: This method is called directly from other thread!
+        """
         logger.debug(u"Stopping downloader ...")
-        self.is_paused = True
-
-    # def resumeDownload(self):
-    #     self.is_paused = False
-    #     self.startDownload(self.url, self.download_dir, self.size_downloaded)
+        self.stop = True
 
 
