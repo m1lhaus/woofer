@@ -181,8 +181,8 @@ class Downloader(QObject):
         size_downloaded = 0
 
         try:
-            context = ssl._create_unverified_context()                  # CA validation sometimes fails, so disable it
-            url_object = urllib2.urlopen(self.url, context=context)
+            # context = ssl._create_unverified_context()                  # CA validation sometimes fails, so disable it
+            url_object = urllib2.urlopen(self.url)      #, context=context)
             total_size = int(url_object.info()["Content-Length"])
             num_blocks = int(total_size / 8192)
             one_percent = int(0.01 * num_blocks)                    # how many blocks are 1% from total_size
@@ -220,24 +220,26 @@ class Downloader(QObject):
             logger.exception(u"Error when connecting to the server and downloading the file!")
             self.status = Downloader.ERROR
             self.errorSignal.emit(tools.ErrorMessages.ERROR,
-                             u"Error when connecting to the server and downloading the update!",
-                             u"URL: '%s'" % self.url)
+                                  u"Error when connecting to the server and downloading the update!",
+                                  u"URL: '%s'" % self.url)
 
         except IOError:
             logger.exception(u"Unable to write downloaded data to file '%s'!" % dest_filename)
             self.status = Downloader.ERROR
             self.errorSignal.emit(tools.ErrorMessages.ERROR,
-                             u"Error when writing downloaded update file!",
-                             u"File: '%s'" % dest_filename)
+                                  u"Error when writing downloaded update file!",
+                                  u"File: '%s'" % dest_filename)
 
         except Exception:
             logger.exception(u"Unexpected error when downloading the update from server!")
             self.status = Downloader.ERROR
             self.errorSignal.emit(tools.ErrorMessages.ERROR,
-                             u"Unexpected error when downloading the update from server!",
-                             u"")
+                                  u"Unexpected error when downloading the update from server!",
+                                  u"")
 
         self.downloaderFinishedSignal.emit(self.status, dest_filename)
+
+        # self.errorSignal.emit(tools.ErrorMessages.INFO, u"Update package downloaded", u"")
 
     def stopDownload(self):
         """
@@ -246,5 +248,20 @@ class Downloader(QObject):
         """
         logger.debug(u"Stopping downloader ...")
         self.stop = True
+
+    @staticmethod
+    def internetConnection(address='http://74.125.228.100', timeout=1):
+        """
+        Checks if internet connection is available (ping to given IP)
+        @rtype: bool
+        """
+        try:
+            response = urllib2.urlopen(address, timeout=timeout)
+        except urllib2.URLError as err:
+            pass
+        else:
+            return True
+
+        return False
 
 
