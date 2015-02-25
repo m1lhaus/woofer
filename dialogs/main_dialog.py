@@ -227,6 +227,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.updater.updaterStartedSignal.connect(self.startDownloadingUpdate)
         self.updater.updateStatusSignal.connect(self.updateDownloaderStatus)
         self.updater.updaterFinishedSignal.connect(self.endDownloadingUpdate)
+        self.updater.errorSignal.connect(self.displayErrorMsg)
 
         self.updaterThread.start()
 
@@ -1230,15 +1231,18 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.downloadStatusLabel = QLabel(u"0 B / " + tools.misc.bytes_to_str(total_size), self)
         self.statusbar.addPermanentWidget(self.downloadStatusLabel)
 
+        self.errorSignal.emit(tools.ErrorMessages.INFO, u"Updates are available, downloading ...", u"")
+
     @pyqtSlot(int, int)
     def updateDownloaderStatus(self, already_down, total_size):
         self.downloadStatusLabel.setText(tools.misc.bytes_to_str(already_down) + u" / " + tools.misc.bytes_to_str(total_size))
 
     @pyqtSlot(int, unicode)
-    def endDownloadingUpdate(self, status, file_path):
+    def endDownloadingUpdate(self, status, filepath):
         logger.debug(u"Updater finished, updating GUI download status")
         if status == components.network.Downloader.COMPLETED:
             self.downloadStatusLabel.setText(u"Ready for update")
+            self.errorSignal.emit(tools.ErrorMessages.INFO, u"Update package downloaded, ready for update!", u"")
         else:
             pass
 
