@@ -1228,20 +1228,37 @@ class MainApp(QMainWindow, main_form.MainForm):
     @pyqtSlot(int)
     def startDownloadingUpdate(self, total_size):
         logger.debug(u"Updater started, initializing GUI download status")
-        self.downloadStatusLabel = QLabel(u"0 B / " + tools.misc.bytes_to_str(total_size), self)
+        self.downloadStatusLabel = QLabel(self)
+        self.downloadAnimation = QMovie(u":/icons/loading.gif", parent=self)
+
+        self.downloadStatusLabel.setMinimumWidth(24)
+        self.downloadStatusLabel.setToolTip(u"Downloading update: 0 B / " + tools.misc.bytes_to_str(total_size))
+        self.downloadStatusLabel.setMovie(self.downloadAnimation)
         self.statusbar.addPermanentWidget(self.downloadStatusLabel)
+        self.downloadAnimation.start()
 
         self.errorSignal.emit(tools.ErrorMessages.INFO, u"Updates are available, downloading ...", u"")
 
     @pyqtSlot(int, int)
     def updateDownloaderStatus(self, already_down, total_size):
-        self.downloadStatusLabel.setText(tools.misc.bytes_to_str(already_down) + u" / " + tools.misc.bytes_to_str(total_size))
+        self.downloadStatusLabel.setToolTip(u"Downloading update: " + tools.misc.bytes_to_str(already_down) + u" / " + tools.misc.bytes_to_str(total_size))
 
     @pyqtSlot(int, unicode)
     def endDownloadingUpdate(self, status, filepath):
         logger.debug(u"Updater finished, updating GUI download status")
         if status == components.network.Downloader.COMPLETED:
-            self.downloadStatusLabel.setText(u"Ready for update")
+            self.downloadStatusLabel.setToolTip(u"Update downloading finished")
+            self.downloadAnimation.stop()
+
+            self.updateAppBtn = QPushButton(self)
+            self.updateAppBtn.setIcon(QIcon(QPixmap(u":/icons/update.png")))
+            self.updateAppBtn.setFlat(True)
+            self.updateAppBtn.setText(u"Update!")
+            self.updateAppBtn.setLayoutDirection(Qt.RightToLeft)
+
+            self.statusbar.removeWidget(self.downloadStatusLabel)
+            self.statusbar.addPermanentWidget(self.updateAppBtn)
+
             self.errorSignal.emit(tools.ErrorMessages.INFO, u"Update package downloaded, ready for update!", u"")
         else:
             pass

@@ -503,6 +503,7 @@ class MainForm(object):
         # STATUSBAR
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
+        self.statusbar.setSizeGripEnabled(False)
         self.statusbar.setStyleSheet("QStatusBar::item {border: none;}")    # remove statusbar separator
         self.statusbar.setFixedHeight(24)
         MainWindow.setStatusBar(self.statusbar)

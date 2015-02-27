@@ -30,5 +30,7 @@
 	<file>icons/save.png</file>
 	<file>icons/open.png</file>
 	<file>icons/help.png</file>
+	<file>icons/update.png</file>
+	<file>icons/loading.gif</file>
   </qresource>
 </RCC>
