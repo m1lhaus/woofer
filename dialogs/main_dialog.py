@@ -55,9 +55,6 @@ class MainApp(QMainWindow, main_form.MainForm):
     removeFileSignal = pyqtSignal(unicode)
     scanFilesSignal = pyqtSignal(unicode)
 
-    myComputerPathIndex = None
-    oldVolumeValue = 0
-
     INFO_MSG_DELAY = 5000
     WARNING_MSG_DELAY = 10000
     ERROR_MSG_DELAY = 20000
@@ -70,6 +67,11 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.session_file = os.path.join(self.appDataPath, u'session.dat')
         self.input_path = play_path.decode(sys.getfilesystemencoding()) if play_path else None
         self.mediaPlayer = components.media.MediaPlayer()
+
+        self.myComputerPathIndex = None
+        self.oldVolumeValue = 0
+        self.updateOnRestart = False
+        self.updatePackage = None
 
         # setups all GUI components from form (design part)
         self.setupUi(self)
@@ -227,9 +229,11 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.updater.updaterStartedSignal.connect(self.startDownloadingUpdate)
         self.updater.updateStatusSignal.connect(self.updateDownloaderStatus)
         self.updater.updaterFinishedSignal.connect(self.endDownloadingUpdate)
+        self.updater.readyForUpdateSignal.connect(self.prepareForAppUpdate)
         self.updater.errorSignal.connect(self.displayErrorMsg)
 
-        self.updaterThread.start()
+        if os.name == "nt":
+            self.updaterThread.start()
 
     def checkPaths(self):
         """
@@ -1227,6 +1231,12 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot(int)
     def startDownloadingUpdate(self, total_size):
+        """
+        Called by scheduler/updater when the updater starts downloading data from the internet.
+        Method displays 'progress' animation (QLabel) in status bar.
+        Real download progress is being display in QLabel tooltip.
+        @param total_size: total size of the file/package
+        """
         logger.debug(u"Updater started, initializing GUI download status")
         self.downloadStatusLabel = QLabel(self)
         self.downloadAnimation = QMovie(u":/icons/loading.gif", parent=self)
@@ -1241,27 +1251,45 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot(int, int)
     def updateDownloaderStatus(self, already_down, total_size):
+        """
+        Called from scheduler/updater whenever one percent of the file is downloaded.
+        Method will display progress in 'downloadStatusLabel'.
+        """
         self.downloadStatusLabel.setToolTip(u"Downloading update: " + tools.misc.bytes_to_str(already_down) + u" / " + tools.misc.bytes_to_str(total_size))
 
     @pyqtSlot(int, unicode)
     def endDownloadingUpdate(self, status, filepath):
+        """
+        Called from scheduler/updater when downloading is finished to remove progress label from status bar.
+        """
         logger.debug(u"Updater finished, updating GUI download status")
         if status == components.network.Downloader.COMPLETED:
             self.downloadStatusLabel.setToolTip(u"Update downloading finished")
             self.downloadAnimation.stop()
-
-            self.updateAppBtn = QPushButton(self)
-            self.updateAppBtn.setIcon(QIcon(QPixmap(u":/icons/update.png")))
-            self.updateAppBtn.setFlat(True)
-            self.updateAppBtn.setText(u"Update!")
-            self.updateAppBtn.setLayoutDirection(Qt.RightToLeft)
-
             self.statusbar.removeWidget(self.downloadStatusLabel)
-            self.statusbar.addPermanentWidget(self.updateAppBtn)
-
-            self.errorSignal.emit(tools.ErrorMessages.INFO, u"Update package downloaded, ready for update!", u"")
         else:
             pass
+
+    @pyqtSlot(unicode)
+    def prepareForAppUpdate(self, filepath):
+        """
+        Called from scheduler when ZIP file is checked (CRC check) to prepare the 'update on restart' procedure.
+        @param filepath: path to downloaded package
+        """
+        logger.debug(u"Preparing for update on restart")
+
+        self.updateOnRestart = True
+        self.updatePackage = filepath
+
+        self.updateAppBtn = QPushButton(self)
+        self.updateAppBtn.setIcon(QIcon(QPixmap(u":/icons/update.png")))
+        self.updateAppBtn.setFlat(True)
+        self.updateAppBtn.setText(u"Update!")
+        self.updateAppBtn.setLayoutDirection(Qt.RightToLeft)
+        self.updateAppBtn.clicked.connect(self.close)
+        self.statusbar.addPermanentWidget(self.updateAppBtn)
+
+        self.errorSignal.emit(tools.ErrorMessages.INFO, u"Update package downloaded, ready for update!", u"")
 
     def closeEvent(self, event):
         """
@@ -1293,6 +1321,9 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.mediaPlayer.stop()
         self.saveSettings()
+
+        if self.updateOnRestart:
+            print "Will launch updater!!! with", self.updatePackage     # todo
 
         event.accept()              # emits quit events
 

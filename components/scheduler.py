@@ -9,6 +9,7 @@ import os
 import time
 import json
 import codecs
+import zipfile
 from datetime import datetime
 
 from PyQt4.QtCore import *
@@ -74,6 +75,7 @@ class Updater(QObject):
     updaterStartedSignal = pyqtSignal(int)                      # total size
     updateStatusSignal = pyqtSignal(int, int)                   # downloaded size, total size
     updaterFinishedSignal = pyqtSignal(int, unicode)            # status, file path
+    readyForUpdateSignal = pyqtSignal(unicode)
 
     def __init__(self):
         super(Updater, self).__init__()
@@ -163,7 +165,7 @@ class Updater(QObject):
         settings = QSettings()
         take_pre_rls = settings.value("components/scheduler/Updater/pre-release", False)
 
-        # analyze JSON from GitHub - find latest release
+        # analyze JSON from GitHub - find latest release            # todo: consider only Windows releases
         latest_rls = release_info[0]
         latest_date = datetime.strptime(latest_rls["published_at"], '%Y-%m-%dT%H:%M:%SZ')
         for rls in release_info:
@@ -186,7 +188,7 @@ class Updater(QObject):
 
             self.downloaderThread.started.connect(self.downloader.startDownload)
             self.downloader.blockDownloadedSignal.connect(self.updateStatusSignal.emit)             # propagate to GUI
-            self.downloader.downloaderFinishedSignal.connect(self.scheduleApplicationUpdate)
+            self.downloader.downloaderFinishedSignal.connect(self.testDownloadedPackage)
             self.downloader.downloaderFinishedSignal.connect(self.updaterFinishedSignal.emit)       # propagate to GUI
             self.downloader.downloaderStartedSignal.connect(self.updaterStartedSignal.emit)         # propagate to GUI
             self.downloader.errorSignal.connect(self.errorSignal.emit)                  # propagate
@@ -197,10 +199,29 @@ class Updater(QObject):
             logger.debug(u"No newer version found")
 
     @pyqtSlot(int, unicode)
-    def scheduleApplicationUpdate(self, status, filepath):
+    def testDownloadedPackage(self, status, filepath):
         # close previous downloader, all should be released from memory
         self.downloaderThread.quit()
         self.downloaderThread.wait(3000)        # terminate delay
 
-        # print "called"
-        # todo: setup application updater
+        if status != network.Downloader.COMPLETED:
+            return
+
+        try:
+            the_zip_file = zipfile.ZipFile(filepath)
+            ret = the_zip_file.testzip()
+        except zipfile.BadZipfile:
+            logger.exception(u"Downloaded file '%s' is not valid ZIP file! File is probably corrupted!", filepath)
+            return
+        except IOError:
+            logger.exception(u"Downloaded file '%s' not found!", filepath)
+            return
+        except Exception:
+            logger.exception(u"Unexpected error when checking downloaded ZIP file '%s'", filepath)
+            return
+
+        if ret is not None:
+            logger.error(u"Downloaded ZIP file '%s' corrupted!", filepath)
+            return
+        else:
+            self.readyForUpdateSignal.emit(filepath)
