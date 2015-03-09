@@ -5,9 +5,12 @@ a = Analysis(['woofer.py'],
 
 b = Analysis(['cmdargs.py'],
              pathex=['build'])
+c = Analysis(['updater.py'],
+             pathex=['build'])
 
 MERGE((a, "woofer", "woofer.exe"),
-      (b, "cmdargs", 'cmdargs.exe'))
+      (b, "cmdargs", 'cmdargs.exe'),
+      (c, "updater", 'updater.exe'))
 
 # EXCLUDE:
 # shell32.dll is part of Windows
@@ -35,8 +38,19 @@ exeB = EXE(pyzB,
           console=True,
           icon=os.path.join("icons", "cmdargs.ico"))
 
+pyzC = PYZ(c.pure)
+exeC = EXE(pyzC,
+          c.scripts,
+          exclude_binaries=1,
+          name='updater.exe',
+          debug=False,
+          strip=None,
+          upx=False,
+          console=True,
+          icon=os.path.join("icons", "cmdargs.ico"))
 
-coll = COLLECT(exe, exeB,
+
+coll = COLLECT(exe, exeB, exeC,
                a.binaries,
                a.zipfiles,
                a.datas,
