@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 
+"""
+Updater component for Woofer player.
+Script take downloaded update ZIP file and updates files in Woofer directory.
+
+WINDOWS ONLY for now.
+"""
+
 import os
 import shutil
 import argparse

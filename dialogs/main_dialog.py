@@ -10,6 +10,7 @@ import sys
 import os
 import errno
 import json
+import subprocess
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -232,7 +233,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.updater.readyForUpdateSignal.connect(self.prepareForAppUpdate)
         self.updater.errorSignal.connect(self.displayErrorMsg)
 
-        if os.name == "nt":
+        if sys.platform.startswith('win') and not tools.IS_PYTHON_FILE:
             self.updaterThread.start()
 
     def checkPaths(self):
@@ -1323,6 +1324,26 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.saveSettings()
 
         if self.updateOnRestart:
+            # # find launcher
+            # if sys.platform.startswith('win'):
+            #     launcher = os.path.join(tools.APP_ROOT_DIR, "updater.exe")
+            # elif sys.platform.startswith('linux'):
+            #     launcher = os.path.join(tools.APP_ROOT_DIR, "updater")
+            # else:
+            #     raise NotImplementedError("Unknown platform type '%s'!" % sys.platform)
+            #
+            # logger.debug("Launching updater script")
+            # if os.path.isfile(launcher):
+            #     if sys.platform.startswith('linux'):
+            #         subprocess.call(["xdg-open", launcher, self.updatePackage, tools.APP_ROOT_DIR, str(os.getpid()), '-r'])
+            #     else:
+            #         # subprocess.call(["start", launcher, self.updatePackage, tools.APP_ROOT_DIR, str(os.getpid()), '-r'])
+            #         os.system(" ".join(["start", launcher, self.updatePackage, tools.APP_ROOT_DIR, str(os.getpid()), '-r']))
+            #
+            # else:
+            #     logger.error("Unable to locate Woofer updater launcher at '%s'!" % tools.APP_ROOT_DIR)
+
+
             print "Will launch updater!!! with", self.updatePackage     # todo
 
         event.accept()              # emits quit events

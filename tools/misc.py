@@ -13,6 +13,7 @@ APP_ROOT_DIR = os.path.abspath(unicode(os.path.dirname(sys.argv[0]), sys.getfile
 LOG_DIR = os.path.join(APP_ROOT_DIR, u'log')
 DATA_DIR = os.path.join(APP_ROOT_DIR, u'data')
 IS_WIN32_EXE = sys.argv[0].endswith(".exe")
+IS_PYTHON_FILE = sys.argv[0].endswith((".py", ".pyc"))
 
 
 def check_binary_type(path):
