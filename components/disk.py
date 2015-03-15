@@ -57,7 +57,7 @@ class RecursiveBrowser(QObject):
             return
 
         # if target dir is already a file
-        if target_dir[-4:].lower().endswith(self.names_filter):
+        if target_dir[-5:].lower().endswith(self.names_filter):
             logger.debug(u"Scanned target dir is a file. Sending path and finish_parser flag.")
             self.parseDataSignal.emit([target_dir])
             self.parseDataSignal.emit([])             # end flag for media parser
