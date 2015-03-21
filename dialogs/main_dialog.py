@@ -10,6 +10,7 @@ import sys
 import os
 import errno
 import json
+import psutil
 import subprocess
 
 from PyQt4.QtGui import *
@@ -72,7 +73,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.myComputerPathIndex = None
         self.oldVolumeValue = 0
         self.updateOnRestart = False
-        self.updatePackage = None
+        self.updateExe = None
 
         # setups all GUI components from form (design part)
         self.setupUi(self)
@@ -233,7 +234,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.updater.readyForUpdateSignal.connect(self.prepareForAppUpdate)
         self.updater.errorSignal.connect(self.displayErrorMsg)
 
-        if sys.platform.startswith('win') and not tools.IS_PYTHON_FILE:
+        if sys.platform.startswith('win') and tools.IS_WIN32_EXE:
             self.updaterThread.start()
 
     def checkPaths(self):
@@ -1280,7 +1281,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         logger.debug(u"Preparing for update on restart")
 
         self.updateOnRestart = True
-        self.updatePackage = filepath
+        self.updateExe = filepath
 
         self.updateAppBtn = QPushButton(self)
         self.updateAppBtn.setIcon(QIcon(QPixmap(u":/icons/update.png")))
@@ -1324,27 +1325,14 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.saveSettings()
 
         if self.updateOnRestart:
-            # # find launcher
-            # if sys.platform.startswith('win'):
-            #     launcher = os.path.join(tools.APP_ROOT_DIR, "updater.exe")
-            # elif sys.platform.startswith('linux'):
-            #     launcher = os.path.join(tools.APP_ROOT_DIR, "updater")
-            # else:
-            #     raise NotImplementedError("Unknown platform type '%s'!" % sys.platform)
-            #
-            # logger.debug("Launching updater script")
-            # if os.path.isfile(launcher):
-            #     if sys.platform.startswith('linux'):
-            #         subprocess.call(["xdg-open", launcher, self.updatePackage, tools.APP_ROOT_DIR, str(os.getpid()), '-r'])
-            #     else:
-            #         # subprocess.call(["start", launcher, self.updatePackage, tools.APP_ROOT_DIR, str(os.getpid()), '-r'])
-            #         os.system(" ".join(["start", launcher, self.updatePackage, tools.APP_ROOT_DIR, str(os.getpid()), '-r']))
-            #
-            # else:
-            #     logger.error("Unable to locate Woofer updater launcher at '%s'!" % tools.APP_ROOT_DIR)
-
-
-            print "Will launch updater!!! with", self.updatePackage     # todo
+            logger.debug(u"Launching updater script ...")
+            if os.path.isfile(self.updateExe):
+                subprocess.call(["start",
+                                 self.updateExe.encode(sys.getfilesystemencoding()),
+                                 tools.APP_ROOT_DIR.encode(sys.getfilesystemencoding()),
+                                 str(os.getpid()), '-r'], shell=True)
+            else:
+                logger.error(u"Unable to locate Woofer updater launcher at '%s'!", self.updateExe)
 
         event.accept()              # emits quit events
 

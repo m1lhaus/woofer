@@ -139,17 +139,12 @@ def clean(backup_dir):
 
 def init_woofer():
     # find launcher
-    if sys.platform.startswith('win'):
-        launcher = os.path.join(args.installDir, "woofer.exe")
-    elif sys.platform.startswith('linux'):
-        launcher = os.path.join(args.installDir, "woofer")
-    else:
-        raise NotImplementedError("Unknown platform type '%s'!" % sys.platform)
+    launcher = os.path.join(args.installDir, u"woofer.exe")
     if not os.path.isfile(launcher):
         raise Exception("Unable to locate Woofer launcher at '%s'!" % args.installDir)
 
     print "Starting Woofer player ..."
-    os.system(" ".join(["start", launcher]))
+    os.startfile(launcher)
 
 
 def main():
@@ -191,6 +186,7 @@ if __name__ == "__main__":
                         help="ReOpen Woofer after update")
     args = parser.parse_args()
 
+    args.installDir = args.installDir.decode(sys.getfilesystemencoding())       # utf8 support
     if not os.path.isdir(args.installDir):
         raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
 

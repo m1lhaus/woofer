@@ -10,6 +10,7 @@ import time
 import json
 import codecs
 import zipfile
+import shutil
 from datetime import datetime
 
 from PyQt4.QtCore import *
@@ -80,18 +81,24 @@ class Updater(QObject):
     def __init__(self):
         super(Updater, self).__init__()
 
-        self.delay = 1 * (1 * 1000)
-        self.github_api_url = "https://api.github.com/repos/m1lhaus/woofer/releases"
-        self.github_release_url = "https://github.com/m1lhaus/woofer/releases/download/"
+        self.delay = 1000
+        self.github_api_url = u"https://api.github.com/repos/m1lhaus/woofer/releases"
+        self.github_release_url = u"https://github.com/m1lhaus/woofer/releases/download/"
 
         # %TEMP%/woofer_update
-        self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u'woofer_update')
+        self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater")
+        self.extracted_pkg = os.path.join(self.download_dir, u"extracted")
 
         self.downloader = None
         self.downloaderThread = None
 
     @pyqtSlot()
     def start(self):
+        if os.path.isdir(self.extracted_pkg):
+            logger.debug(u"Deleting folder with old update ...")
+            shutil.rmtree(self.extracted_pkg)
+        os.makedirs(self.extracted_pkg)
+
         logger.debug(u"Scheduling updater - delay %s", self.delay)
         QTimer.singleShot(self.delay, self.downloadReleaseInfo)
 
@@ -199,7 +206,7 @@ class Updater(QObject):
             logger.debug(u"No newer version found")
 
     @pyqtSlot(int, unicode)
-    def testDownloadedPackage(self, status, filepath):
+    def testDownloadedPackage(self, status, zip_filepath):
         # close previous downloader, all should be released from memory
         self.downloaderThread.quit()
         self.downloaderThread.wait(3000)        # terminate delay
@@ -208,20 +215,49 @@ class Updater(QObject):
             return
 
         try:
-            the_zip_file = zipfile.ZipFile(filepath)
+            the_zip_file = zipfile.ZipFile(zip_filepath)
             ret = the_zip_file.testzip()
         except zipfile.BadZipfile:
-            logger.exception(u"Downloaded file '%s' is not valid ZIP file! File is probably corrupted!", filepath)
+            logger.exception(u"Downloaded file '%s' is not valid ZIP file! File is probably corrupted!", zip_filepath)
             return
         except IOError:
-            logger.exception(u"Downloaded file '%s' not found!", filepath)
+            logger.exception(u"Downloaded file '%s' not found!", zip_filepath)
             return
         except Exception:
-            logger.exception(u"Unexpected error when checking downloaded ZIP file '%s'", filepath)
+            logger.exception(u"Unexpected error when checking downloaded ZIP file '%s'", zip_filepath)
             return
 
         if ret is not None:
-            logger.error(u"Downloaded ZIP file '%s' corrupted!", filepath)
+            logger.error(u"Downloaded ZIP file '%s' corrupted!", zip_filepath)
             return
-        else:
-            self.readyForUpdateSignal.emit(filepath)
+
+        self.extract_files(zip_filepath)
+        updater_exe = os.path.join(self.extracted_pkg, u"updater.exe")
+        if not os.path.join(updater_exe):
+            logger.error(u"Unable to find 'updater.exe' script in '%s'!", self.extracted_pkg)
+
+        # logger.debug(u"Removing ZIP file ...")
+        # os.remove(zip_filepath)
+
+        logger.debug(u"Update package is extracted and ready to be applied")
+        self.readyForUpdateSignal.emit(updater_exe)
+
+    def extract_files(self, filepath):
+        def get_members(zip_object):
+            parts = []
+            for name in zip_object.namelist():
+                if not name.endswith('/'):
+                    parts.append(name.split('/')[:-1])
+            prefix = os.path.commonprefix(parts) or ''
+            if prefix:
+                prefix = '/'.join(prefix) + '/'
+            offset = len(prefix)
+            for zipinfo in zip_object.infolist():
+                name = zipinfo.filename
+                if len(name) > offset:
+                    zipinfo.filename = name[offset:]
+                    yield zipinfo
+
+        logger.debug(u"Extracting new files to '%s' ...", self.extracted_pkg)
+        with zipfile.ZipFile(filepath, 'r') as zip_object:
+            zip_object.extractall(self.extracted_pkg, get_members(zip_object))
