@@ -2,20 +2,68 @@
 
 """
 Updater component for Woofer player.
-Script take downloaded update ZIP file and updates files in Woofer directory.
-
-WINDOWS ONLY for now.
+Script takes files in root directory where updater.exe is executed and updates files in Woofer install directory.
+WINDOWS ONLY!
 """
 
 import os
 import shutil
 import argparse
-import zipfile
 import sys
 import time
-import subprocess
+import logging
+import datetime
 
 import psutil
+
+
+class StreamToLogger(object):
+    """
+    Fake file-like stream object that redirects stdout/stderr writes to a logger instance.
+    """
+
+    def __init__(self, fdnum, logger, log_level=logging.INFO):
+        if fdnum == 0:
+            sys.stdout = self
+            self.orig_output = sys.__stdout__
+        elif fdnum == 1:
+            sys.stderr = self
+            self.orig_output = sys.__stderr__
+        else:
+            raise Exception(u"Given file descriptor num: %s is not supported!" % fdnum)
+
+        self.logger = logger
+        self.log_level = log_level
+
+    def write(self, buf):
+        if buf == '\n':
+            self.orig_output.write(buf)
+        else:
+            if isinstance(buf, str):
+                buf = unicode(buf, u'utf-8')
+            for line in buf.rstrip().splitlines():
+                self.logger.log(self.log_level, line.rstrip())
+
+    def __getattr__(self, name):
+        return self.orig_output.__getattribute__(name)              # pass all other methods to original fd
+
+
+def setup_logging(log_dir):
+    if not os.path.isdir(log_dir):
+        os.mkdir(log_dir)
+
+    date = datetime.datetime.now()
+    msg_format = u"%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
+    log_path = os.path.join(log_dir, u"updater_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
+    logging.basicConfig(level=logging.DEBUG, format=msg_format, filename=log_path)
+    logger = logging.getLogger('')      # get root logger
+
+    # redirects all stderr output (exceptions, etc.) to logger ERROR level
+    sys.stdout = StreamToLogger(0, logger, logging.DEBUG)
+    sys.stderr = StreamToLogger(1, logger, logging.ERROR)
+    logger.debug("Logger initialized")
+
+    return logger
 
 
 def woofer_finished():
@@ -23,11 +71,12 @@ def woofer_finished():
         return pid in psutil.get_pid_list()
 
     print "Waiting until parent process PID: %s finishes ..." % args.pid
+
+    attempts = 5
     time.sleep(0.5)
-    elapsed = 0
-    while is_running(args.pid) and elapsed < 2.5:         # no more waiting than 3s
+    while is_running(args.pid) and attempts > 0:         # no more waiting than 3s
         time.sleep(0.5)
-        elapsed += 0.5
+        attempts -= 1
 
     if is_running(args.pid):
         print "Woofer player is still running. CLOSE the player and try it again!"
@@ -38,65 +87,54 @@ def woofer_finished():
 
 def backup_old_files():
     print "Backing up old Woofer files ..."
+
     back_dir = os.path.join(args.installDir, "updater_backup")
     if os.path.isdir(back_dir):
         shutil.rmtree(back_dir)
     os.mkdir(back_dir)
 
-    dir_content = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if not item == "data"]
+    # move all except log and data dir to backup directory
+    dir_content = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if item not in ("data", "log")]
     for item in dir_content:
         shutil.move(item, back_dir)
 
-
-def extract_files():
-    def get_members(zip_object):
-        parts = []
-        for name in zip_object.namelist():
-            if not name.endswith('/'):
-                parts.append(name.split('/')[:-1])
-        prefix = os.path.commonprefix(parts) or ''
-        if prefix:
-            prefix = '/'.join(prefix) + '/'
-        offset = len(prefix)
-        for zipinfo in zip_object.infolist():
-            name = zipinfo.filename
-            if len(name) > offset:
-                zipinfo.filename = name[offset:]
-                yield zipinfo
-
-    print "Extracting new files ..."
-    with zipfile.ZipFile(args.zipFile, 'r') as zip_object:
-        if zip_object.testzip() is not None:
-            raise Exception("Given ZIP archive '%s' is corrupted!" % args.zipFile)
-
-        zip_object.extractall(args.installDir, get_members(zip_object))
+    return back_dir
 
 
-def restore_backup():
+def copy_new_files():
+    print "Copying new files to install directory ..."
+
+    dir_content = [os.path.abspath(item) for item in os.listdir(os.getcwd()) if not item == "data"]
+    for src in dir_content:
+        if os.path.isdir(src):
+            shutil.copytree(src, os.path.join(args.installDir, os.path.basename(src)))
+        else:
+            shutil.copy(src, args.installDir)
+
+
+def restore_backup(backup_dir):
     print "Restoring old files ..."
 
-    back_dirname = "updater_backup"
-    back_dirpath = os.path.join(args.installDir, "updater_backup")
-
-    dir_content = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if not item in ("data", back_dirname)]
-    for item in dir_content:
+    # remove new files
+    backup_dirname = os.path.basename(backup_dir)
+    content_to_remove = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if item not in ("data", "log", backup_dirname)]
+    for item in content_to_remove:
         if os.path.isfile(item):
             os.remove(item)
         else:
             shutil.rmtree(item)
 
-    dir_content = [os.path.join(args.installDir, back_dirname, item) for item in os.listdir(back_dirpath)]
-    for item in dir_content:
+    # restore old files
+    content_to_restore = [os.path.join(backup_dir, item) for item in os.listdir(backup_dir)]
+    for item in content_to_restore:
         shutil.move(item, args.installDir)
 
-    shutil.rmtree(back_dirpath)
+    shutil.rmtree(backup_dir)
 
 
-def clean():
+def clean(backup_dir):
     print "Removing backup files ..."
-
-    back_dirpath = os.path.join(args.installDir, "updater_backup")
-    shutil.rmtree(back_dirpath)
+    shutil.rmtree(backup_dir)
 
 
 def init_woofer():
@@ -111,55 +149,50 @@ def init_woofer():
         raise Exception("Unable to locate Woofer launcher at '%s'!" % args.installDir)
 
     print "Starting Woofer player ..."
-
-    if sys.platform.startswith('linux'):
-        subprocess.call(["xdg-open", launcher])
-    else:
-        os.startfile(launcher)
+    os.system(" ".join(["start", launcher]))
 
 
 def main():
-    if not os.path.isfile(args.zipFile):
-        raise Exception("Unable to find  ZIP file at '%s'!" % args.zipFile)
+    logger.debug("Waiting until Woofer player is closed ...")
 
-    if not os.path.isdir(args.installDir):
-        raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
-
+    # wait until Woofer process finishes, optionally terminate script execution
     terminate = False
     while not terminate and not woofer_finished():
         terminate = raw_input("Try it again? (y/n): ") != 'y'
-
     if terminate:
-        print "TERMINATED"
         sys.exit(0)
 
-    backup_old_files()
+    backup_dir = backup_old_files()
     try:
-        extract_files()
+        copy_new_files()
     except Exception:
-        restore_backup()
-        raise
+        logger.exception("Error occurred when copying new files to install directory!")
+        restore_backup(backup_dir)
+        print "ERROR - Error occurred when copying new files to install directory!"
+    else:
+        clean(backup_dir)
+        if args.restart:
+            init_woofer()
 
-    clean()
-    if args.restart:
-        init_woofer()
+        print "OK - Update finished successfully!"
 
-    print "FINISHED"
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Updater component for Woofer player. Script take downloaded update "
-                                                 "ZIP file and updates files in Woofer directory."
-                                                 "This script should be always used only by Woofer player!")
+    os.chdir(os.path.dirname(sys.argv[0]))
 
-    parser.add_argument("zipFile", type=str,
-                        help="Source ZIP file")
+    parser = argparse.ArgumentParser(description="Updater component for Woofer player. Script take downloaded package "
+                                                 "and updates files in Woofer directory."
+                                                 "This script should be always used only by Woofer player!")
     parser.add_argument("installDir", type=str,
                         help="Where Woofer player files are stored")
     parser.add_argument('pid', type=int,
                         help="PID of Woofer player process")
     parser.add_argument('-r', '--restart', action='store_true',
                         help="ReOpen Woofer after update")
-
     args = parser.parse_args()
 
+    if not os.path.isdir(args.installDir):
+        raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
+
+    logger = setup_logging(log_dir=os.path.join(args.installDir, "log"))
     main()
