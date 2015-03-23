@@ -6,7 +6,11 @@ Various tools and functions
 
 import os
 import sys
+import logging
+import zipfile
+import errno
 
+logger = logging.getLogger(__name__)
 
 # constants
 APP_ROOT_DIR = os.path.abspath(unicode(os.path.dirname(sys.argv[0]), sys.getfilesystemencoding()))
@@ -87,6 +91,38 @@ def bytes_to_str(size):
         p += 1
 
     return unicode(round(size / 1024.0**(p-1), 2)) + size_name[p-1]
+
+
+def extractZIPFiles(src, dst):
+    def get_members(zip_object):
+        parts = []
+        for name in zip_object.namelist():
+            if not name.endswith('/'):
+                parts.append(name.split('/')[:-1])
+        prefix = os.path.commonprefix(parts) or ''
+        if prefix:
+            prefix = '/'.join(prefix) + '/'
+        offset = len(prefix)
+        for zipinfo in zip_object.infolist():
+            name = zipinfo.filename
+            if len(name) > offset:
+                zipinfo.filename = name[offset:]
+                yield zipinfo
+
+    logger.debug(u"Extracting new files to '%s' ...", dst)
+    with zipfile.ZipFile(src, 'r') as zip_object:
+        zip_object.extractall(dst, get_members(zip_object))
+
+
+def removeFile(filepath):
+    logger.debug(u"Cleaning up file '%s'...", filepath)
+    try:
+        os.remove(filepath)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            logger.exception(u"Error when removing file '%s'", filepath)
+    else:
+        logger.exception(u"Error when removing file '%s'", filepath)
 
 
 class ErrorMessages(object):
