@@ -137,7 +137,9 @@ class Downloader(QObject):
     Class is built to run in separated thread!
 
     @param url: URL to target file (HTTPS supported)
+    @type url: unicode
     @param download_dir: where to stored downloaded file
+    @type download_dir: unicode
     """
 
     DOWNLOADING = 1
@@ -151,7 +153,7 @@ class Downloader(QObject):
     downloaderStartedSignal = pyqtSignal(int)               # total size
     downloaderFinishedSignal = pyqtSignal(int, unicode)     # file path
 
-    def __init__(self, url, download_dir=""):
+    def __init__(self, url, download_dir=u""):
         super(Downloader, self).__init__()
 
         self.url = url
@@ -166,7 +168,7 @@ class Downloader(QObject):
     @pyqtSlot()
     def startDownload(self):
         """
-        Thread worker.
+        Thread worker. Method must NOT be called from MainThread directly!
         Method will start downloading the file from given URL.
         """
         self.stop = False
