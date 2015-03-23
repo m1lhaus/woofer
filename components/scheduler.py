@@ -86,7 +86,7 @@ class Updater(QObject):
         self.github_release_url = u"https://github.com/m1lhaus/woofer/releases/download/"
 
         # %TEMP%/woofer_update
-        self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater")
+        self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater+ěščřžýáíé")
         self.extracted_pkg = os.path.join(self.download_dir, u"extracted")
 
         self.downloader = None
@@ -94,6 +94,11 @@ class Updater(QObject):
 
     @pyqtSlot()
     def start(self):
+        """
+        Method which starts (schedule) Updater.
+        Method must NOT be called from MainThread directly!
+        Instead should be called as slot from "scheduler thread" where it lives.
+        """
         if os.path.isdir(self.extracted_pkg):
             logger.debug(u"Deleting folder with old update ...")
             shutil.rmtree(self.extracted_pkg)
@@ -103,6 +108,10 @@ class Updater(QObject):
         QTimer.singleShot(self.delay, self.downloadReleaseInfo)
 
     def stop(self):
+        """
+        Outside public method. Stops downloading progress immediately.
+        WARNING: Method is not protected by mutex!
+        """
         logger.debug(u"Stopping updater ...")
         if self.downloader:
             self.downloader.stopDownload()
@@ -134,7 +143,9 @@ class Updater(QObject):
         Method takes downloaded JSON file and parsers information about latest Woofer version.
         If there is a newer version, it will be downloaded.
         @param status: downloader status (completed, error, stopped, etc.)
+        @type status: int
         @param filepath: where downloaded file is stored
+        @type filepath: unicode
         """
         # close previous downloader, all should be released from memory
         self.downloaderThread.quit()
@@ -205,8 +216,20 @@ class Updater(QObject):
         else:
             logger.debug(u"No newer version found")
 
+        tools.removeFile(filepath)
+
     @pyqtSlot(int, unicode)
     def testDownloadedPackage(self, status, zip_filepath):
+        """
+        Thread worker. Called as slot from downloader which downloads Woofer ZIP file from GitHub.
+        Method takes downloaded ZIP file, makes CRC tests and extracts it to directory.
+        Finally signal is sent to main GUI thread, where "Update" message is displayed and "
+        Update on restart" is scheduled.
+        @param status: downloader status (completed, error, stopped, etc.)
+        @type status: int
+        @param zip_filepath: where downloaded file is stored
+        @type zip_filepath: unicode
+        """
         # close previous downloader, all should be released from memory
         self.downloaderThread.quit()
         self.downloaderThread.wait(3000)        # terminate delay
@@ -231,33 +254,17 @@ class Updater(QObject):
             logger.error(u"Downloaded ZIP file '%s' corrupted!", zip_filepath)
             return
 
-        self.extract_files(zip_filepath)
+        try:
+            tools.extractZIPFiles(src=zip_filepath, dst=self.extracted_pkg)
+        except Exception:
+            logger.exception(u"Error when extracting downloaded update ZIP file!")
+            return
+
         updater_exe = os.path.join(self.extracted_pkg, u"updater.exe")
         if not os.path.join(updater_exe):
             logger.error(u"Unable to find 'updater.exe' script in '%s'!", self.extracted_pkg)
 
-        # logger.debug(u"Removing ZIP file ...")
-        # os.remove(zip_filepath)
-
         logger.debug(u"Update package is extracted and ready to be applied")
         self.readyForUpdateSignal.emit(updater_exe)
 
-    def extract_files(self, filepath):
-        def get_members(zip_object):
-            parts = []
-            for name in zip_object.namelist():
-                if not name.endswith('/'):
-                    parts.append(name.split('/')[:-1])
-            prefix = os.path.commonprefix(parts) or ''
-            if prefix:
-                prefix = '/'.join(prefix) + '/'
-            offset = len(prefix)
-            for zipinfo in zip_object.infolist():
-                name = zipinfo.filename
-                if len(name) > offset:
-                    zipinfo.filename = name[offset:]
-                    yield zipinfo
-
-        logger.debug(u"Extracting new files to '%s' ...", self.extracted_pkg)
-        with zipfile.ZipFile(filepath, 'r') as zip_object:
-            zip_object.extractall(self.extracted_pkg, get_members(zip_object))
+        tools.removeFile(zip_filepath)
