@@ -191,4 +191,8 @@ if __name__ == "__main__":
         raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
 
     logger = setup_logging(log_dir=os.path.join(args.installDir, "log"))
-    main()
+
+    try:
+        main()
+    finally:
+        time.sleep(3)
