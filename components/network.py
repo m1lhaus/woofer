@@ -36,9 +36,6 @@ class LocalServer(QObject):
             - no
                 - start local server and start listening
                 - continue and start Woofer player
-
-    @param name: server name (must be kind of unique)
-    @type name: str
     """
 
     SERVER = 0
@@ -47,6 +44,10 @@ class LocalServer(QObject):
     messageReceivedSignal = pyqtSignal(str)
 
     def __init__(self, name):
+        """
+        @param name: server name (must be kind of unique)
+        @type name: str
+        """
         super(LocalServer, self).__init__()
 
         self.timeout = 3000
@@ -135,11 +136,6 @@ class Downloader(QObject):
     """
     Downloader component with does, what would you expect. It downloads the file.
     Class is built to run in separated thread!
-
-    @param url: URL to target file (HTTPS supported)
-    @type url: unicode
-    @param download_dir: where to stored downloaded file
-    @type download_dir: unicode
     """
 
     DOWNLOADING = 1
@@ -154,6 +150,12 @@ class Downloader(QObject):
     downloaderFinishedSignal = pyqtSignal(int, unicode)     # file path
 
     def __init__(self, url, download_dir=u""):
+        """
+        @param url: URL to target file (HTTPS supported)
+        @type url: unicode
+        @param download_dir: where to stored downloaded file
+        @type download_dir: unicode
+        """
         super(Downloader, self).__init__()
 
         self.url = url
