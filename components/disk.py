@@ -34,12 +34,12 @@ class RecursiveBrowser(QObject):
     parseDataSignal = pyqtSignal(list)
     errorSignal = pyqtSignal(int, unicode, unicode)
 
-    def __init__(self, names_filter, follow_sym=False):
+    def __init__(self, names_filter):
         super(RecursiveBrowser, self).__init__()
         self.block_size = 5                                         # send limit / parsing this block takes about 50ms
-        self.follow_sym = follow_sym
+        self.follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False)
         self.names_filter = tuple([ext.replace('*', '') for ext in names_filter])           # i.e. remove * from *.mp3
-        self.iteratorFlags = QDirIterator.Subdirectories | QDirIterator.FollowSymlinks if follow_sym else QDirIterator.Subdirectories
+        self.iteratorFlags = QDirIterator.Subdirectories | QDirIterator.FollowSymlinks if self.follow_sym else QDirIterator.Subdirectories
 
         logger.debug(u"Recursive disk browser initialized.")
 

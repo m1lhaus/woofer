@@ -185,7 +185,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Scanner and parser live in separated threads.
         """
         # asynchronous scanner
-        self.scanner = components.disk.RecursiveBrowser(names_filter=FileExt, follow_sym=False)
+        self.scanner = components.disk.RecursiveBrowser(names_filter=FileExt)
         self.scannerThread = QThread(self)
 
         # asynchronous parser

@@ -99,6 +99,10 @@ class Updater(QObject):
         Method must NOT be called from MainThread directly!
         Instead should be called as slot from "scheduler thread" where it lives.
         """
+        if not QSettings().value("components/scheduler/Updater/check_updates", True):
+            logger.debug(u"Checking for updates is turned off")
+            return
+
         if os.path.isdir(self.extracted_pkg):
             logger.debug(u"Deleting folder with old update ...")
             shutil.rmtree(self.extracted_pkg)
