@@ -24,17 +24,16 @@ class RecursiveBrowser(QObject):
     Data are transferred via Signal/Slot mechanism.
     Runs in separated thread!
     Worker method: RecursiveBrowser.scanFiles(unicode_path)
-
-    @param names_filter: Which files or file extensions we looking for.
-    @param follow_sym: Follow symbolic links. WARNING! Beware of cyclic symlinks!
-    @type names_filter: tuple of str
-    @type follow_sym: bool
     """
 
     parseDataSignal = pyqtSignal(list)
     errorSignal = pyqtSignal(int, unicode, unicode)
 
     def __init__(self, names_filter):
+        """
+        @param names_filter: Which files or file extensions we looking for.
+        @type names_filter: tuple of str
+        """
         super(RecursiveBrowser, self).__init__()
         self.block_size = 5                                         # send limit / parsing this block takes about 50ms
         self.follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False)
