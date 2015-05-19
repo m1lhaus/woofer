@@ -36,13 +36,9 @@ class StreamToLogger(object):
         self.log_level = log_level
 
     def write(self, buf):
-        if buf == '\n':
-            self.orig_output.write(buf)
-        else:
-            if isinstance(buf, str):
-                buf = unicode(buf, u'utf-8')
-            for line in buf.rstrip().splitlines():
-                self.logger.log(self.log_level, line.rstrip())
+        buf = buf.decode(sys.getfilesystemencoding())
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.log_level, line.rstrip())
 
     def __getattr__(self, name):
         return self.orig_output.__getattribute__(name)              # pass all other methods to original fd
