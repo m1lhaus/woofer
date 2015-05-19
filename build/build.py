@@ -54,7 +54,8 @@ def which(program):
 
 
 def get_build_info():
-    subprocess.call([sys.executable, os.path.join(build_dir, "update_version.py")])           # update version/build data
+    # update version/build data
+    subprocess.call([sys.executable, os.path.join(build_dir, "update_version.py")])
 
     build_info_file = os.path.join(root_dir, "build.info")
     if not os.path.isfile(build_info_file):
@@ -157,7 +158,7 @@ if __name__ == "__main__":
         raise Exception("VLC libvlc library does NOT match machine (python) type: %s vs %s" %
                         (check_binary_type(VLC_LIBVLC_PATH), check_binary_type(sys.executable)))
 
-    build_dir = os.path.dirname(os.path.realpath(sys.argv[0])).decode(sys.getfilesystemencoding())
+    build_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     root_dir = os.path.dirname(build_dir)
     os.chdir(root_dir)
     print "Root directory set to: ", os.path.abspath(root_dir)
