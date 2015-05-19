@@ -36,7 +36,7 @@ class RecursiveBrowser(QObject):
         """
         super(RecursiveBrowser, self).__init__()
         self.block_size = 5                                         # send limit / parsing this block takes about 50ms
-        self.follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False)
+        self.follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False, bool)
         self.names_filter = tuple([ext.replace('*', '') for ext in names_filter])           # i.e. remove * from *.mp3
         self.iteratorFlags = QDirIterator.Subdirectories | QDirIterator.FollowSymlinks if self.follow_sym else QDirIterator.Subdirectories
 

@@ -17,7 +17,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 from forms import main_form
-from dialogs import library_dialog
+from dialogs import library_dialog, settings_dialog
 
 import components.disk
 import components.media
@@ -142,7 +142,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaQuitAction.triggered.connect(self.close)
 
         self.playlistClearAction.triggered.connect(self.clearPlaylist)
-
+        self.toolsSettingsAction.triggered.connect(self.openSettingsDialog)
         self.helpAboutAction.triggered.connect(self.openAboutDialog)
 
     def setupSystemHook(self):
@@ -782,6 +782,11 @@ class MainApp(QMainWindow, main_form.MainForm):
         libraryDialog = library_dialog.LibraryDialog(self.mediaLibFile, self)
         libraryDialog.finished.connect(self.setupFileBrowser)
         libraryDialog.exec_()
+
+    def openSettingsDialog(self):
+        settingsDialog = settings_dialog.SettingsDialog(self)
+        # libraryDialog.finished.connect(self.setupFileBrowser)
+        settingsDialog.exec_()
 
     @pyqtSlot(list, bool)
     def addToPlaylist(self, sources, append):

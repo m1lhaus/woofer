@@ -99,7 +99,7 @@ class Updater(QObject):
         Method must NOT be called from MainThread directly!
         Instead should be called as slot from "scheduler thread" where it lives.
         """
-        if not QSettings().value("components/scheduler/Updater/check_updates", True):
+        if not QSettings().value("components/scheduler/Updater/check_updates", True, bool):
             logger.debug(u"Checking for updates is turned off")
             return
 
@@ -185,7 +185,7 @@ class Updater(QObject):
         current_date = datetime.strptime(build_info["date"], '%Y-%m-%d %H:%M')
 
         settings = QSettings()
-        take_pre_rls = settings.value("components/scheduler/Updater/pre-release", False)
+        take_pre_rls = settings.value("components/scheduler/Updater/pre-release", False, bool)
 
         # analyze JSON from GitHub - find latest release            # todo: consider only Windows releases
         latest_rls = release_info[0]

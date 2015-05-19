@@ -478,7 +478,7 @@ class MainForm(object):
         self.playlistLoadAction.setEnabled(False)
         self.playlistClearAction = QAction(QIcon(u":/icons/delete.png"), u"&Clear current playlist", MainWindow)
         self.toolsSettingsAction = QAction(QIcon(u":/icons/settings.png"), u"&Settings", MainWindow)
-        self.toolsSettingsAction.setEnabled(False)
+        # self.toolsSettingsAction.setEnabled(False)
         self.helpHelpAction = QAction(QIcon(u":/icons/help.png"), u"&Help", MainWindow)
         self.helpHelpAction.setEnabled(False)
         self.helpAboutAction = QAction(QIcon(u":/icons/info.png"), u"&About", MainWindow)
