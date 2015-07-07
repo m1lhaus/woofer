@@ -2,7 +2,7 @@
 
 import logging
 import urllib2
-import ssl
+# import ssl
 import os
 import sys
 
@@ -185,8 +185,8 @@ class Downloader(QObject):
         size_downloaded = 0
 
         try:
-            context = ssl._create_unverified_context()                  # CA validation sometimes fails, so disable it
-            url_object = urllib2.urlopen(self.url, context=context)
+            # context = ssl._create_unverified_context()                  # CA validation sometimes fails, so disable it
+            url_object = urllib2.urlopen(self.url) #, context=context)
             total_size = int(url_object.info()["Content-Length"])
             num_blocks = int(total_size / 8192)
             one_percent = int(0.01 * num_blocks)                    # how many blocks are 1% from total_size
