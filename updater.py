@@ -68,7 +68,7 @@ def setup_logging(log_dir):
 
 def woofer_finished():
     def is_running(pid):
-        return pid in psutil.get_pid_list()
+        return pid in psutil.pids()
 
     print "Waiting until parent process PID: %s finishes ..." % args.pid
 
