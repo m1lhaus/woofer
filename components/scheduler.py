@@ -86,7 +86,7 @@ class Updater(QObject):
         self.github_release_url = u"https://github.com/m1lhaus/woofer/releases/download/"
 
         # %TEMP%/woofer_update
-        self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater+ěščřžýáíé")
+        self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater")
         self.extracted_pkg = os.path.join(self.download_dir, u"extracted")
 
         self.downloader = None
@@ -270,5 +270,3 @@ class Updater(QObject):
 
         logger.debug(u"Update package is extracted and ready to be applied")
         self.readyForUpdateSignal.emit(updater_exe)
-
-        # tools.removeFile(zip_filepath)
