@@ -10,7 +10,6 @@ import sys
 import os
 import errno
 import json
-import psutil
 import subprocess
 
 from PyQt4.QtGui import *
