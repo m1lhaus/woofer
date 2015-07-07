@@ -254,7 +254,7 @@ class Downloader(QObject):
         self.stop = True
 
     @staticmethod
-    def internetConnection(address='http://74.125.228.100', timeout=1):
+    def internetConnection(address='http://www.google.com', timeout=5):
         """
         Checks if internet connection is available (ping to given IP)
         @rtype: bool
