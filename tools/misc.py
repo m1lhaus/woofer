@@ -121,7 +121,7 @@ def removeFile(filepath):
     except OSError as e:
         if e.errno != errno.ENOENT:
             logger.exception(u"Error when removing file '%s'", filepath)
-    else:
+    except Exception:
         logger.exception(u"Error when removing file '%s'", filepath)
 
 
