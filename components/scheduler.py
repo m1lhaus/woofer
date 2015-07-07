@@ -271,4 +271,4 @@ class Updater(QObject):
         logger.debug(u"Update package is extracted and ready to be applied")
         self.readyForUpdateSignal.emit(updater_exe)
 
-        tools.removeFile(zip_filepath)
+        # tools.removeFile(zip_filepath)
