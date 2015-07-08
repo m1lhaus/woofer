@@ -1032,8 +1032,8 @@ class MainApp(QMainWindow, main_form.MainForm):
             fileName = os.path.basename(self.playlistTable.item(row, self.playlistTable.columnCount()-1).text())
             logger.debug(u"Removing from playlist #%s song named '%s'", row, fileName)
 
-            self.mediaPlayer.removeItem(row)
             self.playlistTable.removeRow(row)
+            self.mediaPlayer.removeItem(row)
 
     @pyqtSlot()
     def playlistRemFromDisk(self, rows=None):

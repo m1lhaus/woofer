@@ -190,28 +190,24 @@ class MediaPlayer(QObject):
         new_playlist_len = self._media_list.count()
         self._media_list.unlock()
 
-        # remove media reference from shuffled_playlist[]
+        # decrease all references with higher index
         for i in xrange(len(self.shuffled_playlist)):
-            if self.shuffled_playlist[i] == remove_index:
-                del self.shuffled_playlist[i]
-                # faster way than iterate over whole array
-                self.shuffled_playlist[i:] = [x-1 for x in self.shuffled_playlist[i:]]
-                break
+            index = self.shuffled_playlist[i]
+            if index > remove_index:
+                self.shuffled_playlist[i] -= 1
+            elif index == remove_index:
+                rem_idx_in_shuffled_playlist = i
+        # remove media reference from shuffled_playlist
+        del self.shuffled_playlist[rem_idx_in_shuffled_playlist]
 
         # change song if removed == played, but stop if there is no next song
         if must_change_song:
-            if remove_index < new_playlist_len:
-                logger.debug(u"Currently playlist media has been removed from playlist, selecting next one.")
-                if restore_playing:
-                    self.play(item_playlist_id=remove_index)
-                else:
-                    self.next(playlist_index=remove_index)
-            else:
-                self.shuffled_playlist_current_index = 0
-                logger.debug(u"Last item from playlist has been removed. Playing remains stopped.")
+            logger.debug(u"Currently playing media has been removed from playlist, selecting next one.")
+            self.play(item_playlist_id=self.shuffled_playlist[self.shuffled_playlist_current_index])
+            if not restore_playing:
+                self.stop()
 
-        # items are now shifted one position down
-        elif remove_index < current_index:
+        elif rem_idx_in_shuffled_playlist < self.shuffled_playlist_current_index:
             self.shuffled_playlist_current_index -= 1
 
     def clearMediaList(self):
