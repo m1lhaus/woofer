@@ -26,7 +26,9 @@ Most recent code is always available here on Github. Python code is readable, we
 - [PyQt4](http://www.riverbankcomputing.co.uk/software/pyqt/download) (Qt 4.8)
 - [LibVLC Python wrapper](https://wiki.videolan.org/Python_bindings/)
 - [PyInstaller](https://github.com/pyinstaller/pyinstaller/wiki) (only for build)
-- Python packages - [Send2Trash](https://pypi.python.org/pypi/Send2Trash), [Python-XLib](http://python-xlib.sourceforge.net/) (only for Linux)
+- [Send2Trash](https://pypi.python.org/pypi/Send2Trash)
+- [Python-XLib](http://python-xlib.sourceforge.net/) (only for Linux)
+- [psutil v3](https://pypi.python.org/pypi?:action=display&name=psutil) (only for build)
 
 Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quite easy. But, I will stick with Python 2.7 because there is no reliable bug-free alternative to PyInstaller for Python 3.
 
