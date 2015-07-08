@@ -50,7 +50,7 @@ Finally run `woofer.py` or `woofer.py --debug` in debug mode.
 
 To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller (latest) package and add binary to PATH. Before you run build script, you need to edit PyInstaller runtime hook for PyQt4, because PyInstaller doesn't consider setting PyQt (Sip) API to v2. So edit file at `%Python-dir%\Lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_qt4plugins.py` and add these lines on top of the file:
 
- ```python
+```python
 ...
 import sip
 # set PyQt API to v2
