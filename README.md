@@ -48,19 +48,21 @@ Finally run `woofer.py` or `woofer.py --debug` in debug mode.
 
 ###How to make standalone binary distribution (Windows/Linux)
 
-To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller (latest) package and add binary to PATH. Before you run build script, you need to edit PyInstaller runtime hook for PyQt4, because PyInstaller doesn't consider setting PyQt (Sip) API to v2. So edit file at `%Python-dir%\Lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_qt4plugins.py` and add these `setapi()` lines:
+To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller (latest) package and add binary to PATH. Before you run build script, you need to edit PyInstaller runtime hook for PyQt4, because PyInstaller doesn't consider setting PyQt (Sip) API to v2. So edit file at `%Python-dir%\Lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_qt4plugins.py` and add these lines on top of the file:
 
-	...
-	import sip
-	# set PyQt API to v2
-	sip.setapi('QDate', 2)
-	sip.setapi('QDateTime', 2)
-	sip.setapi('QString', 2)
-	sip.setapi('QTextStream', 2)
-	sip.setapi('QTime', 2)
-	sip.setapi('QUrl', 2)
-	sip.setapi('QVariant', 2) 
-	...   
+ ```python
+...
+import sip
+# set PyQt API to v2
+sip.setapi('QDate', 2)
+sip.setapi('QDateTime', 2)
+sip.setapi('QString', 2)
+sip.setapi('QTextStream', 2)
+sip.setapi('QTime', 2)
+sip.setapi('QUrl', 2)
+sip.setapi('QVariant', 2) 
+...   
+```
 
 *On Linux, the file will be likely in `.../dist-packages/...` folder. Note that from now on whenever PyInstaller will package any PyQt4 script, it will set API v2 as default!* 
 
@@ -69,5 +71,4 @@ You also need to provide VLC libraries to build standalone distribution. Woofer 
 ## Future work
 
 - save/load playlists
-- automatic application updates
 - media streaming (live broadcasts)
