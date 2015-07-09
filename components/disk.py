@@ -35,6 +35,8 @@ class RecursiveBrowser(QObject):
         @type names_filter: tuple of str
         """
         super(RecursiveBrowser, self).__init__()
+        self._stop = False
+
         self.block_size = 5                                         # send limit / parsing this block takes about 50ms
         self.follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False, bool)
         self.names_filter = tuple([ext.replace('*', '') for ext in names_filter])           # i.e. remove * from *.mp3
@@ -49,6 +51,7 @@ class RecursiveBrowser(QObject):
         The final data are sent to media parser in another thread.
         @type target_dir: unicode
         """
+        self._stop = False
         if not os.path.exists(target_dir):
             logger.error(u"Path given to RecursiveDiskBrowser doesn't exist!")
             self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Path given to disk scanner doesn't exist!", u"%s not found!" % target_dir)
@@ -67,7 +70,7 @@ class RecursiveBrowser(QObject):
         dirIterator = QDirIterator(target_dir, self.iteratorFlags)
 
         logger.debug(u"Dir iterator initialized, starting recursive search and parsing.")
-        while dirIterator.hasNext():
+        while not self._stop and dirIterator.hasNext():
             path = dirIterator.next()
             if path[-5:].lower().endswith(self.names_filter):
                 result.append(os.path.normpath(path))
@@ -91,6 +94,10 @@ class RecursiveBrowser(QObject):
         Not used!
         """
         pass
+
+    def stop(self):
+        logger.debug("Stopping disk scanning...")
+        self._stop = True
 
 
 class MoveToTrash(QObject):
@@ -134,3 +141,10 @@ class MoveToTrash(QObject):
             logger.debug(u"%s send to Trash successfully.", folder_or_file.capitalize())
             self.errorSignal.emit(tools.ErrorMessages.INFO, u"%s '%s' successfully removed from disk" %
                                  (folder_or_file.capitalize(), os.path.basename(path)), u"")
+
+    def stop(self):
+        """
+        Called directly from another thread to immediately stop worker.
+        Convention method. May be reimplemented in future.
+        """
+        pass

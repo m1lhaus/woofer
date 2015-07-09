@@ -658,7 +658,7 @@ class MediaParser(QObject):
     def __init__(self):
         super(MediaParser, self).__init__()
         self.vlc_instance = libvlc.Instance()        # for parsing
-        self.stop = False
+        self._stop = False
 
         logger.debug(u"Media Parser initialized.")
 
@@ -672,11 +672,11 @@ class MediaParser(QObject):
         # END FLAG RECEIVED
         if not sources:
             logger.debug(u"Parser finished, end flag received.")
-            self.stop = False           # reset stop flag
+            self._stop = False           # reset stop flag
             self.finishedSignal.emit()
 
         # PARSE MEDIA FILES
-        elif not self.stop:
+        elif not self._stop:
             media_list = []
             for unicode_path in sources:
                 byte_path = unicode_path.encode("utf8")
@@ -685,3 +685,10 @@ class MediaParser(QObject):
                 media_list.append((unicode_path, media_object))
 
             self.dataParsedSignal.emit(media_list)
+
+    def stop(self):
+        """
+        Called outside the thread to stop parsing.
+        When _stop set, all incoming paths for parsing will be thrown away.
+        """
+        self._stop = True

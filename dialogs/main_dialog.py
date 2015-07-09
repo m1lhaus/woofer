@@ -191,6 +191,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parser = components.media.MediaParser()
         self.parserThread = QThread(self)
 
+        # asynchronous file/folder remover
         self.fileRemover = components.disk.MoveToTrash()
         self.fileRemoverThread = QThread(self)
 
@@ -818,7 +819,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     @pyqtSlot()
     def cancelAdding(self):
         logger.debug(u"Canceling adding new files to playlist (parsing).")
-        self.parser.stop = True
+        self.parser.stop()
 
     @pyqtSlot(int, unicode, unicode)
     def displayErrorMsg(self, er_type, text, details=u" "):
@@ -1304,8 +1305,18 @@ class MainApp(QMainWindow, main_form.MainForm):
         :type event: QCloseEvent
         """
         terminate_delay = 3000
-        self.hkHook.stop_listening()
+
+        self.hkHook.stop_listening()    # stop hotkey listener
         self.updater.stop()             # stop downloading if any
+        self.scanner.stop()             # stop hard disk browsing
+        self.parser.stop()              # stop media parsing
+        self.logCleaner.stop()          # stop scheduled timer or file listing/removing
+        self.fileRemover.stop()         # nothing here
+        self.mediaPlayer.stop()         # stop media player playback (libvlc)
+
+        self.saveSettings()             # save session and app configuration
+
+        self.thread().msleep(100)
 
         self.scannerThread.quit()
         self.parserThread.quit()
@@ -1313,6 +1324,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.fileRemoverThread.quit()
         self.hkHookThread.quit()
         self.updaterThread.quit()
+
+        self.thread().msleep(100)
 
         self.scannerThread.wait(terminate_delay)
         self.parserThread.wait(terminate_delay)
@@ -1325,9 +1338,6 @@ class MainApp(QMainWindow, main_form.MainForm):
             logger.error(u"hkHookThread still running after timeout! Thread will be terminated.")
             self.hkHookThread.terminate()
 
-        self.mediaPlayer.stop()
-        self.saveSettings()
-
         if self.updateOnRestart:
             logger.debug(u"Launching updater script ...")
             if os.path.isfile(self.updateExe):
@@ -1339,11 +1349,3 @@ class MainApp(QMainWindow, main_form.MainForm):
                 logger.error(u"Unable to locate Woofer updater launcher at '%s'!", self.updateExe)
 
         event.accept()              # emits quit events
-
-
-
-
-
-
-
-

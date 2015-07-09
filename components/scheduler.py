@@ -36,17 +36,32 @@ class LogCleaner(QObject):
         self.log_dir = tools.LOG_DIR
         self.delay = 5 * (60 * 1000)                        # 5 minutes in ms
 
+        self._timer = QTimer(self)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self.clean)
+        self._stop = False
+
         logger.debug(u"LogCleaner initialized")
 
     def start(self):
+        """
+        Called directly from another thread to schedule cleaner launch.
+        """
         logger.debug(u"Scheduling log cleaner - delay %s", self.delay)
-        QTimer.singleShot(self.delay, self.clean)
+        self._timer.start(self.delay)
+        self._stop = False
+
+    def stop(self):
+        """
+        Called directly from another thread to stop cleaner.
+        """
+        self._stop = True
 
     @pyqtSlot()
     def clean(self):
         """
-        Deletes old files from /log folder.
-        Thread worker.
+        Deletes old files from './log' folder.
+        Thread worker called by class timer.
         """
         if not os.path.isdir(self.log_dir):
             logger.error(u"Log dir under '%s' doesn't exist!", self.log_dir)
@@ -60,7 +75,7 @@ class LogCleaner(QObject):
             fpath = os.path.join(self.log_dir, ffile)
 
             # if file is older than X days, than remove the file
-            if os.stat(fpath).st_mtime < time_past_limit:
+            if not self._stop and os.stat(fpath).st_mtime < time_past_limit:
                 try:
                     os.remove(fpath)
                 except OSError:
