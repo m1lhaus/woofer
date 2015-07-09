@@ -9,6 +9,7 @@ import sys
 import logging
 import zipfile
 import errno
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +116,7 @@ def extractZIPFiles(src, dst):
 
 
 def removeFile(filepath):
-    logger.debug(u"Cleaning up file '%s'...", filepath)
+    logger.debug(u"Removing file '%s'...", filepath)
     try:
         os.remove(filepath)
     except OSError as e:
@@ -123,6 +124,13 @@ def removeFile(filepath):
             logger.exception(u"Error when removing file '%s'", filepath)
     except Exception:
         logger.exception(u"Error when removing file '%s'", filepath)
+
+def removeFolder(folderpath):
+    logger.debug(u"Removing folder '%s'...", folderpath)
+    try:
+        shutil.rmtree(folderpath)
+    except Exception:
+        logger.exception("Error when removing directory '%s'!", folderpath)
 
 
 class ErrorMessages(object):
