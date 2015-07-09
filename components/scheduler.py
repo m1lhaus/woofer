@@ -10,7 +10,6 @@ import time
 import json
 import codecs
 import zipfile
-import shutil
 from datetime import datetime
 
 from PyQt4.QtCore import *
@@ -77,7 +76,7 @@ class LogCleaner(QObject):
             # if file is older than X days, than remove the file
             if not self._stop and os.stat(fpath).st_mtime < time_past_limit:
                 try:
-                    os.remove(fpath)
+                    tools.removeFile(fpath)
                 except OSError:
                     logger.exception(u"Unable to remove log file: %s", fpath)
 
@@ -114,13 +113,14 @@ class Updater(QObject):
         Method must NOT be called from MainThread directly!
         Instead should be called as slot from "scheduler thread" where it lives.
         """
+        if os.path.isdir(self.download_dir):
+            logger.debug("Removing download dir...")
+            tools.removeFolder(self.download_dir)
+
         if not QSettings().value("components/scheduler/Updater/check_updates", True, bool):
             logger.debug(u"Checking for updates is turned off")
             return
 
-        if os.path.isdir(self.extracted_pkg):
-            logger.debug(u"Deleting folder with old update ...")
-            shutil.rmtree(self.extracted_pkg)
         os.makedirs(self.extracted_pkg)
 
         logger.debug(u"Scheduling updater - delay %s", self.delay)
@@ -234,8 +234,6 @@ class Updater(QObject):
 
         else:
             logger.debug(u"No newer version found")
-
-        tools.removeFile(filepath)
 
     @pyqtSlot(int, unicode)
     def testDownloadedPackage(self, status, zip_filepath):
