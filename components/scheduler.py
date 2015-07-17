@@ -90,19 +90,23 @@ class Updater(QObject):
     updaterStartedSignal = pyqtSignal(int)                      # total size
     updateStatusSignal = pyqtSignal(int, int)                   # downloaded size, total size
     updaterFinishedSignal = pyqtSignal(int, unicode)            # status, file path
-    readyForUpdateSignal = pyqtSignal(unicode)
+
+    readyForUpdateOnRestartSignal = pyqtSignal(unicode)
+    availableUpdatePackageSignal = pyqtSignal(unicode, int)
+    startDownloadingPackageSignal = pyqtSignal()
 
     def __init__(self):
         super(Updater, self).__init__()
 
-        self.delay = 1000
-        self.github_api_url = u"https://api.github.com/repos/m1lhaus/woofer/releases"
-        self.github_release_url = u"https://github.com/m1lhaus/woofer/releases/download/"
+        self._github_api_url = u"https://api.github.com/repos/m1lhaus/woofer/releases"
+        self._github_release_url = u"https://github.com/m1lhaus/woofer/releases/download/"
+        self._package_url = None
 
         # %TEMP%/woofer_update
         self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater")
         self.extracted_pkg = os.path.join(self.download_dir, u"extracted")
 
+        self.init_delay = 1000
         self.downloader = None
         self.downloaderThread = None
 
@@ -123,8 +127,8 @@ class Updater(QObject):
 
         os.makedirs(self.extracted_pkg)
 
-        logger.debug(u"Scheduling updater - delay %s", self.delay)
-        QTimer.singleShot(self.delay, self.downloadReleaseInfo)
+        logger.debug(u"Scheduling updater - delay %s", self.init_delay)
+        QTimer.singleShot(self.init_delay, self.downloadReleaseInfo)
 
     def stop(self):
         """
@@ -146,7 +150,7 @@ class Updater(QObject):
             return
 
         self.downloaderThread = QThread(self)
-        self.downloader = network.Downloader(self.github_api_url, self.download_dir)
+        self.downloader = network.Downloader(self._github_api_url, self.download_dir)
         self.downloader.moveToThread(self.downloaderThread)
 
         self.downloaderThread.started.connect(self.downloader.startDownload)
@@ -218,22 +222,40 @@ class Updater(QObject):
         if latest_rls["tag_name"].lower() != current_version and latest_date > current_date:
             logger.debug(u"Newer version %s published at %s found", latest_rls["tag_name"], latest_date)
 
-            url = self.github_release_url + latest_rls["tag_name"] + "/" + latest_rls["assets"][0]["name"]
-            self.downloaderThread = QThread(self)
-            self.downloader = network.Downloader(url, self.download_dir)
-            self.downloader.moveToThread(self.downloaderThread)
+            for asset in latest_rls["assets"]:
+                # find only Windows binaries
+                if asset["name"].startswith(u"woofer_win"):
+                    self._package_url = self._github_release_url + latest_rls["tag_name"] + "/" + asset["name"]
 
-            self.downloaderThread.started.connect(self.downloader.startDownload)
-            self.downloader.blockDownloadedSignal.connect(self.updateStatusSignal.emit)             # propagate to GUI
-            self.downloader.downloaderFinishedSignal.connect(self.testDownloadedPackage)
-            self.downloader.downloaderFinishedSignal.connect(self.updaterFinishedSignal.emit)       # propagate to GUI
-            self.downloader.downloaderStartedSignal.connect(self.updaterStartedSignal.emit)         # propagate to GUI
-            self.downloader.errorSignal.connect(self.errorSignal.emit)                  # propagate
+                    if settings.value("components/scheduler/Updater/auto_updates", False):
+                        logger.debug(u"Automatic update process is initialized")
+                        self.downloadUpdatePackage()
+                    else:
+                        # notify user
+                        self.startDownloadingPackageSignal.connect(self.downloadUpdatePackage)
+                        self.availableUpdatePackageSignal.emit(unicode(latest_rls["tag_name"].lower()), int(asset["size"]))
 
-            self.downloaderThread.start()
+                    break
 
         else:
             logger.debug(u"No newer version found")
+
+    @pyqtSlot()
+    def downloadUpdatePackage(self):
+        logger.debug(u"Initializing update package download")
+
+        self.downloaderThread = QThread(self)
+        self.downloader = network.Downloader(self._package_url, self.download_dir)
+        self.downloader.moveToThread(self.downloaderThread)
+
+        self.downloaderThread.started.connect(self.downloader.startDownload)
+        self.downloader.blockDownloadedSignal.connect(self.updateStatusSignal.emit)             # propagate to GUI
+        self.downloader.downloaderFinishedSignal.connect(self.testDownloadedPackage)
+        self.downloader.downloaderFinishedSignal.connect(self.updaterFinishedSignal.emit)       # propagate to GUI
+        self.downloader.downloaderStartedSignal.connect(self.updaterStartedSignal.emit)         # propagate to GUI
+        self.downloader.errorSignal.connect(self.errorSignal.emit)                  # propagate
+
+        self.downloaderThread.start()
 
     @pyqtSlot(int, unicode)
     def testDownloadedPackage(self, status, zip_filepath):
@@ -282,4 +304,4 @@ class Updater(QObject):
             logger.error(u"Unable to find 'updater.exe' script in '%s'!", self.extracted_pkg)
 
         logger.debug(u"Update package is extracted and ready to be applied")
-        self.readyForUpdateSignal.emit(updater_exe)
+        self.readyForUpdateOnRestartSignal.emit(updater_exe)

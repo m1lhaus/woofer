@@ -231,7 +231,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.updater.updaterStartedSignal.connect(self.startDownloadingUpdate)
         self.updater.updateStatusSignal.connect(self.updateDownloaderStatus)
         self.updater.updaterFinishedSignal.connect(self.endDownloadingUpdate)
-        self.updater.readyForUpdateSignal.connect(self.prepareForAppUpdate)
+        self.updater.readyForUpdateOnRestartSignal.connect(self.prepareForAppUpdate)
+        self.updater.availableUpdatePackageSignal.connect(self.displayAvailableUpdates)
         self.updater.errorSignal.connect(self.displayErrorMsg)
 
         if sys.platform.startswith('win') and tools.IS_WIN32_EXE:
@@ -1245,6 +1246,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param total_size: total size of the file/package
         """
         logger.debug(u"Updater started, initializing GUI download status")
+        self.statusbar.removeWidget(self.downloadUpdateBtn)
+        self.statusbar.removeWidget(self.availableUpdateLabel)
+
         self.downloadStatusLabel = QLabel(self)
         self.downloadAnimation = QMovie(u":/icons/loading.gif", parent=self)
 
@@ -1276,6 +1280,29 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.statusbar.removeWidget(self.downloadStatusLabel)
         else:
             pass
+
+    @pyqtSlot(unicode, int)
+    def displayAvailableUpdates(self, version, total_size):
+        """
+        Display information about newer version is beeing available in statusbar.
+        Version and total download size is displayed.
+        @type version: unicode
+        @type total_size: int
+        """
+        logger.debug(u"Displaying info about available application update")
+
+        self.availableUpdateLabel = QLabel(u"New version <u>%s</u> is available!" % version, self)
+        self.availableUpdateLabel.setToolTip(u"Total size: %s" % tools.bytes_to_str(total_size))
+        self.downloadUpdateBtn = QPushButton(self)
+        self.downloadUpdateBtn.setIcon(QIcon(QPixmap(u":/icons/download.png")))
+        self.downloadUpdateBtn.setFlat(True)
+        self.downloadUpdateBtn.setToolTip(u"Download and install package")
+
+        # when user hits download button, downloader thread will start downloading update package
+        self.downloadUpdateBtn.clicked.connect(self.updater.downloadUpdatePackage)
+
+        self.statusbar.addPermanentWidget(self.availableUpdateLabel)
+        self.statusbar.addPermanentWidget(self.downloadUpdateBtn)
 
     @pyqtSlot(unicode)
     def prepareForAppUpdate(self, filepath):
