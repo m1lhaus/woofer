@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class SettingsDialog(QDialog, Ui_settingsDialog):
     """
-    Dialog where user can edit settings and preferences:
+    Dialog where user can edit application settings and preferences
     """
 
     def __init__(self, parent=None):
@@ -36,8 +36,13 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
 
     def setupSignals(self):
         self.buttonBox.clicked.connect(self.buttonClicked)
+        self.checkUpdatesChBox.stateChanged.connect(self.disableAutoUpdates)
 
     def resetDefaults(self):
+        """
+        Reset all GUI elements to their default values.
+        Dialog must be accepted to propagate default settings to QSettings.
+        """
         logger.debug(u"Resetting factory default settings to GUI")
         self.followSymChBox.setChecked(False)
         self.saveRestoreSessionChBox.setChecked(True)
@@ -53,6 +58,15 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         """
         if self.buttonBox.buttonRole(button) == QDialogButtonBox.ResetRole:
             self.resetDefaults()
+
+    @pyqtSlot(bool)
+    def disableAutoUpdates(self, update_check):
+        """
+        Called when user enables/disables checking for application updates.
+        If checking for updates is turned off, then automatic updates (implicitly turned off) option is disabled .
+        @param update_check: checkbox state - see Qt::CheckState
+        """
+        self.downUpdatesChBox.setEnabled(True if update_check == Qt.Checked else False)
 
     @pyqtSlot()
     def accept(self):
