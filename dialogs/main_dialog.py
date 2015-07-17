@@ -1294,8 +1294,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         logger.debug(u"Displaying info about available application update")
 
-        self.availableUpdateLabel = QLabel(u"New version <u>%s</u> is available!" % version, self)
-        self.availableUpdateLabel.setToolTip(u"Total size: %s" % tools.bytes_to_str(total_size))
+        self.availableUpdateLabel = QLabel(u"New version is available!", self)
+        self.availableUpdateLabel.setToolTip(u"Version: %s\nTotal size: %s" %
+                                             (version, tools.bytes_to_str(total_size)))
         self.downloadUpdateBtn = QPushButton(self)
         self.downloadUpdateBtn.setIcon(QIcon(QPixmap(u":/icons/download.png")))
         self.downloadUpdateBtn.setFlat(True)
