@@ -227,7 +227,7 @@ class Updater(QObject):
                 if asset["name"].startswith(u"woofer_win"):
                     self._package_url = self._github_release_url + latest_rls["tag_name"] + "/" + asset["name"]
 
-                    if settings.value("components/scheduler/Updater/auto_updates", False):
+                    if settings.value("components/scheduler/Updater/auto_updates", False, bool):
                         logger.debug(u"Automatic update process is initialized")
                         self.downloadUpdatePackage()
                     else:

@@ -28,10 +28,9 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         self.saveRestoreSessionChBox.setEnabled(False)
         self.clearSessionBtn.setEnabled(False)
         self.checkUpdatesChBox.setChecked(self.settings.value(u"components/scheduler/Updater/check_updates", True, bool))
+        self.downUpdatesChBox.setChecked(self.settings.value(u"components/scheduler/Updater/auto_updates", False, bool))
         current_idx = 1 if self.settings.value(u"components/scheduler/Updater/pre-release", False, bool) else 0
         self.channelCombo.setCurrentIndex(current_idx)
-        # self.downUpdatesChBox.setEnabled(False)
-        self.downUpdatesChBox.setChecked(self.settings.value(u"components/scheduler/Updater/auto_updates", False, bool))
 
         self.setupSignals()
 

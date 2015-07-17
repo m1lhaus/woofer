@@ -73,6 +73,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.oldVolumeValue = 0
         self.updateOnRestart = False
         self.updateExe = None
+        self.availableUpdateLabel = None
+        self.downloadUpdateBtn = None
 
         # setups all GUI components from form (design part)
         self.setupUi(self)
@@ -1246,8 +1248,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param total_size: total size of the file/package
         """
         logger.debug(u"Updater started, initializing GUI download status")
-        self.statusbar.removeWidget(self.downloadUpdateBtn)
-        self.statusbar.removeWidget(self.availableUpdateLabel)
+        if self.downloadUpdateBtn and self.availableUpdateLabel:
+            self.statusbar.removeWidget(self.downloadUpdateBtn)
+            self.statusbar.removeWidget(self.availableUpdateLabel)
 
         self.downloadStatusLabel = QLabel(self)
         self.downloadAnimation = QMovie(u":/icons/loading.gif", parent=self)
