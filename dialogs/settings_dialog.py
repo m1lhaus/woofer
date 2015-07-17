@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import sys
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+
+import tools
 
 from forms.setting_form import Ui_settingsDialog
 
@@ -20,6 +23,9 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
 
         self.setupUi(self)
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
+
+        if not sys.platform.startswith('win') or not tools.IS_WIN32_EXE:
+            self.updaterLbl.setText(self.updaterLbl.text() + u" (disabled - Windows only)")
 
         self.settings = QSettings()
 
