@@ -101,6 +101,9 @@ class Updater(QObject):
         self._github_api_url = u"https://api.github.com/repos/m1lhaus/woofer/releases"
         self._github_release_url = u"https://github.com/m1lhaus/woofer/releases/download/"
         self._package_url = None
+        self._init_timer = QTimer(self)
+        self._init_timer.setSingleShot(True)
+        self._init_timer.timeout.connect(self.downloadReleaseInfo)
 
         # %TEMP%/woofer_update
         self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater")
@@ -128,7 +131,7 @@ class Updater(QObject):
         os.makedirs(self.extracted_pkg)
 
         logger.debug(u"Scheduling updater - delay %s", self.init_delay)
-        QTimer.singleShot(self.init_delay, self.downloadReleaseInfo)
+        self._init_timer.start(self.init_delay)
 
     def stop(self):
         """
