@@ -30,7 +30,8 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         self.checkUpdatesChBox.setChecked(self.settings.value(u"components/scheduler/Updater/check_updates", True, bool))
         current_idx = 1 if self.settings.value(u"components/scheduler/Updater/pre-release", False, bool) else 0
         self.channelCombo.setCurrentIndex(current_idx)
-        self.downUpdatesChBox.setEnabled(False)
+        # self.downUpdatesChBox.setEnabled(False)
+        self.downUpdatesChBox.setChecked(self.settings.value(u"components/scheduler/Updater/auto_updates", False, bool))
 
         self.setupSignals()
 
@@ -43,7 +44,7 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         self.saveRestoreSessionChBox.setChecked(True)
         self.checkUpdatesChBox.setChecked(True)
         self.channelCombo.setCurrentIndex(0)
-        self.downUpdatesChBox.setEnabled(False)
+        self.downUpdatesChBox.setChecked(False)
 
     @pyqtSlot('QPushButton')
     def buttonClicked(self, button):
@@ -64,6 +65,7 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         self.settings.setValue(u"components/disk/RecursiveBrowser/follow_symlinks", self.followSymChBox.isChecked())
         self.settings.setValue(u"session/saveRestoreSession", self.saveRestoreSessionChBox.isChecked())
         self.settings.setValue(u"components/scheduler/Updater/check_updates", self.checkUpdatesChBox.isChecked())
+        self.settings.setValue(u"components/scheduler/Updater/auto_updates", self.downUpdatesChBox.isChecked())
         pre_rls = True if self.channelCombo.currentIndex() == 1 else False
         self.settings.setValue(u"components/scheduler/Updater/pre-release", pre_rls)
 
