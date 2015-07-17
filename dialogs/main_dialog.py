@@ -1379,4 +1379,5 @@ class MainApp(QMainWindow, main_form.MainForm):
             else:
                 logger.error(u"Unable to locate Woofer updater launcher at '%s'!", self.updateExe)
 
+        self.playlistTable.clear()  # fixes Python crashing on exit (no one knows why)
         event.accept()              # emits quit events
