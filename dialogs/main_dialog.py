@@ -1354,8 +1354,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.hkHookThread.quit()
         self.updaterThread.quit()
 
-        self.thread().msleep(100)
-
         self.scannerThread.wait(tools.TERMINATE_DELAY)
         self.parserThread.wait(tools.TERMINATE_DELAY)
         self.logCleanerThread.wait(tools.TERMINATE_DELAY)
