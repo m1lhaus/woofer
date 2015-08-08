@@ -84,6 +84,10 @@ class LogCleaner(QObject):
 
 
 class Updater(QObject):
+    """
+    Updater component which controls update-checking procedure, update downloading and setup.
+    Component lives separately in its own thread!
+    """
 
     errorSignal = pyqtSignal(int, unicode, unicode)
 
@@ -91,41 +95,42 @@ class Updater(QObject):
     updateStatusSignal = pyqtSignal(int, int)                   # downloaded size, total size
     updaterFinishedSignal = pyqtSignal(int, unicode)            # status, file path
 
-    readyForUpdateOnRestartSignal = pyqtSignal(unicode)
-    availableUpdatePackageSignal = pyqtSignal(unicode, int)
+    readyForUpdateOnRestartSignal = pyqtSignal(unicode)         # path to new updater.exe
+    availableUpdatePackageSignal = pyqtSignal(unicode, int)     # version (tag) name, package size
     startDownloadingPackageSignal = pyqtSignal()
 
     def __init__(self):
         super(Updater, self).__init__()
+        self.init_delay = 1000                              # check-for-updates delay in ms
+        self.mutex = QMutex()
 
         self._github_api_url = u"https://api.github.com/repos/m1lhaus/woofer/releases"
         self._github_release_url = u"https://github.com/m1lhaus/woofer/releases/download/"
+
         self._package_url = None
         self._init_timer = QTimer(self)
         self._init_timer.setSingleShot(True)
         self._init_timer.timeout.connect(self.downloadReleaseInfo)
+        self._downloader = None
+        self._downloaderThread = None
 
         # %TEMP%/woofer_update
         self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater")
         self.extracted_pkg = os.path.join(self.download_dir, u"extracted")
 
-        self.init_delay = 1000
-        self.downloader = None
-        self.downloaderThread = None
-
     @pyqtSlot()
     def start(self):
         """
-        Method which starts (schedule) Updater.
+        Method which starts (schedules) updater component.
         Method must NOT be called from MainThread directly!
         Instead should be called as slot from "scheduler thread" where it lives.
         """
         if os.path.isdir(self.download_dir):
-            logger.debug("Removing download dir...")
+            logger.debug(u"Removing download dir...")
             tools.removeFolder(self.download_dir)
 
         if not QSettings().value("components/scheduler/Updater/check_updates", True, bool):
-            logger.debug(u"Checking for updates is turned off")
+            logger.debug(u"Checking for updates is turned off, updater will NOT be scheduled")
             return
 
         os.makedirs(self.extracted_pkg)
@@ -135,47 +140,51 @@ class Updater(QObject):
 
     def stop(self):
         """
-        Outside public method. Stops downloading progress immediately.
-        WARNING: Method is not protected by mutex!
+        DIRECTLY CALLED method called directly from another thread.
+        Stops downloading progress immediately.
         """
-        logger.debug(u"Stopping updater ...")
-        if self.downloader:
-            self.downloader.stopDownload()
+        mutexLocker = QMutexLocker(self.mutex)
+        try:
+            logger.debug(u"Stopping updater ...")
+            if self._downloader:
+                self._downloader.stopDownload()
+        finally:
+            mutexLocker.unlock()
 
     @pyqtSlot()
     def downloadReleaseInfo(self):
         """
-        Thread worker. Called as slot from time inside the thread.
-        Object is to retrieve JSON file from GitHub which contain information about releases.
+        Thread worker. Called as slot from timer inside the thread after init_delay.
+        Object is to retrieve JSON file from GitHub which contain information about Woofer releases.
         """
-        if not network.Downloader.internetConnection():
-            logger.debug(u"Unable connect to the Google IP address, probably no internet connection")
-            return
+        # if not network.Downloader.internetConnection():
+        #     logger.debug(u"Unable connect to the Google IP address, probably no internet connection")
+        #     return
 
-        self.downloaderThread = QThread(self)
-        self.downloader = network.Downloader(self._github_api_url, self.download_dir)
-        self.downloader.moveToThread(self.downloaderThread)
+        self._downloaderThread = QThread(self)
+        self._downloader = network.Downloader(self._github_api_url, self.download_dir)
+        self._downloader.moveToThread(self._downloaderThread)
 
-        self.downloaderThread.started.connect(self.downloader.startDownload)
-        self.downloader.downloaderFinishedSignal.connect(self.parseReleaseInfo)
-        self.downloader.errorSignal.connect(self.errorSignal.emit)                  # propagate
+        self._downloaderThread.started.connect(self._downloader.startDownload)
+        self._downloader.downloaderFinishedSignal.connect(self.parseReleaseInfo)
+        self._downloader.errorSignal.connect(self.errorSignal.emit)             # propagate to upper level
 
-        self.downloaderThread.start()
+        self._downloaderThread.start()
 
     @pyqtSlot(int, unicode)
     def parseReleaseInfo(self, status, filepath):
         """
         Thread worker. Called as slot from downloader which downloads JSON file from GitHub.
-        Method takes downloaded JSON file and parsers information about latest Woofer version.
-        If there is a newer version, it will be downloaded.
+        Method takes downloaded JSON file and parses information about latest Woofer version.
+        If there is a newer version, it will be downloaded or user will be notified.
         @param status: downloader status (completed, error, stopped, etc.)
         @type status: int
         @param filepath: where downloaded file is stored
         @type filepath: unicode
         """
         # close previous downloader, all should be released from memory
-        self.downloaderThread.quit()
-        self.downloaderThread.wait(3000)                # terminate delay
+        self._downloaderThread.quit()
+        self._downloaderThread.wait(tools.TERMINATE_DELAY)                # terminate delay
 
         if status != network.Downloader.COMPLETED:
             logger.error(u"Release info file downloader does NOT finished properly, returned status: %s", status)
@@ -183,7 +192,7 @@ class Updater(QObject):
 
         try:
             with codecs.open(filepath, 'r', encoding="utf-8") as fobject:
-                release_info = json.load(fobject)       # unicode should be default encoding
+                release_info = json.load(fobject)           # unicode is default encoding
         except IOError:
             logger.exception(u"Unable to open downloaded release info file '%s'!", filepath)
             return
@@ -192,15 +201,14 @@ class Updater(QObject):
             return
 
         # get current version
-        build_info_file = os.path.join(tools.misc.APP_ROOT_DIR, u"build.info")
         try:
-            with codecs.open(build_info_file, 'r', encoding="utf-8") as fobject:
+            with codecs.open(tools.BUILD_INFO_FILE, 'r', encoding="utf-8") as fobject:
                 build_info = json.load(fobject)
         except IOError:
-            logger.error(u"Unable to open 'build.info' file in root directory!")
+            logger.error(u"Unable to open build-info file at '%s'" % tools.BUILD_INFO_FILE)
             return
         except ValueError:
-            logger.exception(u"Unable to parse build info data from 'build.info' file!")
+            logger.exception(u"Unable to parse build info data from build-info file!")
             return
 
         current_version = "v" + build_info["version"].lower()
@@ -209,7 +217,7 @@ class Updater(QObject):
         settings = QSettings()
         take_pre_rls = settings.value("components/scheduler/Updater/pre-release", False, bool)
 
-        # analyze JSON from GitHub - find latest release            # todo: consider only Windows releases
+        # analyze JSON from GitHub - find latest release
         latest_rls = release_info[0]
         latest_date = datetime.strptime(latest_rls["published_at"], '%Y-%m-%dT%H:%M:%SZ')
         for rls in release_info:
@@ -245,38 +253,43 @@ class Updater(QObject):
 
     @pyqtSlot()
     def downloadUpdatePackage(self):
+        """
+        Method to initiate and setup downloading the update package if available.
+        Called as slot automatically (auto-update) or by user (update button clicked).
+        """
         logger.debug(u"Initializing update package download")
 
-        self.downloaderThread = QThread(self)
-        self.downloader = network.Downloader(self._package_url, self.download_dir)
-        self.downloader.moveToThread(self.downloaderThread)
+        self._downloaderThread = QThread(self)
+        self._downloader = network.Downloader(self._package_url, self.download_dir)
+        self._downloader.moveToThread(self._downloaderThread)
 
-        self.downloaderThread.started.connect(self.downloader.startDownload)
-        self.downloader.blockDownloadedSignal.connect(self.updateStatusSignal.emit)             # propagate to GUI
-        self.downloader.downloaderFinishedSignal.connect(self.testDownloadedPackage)
-        self.downloader.downloaderFinishedSignal.connect(self.updaterFinishedSignal.emit)       # propagate to GUI
-        self.downloader.downloaderStartedSignal.connect(self.updaterStartedSignal.emit)         # propagate to GUI
-        self.downloader.errorSignal.connect(self.errorSignal.emit)                  # propagate
+        self._downloaderThread.started.connect(self._downloader.startDownload)
+        self._downloader.blockDownloadedSignal.connect(self.updateStatusSignal.emit)             # propagate to GUI
+        self._downloader.downloaderStartedSignal.connect(self.updaterStartedSignal.emit)         # propagate to GUI
+        self._downloader.downloaderFinishedSignal.connect(self.testDownloadedPackage)
+        self._downloader.downloaderFinishedSignal.connect(self.updaterFinishedSignal.emit)       # propagate to GUI
+        self._downloader.errorSignal.connect(self.errorSignal.emit)                  # propagate
 
-        self.downloaderThread.start()
+        self._downloaderThread.start()
 
     @pyqtSlot(int, unicode)
     def testDownloadedPackage(self, status, zip_filepath):
         """
         Thread worker. Called as slot from downloader which downloads Woofer ZIP file from GitHub.
         Method takes downloaded ZIP file, makes CRC tests and extracts it to directory.
-        Finally signal is sent to main GUI thread, where "Update" message is displayed and "
-        Update on restart" is scheduled.
+        Finally signal is sent to main GUI thread, where "Update on restart" message is displayed and
+        update process on restart is scheduled.
         @param status: downloader status (completed, error, stopped, etc.)
         @type status: int
         @param zip_filepath: where downloaded file is stored
         @type zip_filepath: unicode
         """
         # close previous downloader, all should be released from memory
-        self.downloaderThread.quit()
-        self.downloaderThread.wait(3000)        # terminate delay
+        self._downloaderThread.quit()
+        self._downloaderThread.wait(tools.TERMINATE_DELAY)
 
         if status != network.Downloader.COMPLETED:
+            logger.debug(u"Update package downloading did NOT finish properly")
             return
 
         try:

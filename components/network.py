@@ -138,6 +138,7 @@ class Downloader(QObject):
     Class is built to run in separated thread!
     """
 
+    # enums
     DOWNLOADING = 1
     COMPLETED = 2
     STOPPED = 3
@@ -158,12 +159,15 @@ class Downloader(QObject):
         """
         super(Downloader, self).__init__()
 
-        self.url = url
+        self.url = url                          # should be valid URL (hardcoded)
         self.file_name = url.split("/")[-1]
         self.download_dir = os.path.abspath(download_dir)
-
         self.status = None
-        self.stop = False
+
+        self._stop = False
+        self._block_size = 8192
+
+        self.mutex = QMutex()
 
         logger.debug(u"Downloader class initialized")
 
@@ -173,7 +177,8 @@ class Downloader(QObject):
         Thread worker. Method must NOT be called from MainThread directly!
         Method will start downloading the file from given URL.
         """
-        self.stop = False
+        self._stop = False
+        block_size = self._block_size       # prevent overhead
 
         if not os.path.isdir(self.download_dir):
             os.makedirs(self.download_dir)
@@ -185,10 +190,9 @@ class Downloader(QObject):
         size_downloaded = 0
 
         try:
-            # context = ssl._create_unverified_context()                  # CA validation sometimes fails, so disable it
-            url_object = urllib2.urlopen(self.url) #, context=context)
+            url_object = urllib2.urlopen(self.url)
             total_size = int(url_object.info()["Content-Length"])
-            num_blocks = int(total_size / 8192)
+            num_blocks = int(total_size / block_size)
             one_percent = int(0.01 * num_blocks)                    # how many blocks are 1% from total_size
 
             with open(dest_filename, 'wb') as fobject:
@@ -198,7 +202,7 @@ class Downloader(QObject):
 
                 i = 1
                 while True:
-                    data = url_object.read(8192)
+                    data = url_object.read(block_size)
                     if not data:
                         logger.debug(u"Reading from server finished OK")
                         self.status = Downloader.COMPLETED
@@ -208,7 +212,7 @@ class Downloader(QObject):
                     fobject.write(data)
                     size_downloaded += len(data)
 
-                    if self.stop:
+                    if self._stop:
                         logger.debug(u"Downloading jop has been interrupted!")
                         self.status = Downloader.STOPPED
                         break
@@ -243,20 +247,23 @@ class Downloader(QObject):
 
         self.downloaderFinishedSignal.emit(self.status, dest_filename)
 
-        # self.errorSignal.emit(tools.ErrorMessages.INFO, u"Update package downloaded", u"")
-
     def stopDownload(self):
         """
-        Method to immediately stop downloading.
-        WARNING: This method is called directly from other thread!
+        DIRECTLY CALLED method to immediately stop downloading.
         """
-        logger.debug(u"Stopping downloader ...")
-        self.stop = True
+        mutexLocker = QMutexLocker(self.mutex)
+        try:
+            logger.debug(u"Stopping downloader ...")
+            self._stop = True
+        finally:
+            mutexLocker.unlock()
 
     @staticmethod
-    def internetConnection(address='http://www.google.com', timeout=5):
+    def pingURL(address='http://www.google.com', timeout=5):
         """
         Checks if internet connection is available (ping to given IP)
+        @param address: destination url
+        @param timeout: timeout in seconds
         @rtype: bool
         """
         try:

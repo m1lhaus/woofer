@@ -19,6 +19,8 @@ LOG_DIR = os.path.join(APP_ROOT_DIR, u'log')
 DATA_DIR = os.path.join(APP_ROOT_DIR, u'data')
 IS_WIN32_EXE = sys.argv[0].endswith(".exe")
 IS_PYTHON_FILE = sys.argv[0].endswith((".py", ".pyc"))
+TERMINATE_DELAY = 3000                                          # thread quit() delay in ms before it will be terminated
+BUILD_INFO_FILE = os.path.join(APP_ROOT_DIR, u"build.info")
 
 
 def check_binary_type(path):
@@ -125,12 +127,13 @@ def removeFile(filepath):
     except Exception:
         logger.exception(u"Error when removing file '%s'", filepath)
 
+
 def removeFolder(folderpath):
     logger.debug(u"Removing folder '%s'...", folderpath)
     try:
         shutil.rmtree(folderpath)
     except Exception:
-        logger.exception("Error when removing directory '%s'!", folderpath)
+        logger.exception(u"Error when removing directory '%s'!", folderpath)
 
 
 class ErrorMessages(object):
