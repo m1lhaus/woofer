@@ -1335,8 +1335,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         Quits all threads, saves settings, etc. before application exit.
         :type event: QCloseEvent
         """
-        terminate_delay = 3000
-
         self.hkHook.stop_listening()    # stop hotkey listener
         self.updater.stop()             # stop downloading if any
         self.scanner.stop()             # stop hard disk browsing
@@ -1358,12 +1356,12 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.thread().msleep(100)
 
-        self.scannerThread.wait(terminate_delay)
-        self.parserThread.wait(terminate_delay)
-        self.logCleanerThread.wait(terminate_delay)
-        self.fileRemoverThread.wait(terminate_delay)
-        self.hkHookThread.wait(terminate_delay)
-        self.updaterThread.wait(terminate_delay)
+        self.scannerThread.wait(tools.TERMINATE_DELAY)
+        self.parserThread.wait(tools.TERMINATE_DELAY)
+        self.logCleanerThread.wait(tools.TERMINATE_DELAY)
+        self.fileRemoverThread.wait(tools.TERMINATE_DELAY)
+        self.hkHookThread.wait(tools.TERMINATE_DELAY)
+        self.updaterThread.wait(tools.TERMINATE_DELAY)
 
         if self.hkHookThread.isRunning():
             logger.error(u"hkHookThread still running after timeout! Thread will be terminated.")
