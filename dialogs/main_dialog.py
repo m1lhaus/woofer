@@ -1341,7 +1341,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.parser.stop()              # stop media parsing
         self.logCleaner.stop()          # stop scheduled timer or file listing/removing
         self.fileRemover.stop()         # nothing here
-        self.mediaPlayer.stop()         # stop media player playback (libvlc)
+        self.mediaPlayer.quit()         # stop media player playback (libvlc)
 
         self.saveSettings()             # save session and app configuration
 

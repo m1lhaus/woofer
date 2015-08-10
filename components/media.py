@@ -45,12 +45,14 @@ class MediaPlayer(QObject):
 
     def __init__(self):
         super(MediaPlayer, self).__init__()
-        self.instance = libvlc.Instance()
+        self._instance = libvlc.Instance()
         """@type: libvlc.Instance"""
-        self._media_player = self.instance.media_player_new()
+        self._media_player = self._instance.media_player_new()
         """@type: libvlc.MediaPlayer"""
-        self._media_list = self.instance.media_list_new()
+        self._media_list = self._instance.media_list_new()
         """@type: libvlc.MediaList"""
+        self._event_manager = self._media_player.event_manager()
+        """@type: libvlc.EventManager"""
         logger.debug(u"Core instances of VLC player created")
 
         self.tick_rate = 1000                           # in ms
@@ -77,14 +79,13 @@ class MediaPlayer(QObject):
         self.endReachedCallbackSignal.connect(self._endReachedSlot)
         self.errorCallbackSignal.connect(self._errorSlot)
 
-        self._setupEvents()
+        self._attachEvents()
 
         logger.debug(u"Created Woofer player instance")
 
-    def _setupEvents(self):
-        self._event_manager = self._media_player.event_manager()
-        # self._event_manager.event_attach(libvlc.EventType.MediaPlayerOpening, self.playerStateChanged)
-        # self._event_manager.event_attach(libvlc.EventType.MediaPlayerBuffering, self.playerStateChanged)
+    def _attachEvents(self):
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerOpening, self.__openingCallback)
+        self._event_manager.event_attach(libvlc.EventType.MediaPlayerBuffering, self.__bufferingCallback)
         self._event_manager.event_attach(libvlc.EventType.MediaPlayerPlaying, self.__playingCallback)
         self._event_manager.event_attach(libvlc.EventType.MediaPlayerPaused, self.__pausedCallback)
         self._event_manager.event_attach(libvlc.EventType.MediaPlayerStopped, self.__stoppedCallback)
@@ -95,6 +96,20 @@ class MediaPlayer(QObject):
         self._event_manager.event_attach(libvlc.EventType.MediaPlayerTimeChanged, self.__timeChangedCallback)
         self._event_manager.event_attach(libvlc.EventType.MediaPlayerPositionChanged, self.__positionChangedCallback)
         self._event_manager.event_attach(libvlc.EventType.MediaPlayerMediaChanged, self.__mediaChangedCallback)
+
+    def _detachEvents(self):
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerOpening)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerBuffering)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerPlaying)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerPaused)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerStopped)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerForward)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerBackward)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerEndReached)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerEncounteredError)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerTimeChanged)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerPositionChanged)
+        self._event_manager.event_detach(libvlc.EventType.MediaPlayerMediaChanged)
 
     @pyqtSlot(list)
     def addMedia(self, mlist, restoring_session=False):
@@ -217,7 +232,7 @@ class MediaPlayer(QObject):
         logger.debug(u"Clearing _media_list")
         self.stop()
         self._media_list.release()                              # delete old media list
-        self._media_list = self.instance.media_list_new()       # create new and empty list
+        self._media_list = self._instance.media_list_new()       # create new and empty list
         self._media_player.set_media(None)
         self.media_list = []
         self.player_is_empty = True
@@ -531,6 +546,10 @@ class MediaPlayer(QObject):
             else:
                 self.setShuffle(True)       # implicit shuffle
 
+    def quit(self):
+        self.stop()
+        self._detachEvents()
+
     # ------------------------- CALLBACKS ------------------------------------------
 
     @pyqtSlot()
@@ -643,6 +662,11 @@ class MediaPlayer(QObject):
     def __errorCallback(self, event):
         self.errorCallbackSignal.emit()
 
+    def __bufferingCallback(self, event):
+        pass
+
+    def __openingCallback(self, event):
+        pass
 
 class MediaParser(QObject):
     """
