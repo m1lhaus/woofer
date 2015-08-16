@@ -17,9 +17,9 @@ import datetime
 import psutil
 
 
-class StreamToLogger(object):
+class CopyToLogger(object):
     """
-    Fake file-like stream object that redirects stdout/stderr writes to a logger instance.
+    Fake file-like stream object that copies stdout/stderr writes to a logger instance.
     """
 
     def __init__(self, fdnum, logger, log_level=logging.INFO):
@@ -36,13 +36,18 @@ class StreamToLogger(object):
         self.log_level = log_level
 
     def write(self, buf):
-        if buf == '\n':
-            self.orig_output.write(buf)
-        else:
-            if isinstance(buf, str):
-                buf = unicode(buf, u'utf-8')
-            for line in buf.rstrip().splitlines():
-                self.logger.log(self.log_level, line.rstrip())
+        self.orig_output.write(buf)
+        buf = buf.decode(sys.getfilesystemencoding())
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.log_level, line.rstrip())
+
+        # if buf == '\n':
+        #     self.orig_output.write(buf)
+        # else:
+        #     if isinstance(buf, str):
+        #         buf = unicode(buf, u'utf-8')
+        #     for line in buf.rstrip().splitlines():
+        #         self.logger.log(self.log_level, line.rstrip())
 
     def __getattr__(self, name):
         return self.orig_output.__getattribute__(name)              # pass all other methods to original fd
@@ -59,8 +64,8 @@ def setup_logging(log_dir):
     logger = logging.getLogger('')      # get root logger
 
     # redirects all stderr output (exceptions, etc.) to logger ERROR level
-    sys.stdout = StreamToLogger(0, logger, logging.DEBUG)
-    sys.stderr = StreamToLogger(1, logger, logging.ERROR)
+    sys.stdout = CopyToLogger(0, logger, logging.DEBUG)
+    sys.stderr = CopyToLogger(1, logger, logging.ERROR)
     logger.debug("Logger initialized")
 
     return logger
@@ -72,9 +77,9 @@ def woofer_finished():
 
     print "Waiting until parent process PID: %s finishes ..." % args.pid
 
-    attempts = 5
+    attempts = 9
     time.sleep(0.5)
-    while is_running(args.pid) and attempts > 0:         # no more waiting than 3s
+    while is_running(args.pid) and attempts > 0:         # no more waiting than 5s
         time.sleep(0.5)
         attempts -= 1
 
