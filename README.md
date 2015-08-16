@@ -18,7 +18,9 @@ Thanks to Python, Qt and LibVLC, Woofer is developed to run on multiple operatin
 
 ## Open-source
 
-Most recent code is always available here on Github. Python code is readable, well documented and self-explanatory. Feel free to join or fork the project. Woofer is published under **GPL v2 license**.
+Most recent code is always available here on Github. Python code is readable, well documented and self-explanatory. Feel free to join or fork the project. 
+
+Woofer is published under **GPL v3 license**.
 
 **Used packages (Requirements):**
 

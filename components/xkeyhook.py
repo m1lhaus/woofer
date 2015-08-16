@@ -5,9 +5,30 @@
 #   Only key hook functionality has been kept from original lib.
 #   The module is subject to the license terms set out below.
 #
-#   Modified by: Milan Herbig (m1lhaus)
-#   Copyright (C) 2008 Tim Alexander <dragonfyre13@gmail.com>
-#   Licence GPL v2
+#   Modified by: Milan Herbig <milanherbig[at]gmail.com> in 2015
+#
+#         Copyright (C) 2008 Tim Alexander <dragonfyre13@gmail.com>
+#
+#         This program is free software; you can redistribute it and/or modify
+#         it under the terms of the GNU General Public License as published by
+#         the Free Software Foundation; either version 2 of the License, or
+#         (at your option) any later version.
+#
+#         This program is distributed in the hope that it will be useful,
+#         but WITHOUT ANY WARRANTY; without even the implied warranty of
+#         MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#         GNU General Public License for more details.
+#
+#         You should have received a copy of the GNU General Public License
+#         along with this program; if not, write to the Free Software
+#         Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#         Thanks to Alex Badea <vamposdecampos@gmail.com> for writing the Record
+#         demo for the xlib libraries. It helped me immensely working with these
+#         in this library.
+#
+#         Thanks to the python-xlib team. This wouldn't have been possible without
+#         your code.
 
 
 import sys

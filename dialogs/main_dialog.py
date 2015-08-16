@@ -1,4 +1,20 @@
 # -*- coding: utf-8 -*-
+#
+# Woofer - free open-source cross-platform music player
+# Copyright (C) 2015 Milan Herbig <milanherbig[at]gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 """
 Main application GUI module.
@@ -1159,7 +1175,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 path_to_licence = u"file:///" + path_to_licence
             else:
                 logger.error(u"LICENSE.txt file was not found in woofer root dir!")
-                path_to_licence = u"http://www.gnu.org/licenses/gpl-2.0.html"
+                path_to_licence = u"http://www.gnu.org/licenses/gpl-3.0.txt"
 
             return path_to_licence
 
@@ -1180,7 +1196,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                    u"<br/>" \
                    u"Created by: {4} &lt; {5} &gt;<br/>" \
                    u"Web: <a href='{1}'>m1lhaus.github.io/woofer</a><br/>" \
-                   u"Source: <a href='{2}'>GitHub repository</a> &lt; <a href='{3}'>LICENCE GPL v2</a> &gt;".format(
+                   u"Source: <a href='{2}'>GitHub repository</a> &lt; <a href='{3}'>LICENCE GPL v3</a> &gt;".format(
                    videolan_url, woofer_url, github_url, path_to_licence, author, email)
 
         maintextLabel = QLabel()
