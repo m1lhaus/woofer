@@ -134,8 +134,8 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.playPauseBtn.clicked.connect(self.mediaPlayer.playPause)
         self.stopBtn.clicked.connect(self.mediaPlayer.stop)
-        self.nextBtn.clicked.connect(self.mediaPlayer.next)
-        self.previousBtn.clicked.connect(self.mediaPlayer.prev)
+        self.nextBtn.clicked.connect(self.mediaPlayer.next_track)
+        self.previousBtn.clicked.connect(self.mediaPlayer.prev_track)
         self.seekerSlider.valueChanged.connect(self.mediaPlayer.setPosition)
         self.volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
         self.volumeSlider.valueChanged.connect(self.volumeChanged)
@@ -151,8 +151,8 @@ class MainApp(QMainWindow, main_form.MainForm):
     def setupActionsSignals(self):
         self.mediaPlayPauseAction.triggered.connect(self.mediaPlayer.playPause)
         self.mediaStopAction.triggered.connect(self.mediaPlayer.stop)
-        self.mediaNextAction.triggered.connect(self.mediaPlayer.next)
-        self.mediaPreviousAction.triggered.connect(self.mediaPlayer.prev)
+        self.mediaNextAction.triggered.connect(self.mediaPlayer.next_track)
+        self.mediaPreviousAction.triggered.connect(self.mediaPlayer.prev_track)
         self.mediaShuffleAction.triggered.connect(self.shuffleBtn.toggle)
         self.mediaRepeatAction.triggered.connect(self.repeatBtn.toggle)
         self.mediaMuteAction.triggered.connect(self.muteBtn.toggle)
@@ -1010,14 +1010,24 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.seekerSlider.setValue(value)
             self.seekerSlider.blockSignals(False)
 
-    @pyqtSlot(int)
-    def displayCurrentMedia(self, index):
+    @pyqtSlot(int, int)
+    def displayCurrentMedia(self, current_index, last_index):
         """
         When media is changed, select row corresponding with media.
-        @param index: position of media in media_list == position in playlist table
-        @type index: int
+        @param current_index: position of media in media_list == position in playlist table
+        @type current_index: int
+        @param last_index: previous position of media in media_list
+        @type last_index: int
         """
-        self.playlistTable.setCurrentCell(index, 0)          # select the entire row due to table selection behaviour
+        # remove icon from previous item (playlist row)
+        last_item = self.playlistTable.item(last_index, 0)
+        null_icon = QIcon()
+        last_item.setIcon(null_icon)
+
+        # set play icon to current item (current playlist row)
+        self.playlistTable.setCurrentCell(current_index, 0)          # select the entire row due to table selection behaviour
+        current_item = self.playlistTable.item(current_index, 0)
+        current_item.setIcon(QIcon(QPixmap(u":/icons/media-play.png")))
 
     @pyqtSlot()
     def playlistPlayNow(self, row=None, col=None):

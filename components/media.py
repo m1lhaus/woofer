@@ -50,7 +50,7 @@ class MediaPlayer(QObject):
     pausedSignal = pyqtSignal()
     timeChangedSignal = pyqtSignal(int)
     positionChangedSignal = pyqtSignal(float)
-    mediaChangedSignal = pyqtSignal(int)          # TODO: add metadata
+    mediaChangedSignal = pyqtSignal(int, int)
     endReachedSignal = pyqtSignal(bool)
 
     # this signals are used as helper, because callback are called from vlc directly (from another thread),
@@ -76,6 +76,7 @@ class MediaPlayer(QObject):
                                                         # vlc translates the path to its form
         self.shuffled_playlist = []                     # items are represented by its index in _media_list
         self.shuffled_playlist_current_index = 0        # points which media in shuffled_playlist is being played
+        self.shuffled_playlist_last_index = 0           # points which media in shuffled_playlist was previously played
 
         self.is_playing = False
         self.is_paused = False
@@ -86,7 +87,7 @@ class MediaPlayer(QObject):
         self.repeat_mode = False
         self.player_is_empty = True
 
-        self.endReachedSignal.connect(self.next)
+        self.endReachedSignal.connect(self.next_track)
         self.playingSignal.connect(self._playingSlot)
         self.pausedSignal.connect(self._pausedSlot)
         self.stoppedSignal.connect(self._stoppedSlot)
@@ -255,6 +256,7 @@ class MediaPlayer(QObject):
 
         self.shuffled_playlist = []
         self.shuffled_playlist_current_index = 0
+        self.shuffled_playlist_last_index = 0
 
     def getMrl(self):
         """
@@ -301,15 +303,18 @@ class MediaPlayer(QObject):
         @param item_playlist_id: id (index) of item in idPlaylist
         @type item_playlist_id: int
         """
+        self.shuffled_playlist_last_index = self.shuffled_playlist_current_index
+
         # play given media (index) - find item in playlist
         if item_playlist_id is not None:
             logger.debug(u"Play method called with index: %s" % item_playlist_id)
             self._media_player.stop()
+            self.shuffled_playlist_current_index = self.shuffled_playlist.index(item_playlist_id)
+
             play_media = self._media_list.item_at_index(item_playlist_id)
             self._media_player.set_media(play_media)
             self.player_is_empty = False
             play_media.release()
-            self.shuffled_playlist_current_index = self.shuffled_playlist.index(item_playlist_id)
         else:
             logger.debug(u"Play method called")
 
@@ -335,12 +340,14 @@ class MediaPlayer(QObject):
         self._media_player.stop()
 
     @pyqtSlot(bool)
-    def next(self, repeat=False, playlist_index=None):
+    def next_track(self, repeat=False, playlist_index=None):
         """
         Switches to next media in media_list if any.
         @param repeat: if set, current media is played again
         @type repeat: bool
         """
+        self.shuffled_playlist_last_index = self.shuffled_playlist_current_index
+
         if playlist_index is not None:
             logger.debug(u"Setting next media to play by playlist_id: %s" % playlist_index)
             self._media_player.stop()
@@ -373,13 +380,15 @@ class MediaPlayer(QObject):
                 self._media_player.stop()
 
     @pyqtSlot()
-    def prev(self):
+    def prev_track(self):
         """
         Switches to next media in media_list if any.
         Method returns False if there is no media to switch.
         @rtype : bool
         """
         logger.debug(u"Previous media method called")
+
+        self.shuffled_playlist_last_index = self.shuffled_playlist_current_index
 
         if self._media_player.is_playing():
             self._media_player.stop()
@@ -605,13 +614,17 @@ class MediaPlayer(QObject):
         Slot is used as helper, because callback are called from vlc directly (from another thread),
         so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
         """
-        currentMedia = self._media_player.get_media()
-        self._media_list.lock()
-        index = self._media_list.index_of_item(currentMedia)
-        self._media_list.unlock()
-        currentMedia.release()
+        # currentMedia = self._media_player.get_media()
+        # self._media_list.lock()
+        # index = self._media_list.index_of_item(currentMedia)
+        # self._media_list.unlock()
+        # currentMedia.release()
 
-        self.mediaChangedSignal.emit(index)
+
+
+        current_index = self.shuffled_playlist[self.shuffled_playlist_current_index]
+        last_index = self.shuffled_playlist[self.shuffled_playlist_last_index]
+        self.mediaChangedSignal.emit(current_index, last_index)
 
     @pyqtSlot()
     def _endReachedSlot(self):
