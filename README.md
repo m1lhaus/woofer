@@ -8,6 +8,7 @@
 - **Folder based:** Your music is not ordered by album or interpret name, but only by its folder structure (on disk).
 - **Multi-platform:** Currently supports both Windows (XP and higher) and Linux (tested on Ubuntu distros).
 - **Fully portable:** No installation needed. Woofer will play right from your pen drive. 
+- **Auto-updater:** Built-in update checking and installing on Windows
 - more will be coming ...
 
 ## Cross-platform
