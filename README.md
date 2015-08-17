@@ -15,7 +15,7 @@
 
 Thanks to Python, Qt and LibVLC, Woofer is developed to run on multiple operating systems. **Windows, Linux and Mac OS** platforms are supported. Currently Woofer is being tested only on Windows and Linux distribution, because I don't have any Mac OS device to test and debug. 
 
-<div align="center"><img style="max-width:100p;height:auto;" src="doc/img/woofer-mp.jpg"></div>
+<div align="center"><img style="max-width:100p;height:auto;" src="doc/img/woofer-mp.png"></div>
 
 ## Open-source
 
