@@ -85,6 +85,7 @@
                 <li><strong>Folder based:</strong> Your music is not ordered by album or interpret name, but only by its folder structure (on disk).</li>
                 <li><strong>Multi-platform:</strong> Currently supports both Windows (XP and higher) and Linux (tested on Ubuntu distros).</li>
                 <li><strong>Fully portable:</strong> No installation needed. Woofer will play right from your pen drive.</li>
+                <li><strong>Auto-updater:</strong> Built-in update checking and installing on Windows</li>
                 <li>more will be coming ...</li>
             </ul>
 
@@ -92,11 +93,11 @@
 
             <p>Thanks to Python, Qt and LibVLC, Woofer is developed to run on multiple operating systems. <strong>Windows, Linux and Mac OS</strong> platforms are supported. Currently Woofer is being tested only on Windows and Linux distribution, because I don't have any Mac OS device to test and debug.</p>
 
-            <div style="text-align: center"><img src="https://raw.githubusercontent.com/m1lhaus/woofer/master/doc/img/woofer-mp.jpg"><br/><small>Works both on Windows and Linux</small></div>
+            <div style="text-align: center"><img src="https://raw.githubusercontent.com/m1lhaus/woofer/master/doc/img/woofer-mp.png"><br/><small>Works both on Windows and Linux</small></div>
 
             <h2><a class="anchor" href="#open-source" id="open-source"><span class="octicon octicon-link"></span></a>Open-source</h2>
 
-            <p>Most recent code is always available <a href="https://github.com/m1lhaus/woofer" target="_blank">here on Github</a>. Python code is readable, well documented and self-explanatory. Feel free to join or fork the project. Woofer is published under <strong>GPL v2 license</strong>.</p>
+            <p>Most recent code is always available <a href="https://github.com/m1lhaus/woofer" target="_blank">here on Github</a>. Python code is readable, well documented and self-explanatory. Feel free to join or fork the project. Woofer is published under <strong>GPL v3 license</strong>.</p>
 
             <p><strong>Used packages (Requirements):</strong></p>
 
@@ -105,7 +106,7 @@
                 <li><a href="http://www.riverbankcomputing.co.uk/software/pyqt/download" target="_blank">PyQt4</a> (Qt 4.8)</li>
                 <li><a href="https://wiki.videolan.org/Python_bindings/" target="_blank">LibVLC Python wrapper</a></li>
                 <li><a href="https://github.com/pyinstaller/pyinstaller/wiki" target="_blank">PyInstaller</a> (only for build)</li>
-                <li>Python packages - <a href="https://pypi.python.org/pypi/Send2Trash" target="_blank">Send2Trash</a>, <a href="http://python-xlib.sourceforge.net/" target="_blank">Python-XLib</a> (only for Linux)</li>
+                <li>Python packages - <a href="https://pypi.python.org/pypi/Send2Trash" target="_blank">Send2Trash</a>, <a href="http://python-xlib.sourceforge.net/" target="_blank">Python-XLib</a> (only for Linux), <a href="https://github.com/giampaolo/psutil" target="_blank">psutil</a></li>
             </ul>
 
             <p>Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quite easy. But, Woofer will stick with Python 2.7 because there is no reliable bug-free alternative to PyInstaller for Python 3.</p>
@@ -131,8 +132,8 @@
             <h2><a class="anchor" href="#future-work" id="future-work"><span class="octicon octicon-link"></span></a>Future work</h2>
 
             <ul>
+                <li>multi-language support</li>
                 <li>save/load playlists</li>
-                <li>automatic application updates</li>
                 <li>media streaming (live broadcasts)</li>
             </ul>
         </section>
