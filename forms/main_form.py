@@ -129,6 +129,7 @@ class PlaylistTable(QTableWidget):
         self.horizontalHeader().setDefaultSectionSize(200)
         self.verticalHeader().setDefaultSectionSize(19)
         self.setColumnHidden(self.columnCount() - 1, True)
+        self.setColumnHidden(1, True)
         header = self.horizontalHeader()
         header.setResizeMode(0, QHeaderView.Stretch)
         header.setResizeMode(1, QHeaderView.Fixed)
@@ -495,8 +496,9 @@ class MainForm(object):
         self.playlistClearAction = QAction(QIcon(u":/icons/delete.png"), u"&Clear current playlist", MainWindow)
         self.toolsSettingsAction = QAction(QIcon(u":/icons/settings.png"), u"&Settings", MainWindow)
         # self.toolsSettingsAction.setEnabled(False)
-        self.helpHelpAction = QAction(QIcon(u":/icons/help.png"), u"&Help", MainWindow)
-        self.helpHelpAction.setEnabled(False)
+        # self.helpHelpAction = QAction(QIcon(u":/icons/help.png"), u"&Help", MainWindow)
+        # self.helpHelpAction.setEnabled(False)
+        # self.helpHelpAction.setVisible(False)
         self.helpAboutAction = QAction(QIcon(u":/icons/info.png"), u"&About", MainWindow)
 
         self.menubar.addAction(self.menuMedia.menuAction())
@@ -514,7 +516,7 @@ class MainForm(object):
         self.menuPlaylist.addSeparator()
         self.menuPlaylist.addAction(self.playlistClearAction)
         self.menuTools.addAction(self.toolsSettingsAction)
-        self.menuHelp.addActions([self.helpHelpAction, self.helpAboutAction])
+        self.menuHelp.addAction(self.helpAboutAction)
 
         # STATUSBAR
         MainWindow.setMenuBar(self.menubar)

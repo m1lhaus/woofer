@@ -1277,7 +1277,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.statusbar.addPermanentWidget(self.downloadStatusLabel)
         self.downloadAnimation.start()
 
-        self.errorSignal.emit(tools.ErrorMessages.INFO, u"Updates are available, downloading ...", u"")
+        self.errorSignal.emit(tools.ErrorMessages.INFO, u"Downloading update package ...", u"")
 
     @pyqtSlot(int, int)
     def updateDownloaderStatus(self, already_down, total_size):
