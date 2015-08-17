@@ -45,7 +45,7 @@ def get_git_version_and_hash():
         revision = matchObj.group(4)
     else:
         raise Exception("Unable to parse retrieved git version info! "
-                        "Expected something like this: 'v0.7-0-ge502b4a', but given %s" % full_version_info)
+                        "Expected something like this: 'v1.0.0-0-ge502b4a', but given %s" % full_version_info)
 
     vlabel = "-" + vlabel if vlabel else vlabel
     return version + vlabel, commits, revision
