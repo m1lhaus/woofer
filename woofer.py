@@ -28,6 +28,7 @@ import os
 import logging
 
 import components.log
+import components.translator
 import tools
 
 if sys.version_info < (2, 7) or sys.version_info >= (3, 0):
@@ -198,6 +199,11 @@ if __name__ == "__main__":
 
         logging.shutdown()              # quit application
         sys.exit()
+
+    # init translator module
+    settings = QSettings()
+    lang_code = settings.value("components/translator/Translator/language", "en_US")
+    components.translator.init(lang_code)
 
     # start gui application
     import dialogs.main_dialog
