@@ -94,7 +94,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.updateOnExit = False
         self.restartAfterUpdate = False
 
-
         # setups all GUI components from form (design part)
         self.setupUi(self)
         self.setWindowTitle(u"Woofer" if mode == 'PRODUCTION' else u"Woofer - debug mode")
