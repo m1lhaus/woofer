@@ -61,7 +61,7 @@ def get_git_revision_short_hash():
 
 def write_version_file(data):
     with open("build.info", 'w') as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
 
 if __name__ == "__main__":
     version, commits, revision = get_git_version_and_hash()
