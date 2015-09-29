@@ -614,14 +614,6 @@ class MediaPlayer(QObject):
         Slot is used as helper, because callback are called from vlc directly (from another thread),
         so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
         """
-        # currentMedia = self._media_player.get_media()
-        # self._media_list.lock()
-        # index = self._media_list.index_of_item(currentMedia)
-        # self._media_list.unlock()
-        # currentMedia.release()
-
-
-
         current_index = self.shuffled_playlist[self.shuffled_playlist_current_index]
         last_index = self.shuffled_playlist[self.shuffled_playlist_last_index]
         self.mediaChangedSignal.emit(current_index, last_index)
