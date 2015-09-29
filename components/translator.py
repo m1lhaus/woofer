@@ -96,5 +96,3 @@ class Translator:
             raise
 
         return string
-
-
