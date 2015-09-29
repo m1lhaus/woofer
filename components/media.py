@@ -689,6 +689,7 @@ class MediaPlayer(QObject):
     def __openingCallback(self, event):
         pass
 
+
 class MediaParser(QObject):
     """
     Class for parsing media object.
