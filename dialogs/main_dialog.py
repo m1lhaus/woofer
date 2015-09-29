@@ -87,10 +87,13 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.myComputerPathIndex = None
         self.oldVolumeValue = 0
-        self.updateOnRestart = False
+        self.updateOnExit = False
         self.updateExe = None
         self.availableUpdateLabel = None
         self.downloadUpdateBtn = None
+        self.updateOnExit = False
+        self.restartAfterUpdate = False
+
 
         # setups all GUI components from form (design part)
         self.setupUi(self)
@@ -1342,18 +1345,26 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         logger.debug(u"Preparing for update on restart")
 
-        self.updateOnRestart = True
+        self.updateOnExit = True
         self.updateExe = filepath
 
         self.updateAppBtn = QPushButton(self)
         self.updateAppBtn.setIcon(QIcon(QPixmap(u":/icons/update.png")))
         self.updateAppBtn.setFlat(True)
-        self.updateAppBtn.setText(u"Update!")
+        self.updateAppBtn.setText(u"Update and restart")
         self.updateAppBtn.setLayoutDirection(Qt.RightToLeft)
-        self.updateAppBtn.clicked.connect(self.close)
+        self.updateAppBtn.clicked.connect(self.updateAndRestart)
         self.statusbar.addPermanentWidget(self.updateAppBtn)
 
         self.errorSignal.emit(tools.ErrorMessages.INFO, u"Update package downloaded, ready for update!", u"")
+
+    @pyqtSlot()
+    def updateAndRestart(self):
+        """
+        Called as slot by "Update and restart" button in statusbar.
+        """
+        self.restartAfterUpdate = True
+        self.close()
 
     def closeEvent(self, event):
         """
@@ -1391,13 +1402,15 @@ class MainApp(QMainWindow, main_form.MainForm):
             logger.error(u"hkHookThread still running after timeout! Thread will be terminated.")
             self.hkHookThread.terminate()
 
-        if self.updateOnRestart:
-            logger.debug(u"Launching updater script ...")
+        if self.updateOnExit:
             if os.path.isfile(self.updateExe):
-                subprocess.call(["start",
-                                 self.updateExe.encode(sys.getfilesystemencoding()),
-                                 tools.APP_ROOT_DIR.encode(sys.getfilesystemencoding()),
-                                 str(os.getpid()), '-r'], shell=True)
+                command = ["start", self.updateExe.encode(sys.getfilesystemencoding()),
+                           tools.APP_ROOT_DIR.encode(sys.getfilesystemencoding()), str(os.getpid())]
+                if self.restartAfterUpdate:
+                    command.append('-r')
+
+                logger.debug(u"Launching updater script, command: %s", " ".join(command))
+                subprocess.call(command, shell=True)
             else:
                 logger.error(u"Unable to locate Woofer updater launcher at '%s'!", self.updateExe)
 
