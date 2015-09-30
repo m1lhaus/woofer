@@ -284,11 +284,9 @@ class Downloader(QObject):
         """
         try:
             response = urllib2.urlopen(address, timeout=timeout)
-        except urllib2.URLError as err:
+        except urllib2.URLError:
             pass
         else:
             return True
 
         return False
-
-
