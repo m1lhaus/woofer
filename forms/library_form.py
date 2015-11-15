@@ -25,6 +25,8 @@ import logging
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+from components.translator import tr
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,7 +62,7 @@ class Ui_libraryDialog(object):
         self.retranslateUi(libraryDialog)
 
     def retranslateUi(self, libraryDialog):
-        libraryDialog.setWindowTitle(u"Media library")
-        self.label.setText(u"Add folders for quick access:")
-        self.addBtn.setText(u"Add")
-        self.removeBtn.setText(u"Remove")
+        libraryDialog.setWindowTitle(tr['MEDIA_LIBRARY'])
+        self.label.setText(tr['ADD_MEDIALIB_FOLDER_LBL'])
+        self.addBtn.setText(tr['ADD'])
+        self.removeBtn.setText(tr['REMOVE'])

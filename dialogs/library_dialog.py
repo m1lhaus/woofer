@@ -24,6 +24,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 from forms.library_form import Ui_libraryDialog
+from components.translator import tr
 
 logger = logging.getLogger(__name__)
 
@@ -53,10 +54,10 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
                 assert isinstance(self.mediaFolders, list)
         except IOError:
             logger.exception(u"Error when reading media file data from disk")
-            QMessageBox(QMessageBox.Critical, u"IO Error", u"Error when reading media file data from disk!").exec_()
+            QMessageBox(QMessageBox.Critical, tr['ERROR_READ_MEDIALIB_FILE'], u"").exec_()
         except Exception:
             logger.exception(u"Error when parsing media file data from json")
-            QMessageBox(QMessageBox.Critical, u"Parsing error", u"Error when parsing media file data from json!").exec_()
+            QMessageBox(QMessageBox.Critical, tr['ERROR_PARSE_MEDIALIB_FILE'], u"").exec_()
 
         # fill QListWidget with folders
         for folder in self.mediaFolders:
@@ -65,7 +66,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
 
             if not os.path.isdir(folder):
                 folder_item.setForeground(QBrush(Qt.red))
-                folder_item.setToolTip(u"Folder does not exist!")
+                folder_item.setToolTip(tr['FOLDER_NOT_EXIST'])
 
             self.folderList.addItem(folder_item)
 
@@ -92,7 +93,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
 
         new_folder = QFileDialog.getExistingDirectory(directory=start_folder)
         if new_folder:
-            logger.debug(u"Selected directory: %s", new_folder)
+            logger.debug(tr['SELECTED_DIRECTORY'], new_folder)
             new_folder = os.path.normpath(new_folder)
             self.mediaFolders.append(new_folder)
             self.folderList.addItem(new_folder)
@@ -143,9 +144,9 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
                 json.dump(self.mediaFolders, mediaFile)
         except IOError:
             logger.exception(u"Error when writing media file data to disk")
-            QMessageBox(QMessageBox.Critical, u"IO Error", u"Error when writing media file data to disk!").exec_()
+            QMessageBox(QMessageBox.Critical, tr['ERROR_WRITE_MEADIALIB_FILE'], u"").exec_()
         except Exception:
             logger.exception(u"Error when dumping mediaFolders to media file")
-            QMessageBox(QMessageBox.Critical, u"Parsing error", u"Error when parsing media file data from json!").exec_()
+            QMessageBox(QMessageBox.Critical, tr['ERROR_PARSE_MEDIALIB_FILE'], u"").exec_()
 
         super(LibraryDialog, self).accept()
