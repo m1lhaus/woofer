@@ -33,6 +33,7 @@ from PyQt4.QtCore import *
 
 from forms import main_form
 from dialogs import library_dialog, settings_dialog
+from components.translator import tr
 
 import components.disk
 import components.media
@@ -268,7 +269,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         except OSError, exception:
             if exception.errno != errno.EEXIST:
                 logger.exception(u"Unable to create data folder on path: %s", self.appDataPath)
-                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to create data folder.",
+                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['ERROR_CREATE_DATA_FOLDER'],
                                       u"%s" % str(exception).decode(sys.getfilesystemencoding()))
         else:
             logger.debug(u"Data folder didn't exist and has been created.")
@@ -285,14 +286,13 @@ class MainApp(QMainWindow, main_form.MainForm):
                         f.write('[]')
                 except IOError:
                     logger.exception(u"Error when creating new media library file.")
-                    self.errorSignal.emit(tools.ErrorMessages.CRITICAL,
-                                          u"Unable to create medialib file and write default data.",
+                    self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['ERROR_CREATE_MEDIALIB_FILE'],
                                           u"%s" % str(exception).decode(sys.getfilesystemencoding()))
                 else:
                     logger.debug(u"Media file has been created and initialized.")
             else:
                 logger.exception(u"Error when reading medialib file.")
-                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.",
+                self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['ERROR_READ_MEDIALIB_FILE'],
                                       u"%s" % str(exception).decode(sys.getfilesystemencoding()))
 
     @pyqtSlot(int)
@@ -308,12 +308,12 @@ class MainApp(QMainWindow, main_form.MainForm):
                 mediaFolders = json.load(mediaFile)
         except IOError, exception:
             logger.exception(u"Error when reading medialib file.")
-            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to open and read medialib file.", u"%s" %
-                                  str(exception).decode(sys.getfilesystemencoding()))
+            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['READ_MEDIALIB_FILE_ERROR'],
+                                  u"%s" % str(exception).decode(sys.getfilesystemencoding()))
             raise
         except ValueError, exception:
             logger.exception(u"Unable to load and parse data from JSON file.")
-            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, u"Unable to load and parse data from medialib file.",
+            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['ERROR_PARSE_MEDIALIB_FILE'],
                                   u"%s" % str(exception).decode(sys.getfilesystemencoding()))
             raise
 
@@ -342,7 +342,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.folderCombo.addItem(folder)
                 folders_to_display.append(folder)
             else:
-                self.errorSignal.emit(tools.ErrorMessages.WARNING, u"Some folders in media library don't exist.", u"")
+                self.errorSignal.emit(tools.ErrorMessages.WARNING, tr['WARNING_NONEXIST_MEDIALIB_PATH'], u"")
 
         # set back previously selected (current) item in folderCombo if exists (may be deleted => set root folder)
         if current_folder_text in folders_to_display:
@@ -591,7 +591,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaPlayer.clearMediaList()
         self.mediaPlayer.initMediaAdding(append=False)
         self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-        self.displayProgress(u"Adding...")
+        self.displayProgress(tr['PROGRESS_ADDING'])
 
     @pyqtSlot('QPointF')
     def sourceItemsBrowserContextMenu(self, pos):
@@ -623,10 +623,10 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         # menu setup
         menu = QMenu(self.mainTreeBrowser)
-        playNow = QAction(QIcon(u":/icons/play-now.png"), u"Play now", menu)
-        addToPlayList = QAction(QIcon(u":/icons/play-next.png"), u"Add to playlist", menu)
-        playAll = QAction(QIcon(u":/icons/play-now.png"), u"Play all", menu)
-        removeFromDisk = QAction(QIcon(u":/icons/delete.png"), u"Remove from disk", menu)
+        playNow = QAction(QIcon(u":/icons/play-now.png"), tr['PLAY_NOW'], menu)
+        addToPlayList = QAction(QIcon(u":/icons/play-next.png"), tr['ADD_TO_PLAYLIST'], menu)
+        playAll = QAction(QIcon(u":/icons/play-now.png"), tr['PLAY_ALL'], menu)
+        removeFromDisk = QAction(QIcon(u":/icons/delete.png"), tr['REMOVE_FROM_DISK'], menu)
         separator = QAction(menu)
         separator.setSeparator(True)
 
@@ -645,29 +645,14 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         # PLAY NOW
         if choice is playNow:
-            # self.mediaPlayer.clearMediaList()
-            # self.mediaPlayer.initMediaAdding(append=False)
-            #
-            # targetPath = fileInfo.absoluteFilePath()
-            # self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-            # self.displayProgress(u"Adding...")
             self.playPath(fileInfo.absoluteFilePath(), append=False)
 
         # PLAY ALL
         elif choice is playAll:
-            # self.mediaPlayer.clearMediaList()
-            # self.mediaPlayer.initMediaAdding(append=False)
-            # targetPath = fileInfo.absoluteFilePath()
-            # self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-            # self.displayProgress(u"Adding...")
             self.playPath(fileInfo.absoluteFilePath(), append=False)
 
         # ADD TO PLAYLIST
         elif choice is addToPlayList:
-            # self.mediaPlayer.initMediaAdding(append=True)         # asynchronously recursively search for media files
-            # targetPath = fileInfo.absoluteFilePath()
-            # self.scanFilesSignal.emit(targetPath)
-            # self.displayProgress(u"Adding...")
             self.playPath(fileInfo.absoluteFilePath(), append=True)
 
         # REMOVE FROM DISK
@@ -689,18 +674,18 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         logger.debug(u"Opening playlist context menu.")
         menu = QMenu(self.playlistTable)
-        playNowAction = QAction(QIcon(u":/icons/play-now.png"), u"Play now", menu)
+        playNowAction = QAction(QIcon(u":/icons/play-now.png"), tr['PLAY_NOW'], menu)
         playNowAction.setShortcut(QKeySequence(Qt.Key_Enter))
         playNowAction.setEnabled(True if len(selected_rows) == 1 else False)
-        remFromPlaylistAction = QAction(u"Remove from playlist", menu)
+        remFromPlaylistAction = QAction(tr['REMOVE_FROM_PLAYLIST'], menu)
         remFromPlaylistAction.setShortcut(QKeySequence(Qt.Key_Delete))
-        remFromDiskAction = QAction(QIcon(u":/icons/delete.png"), u"Remove from disk", menu)
+        remFromDiskAction = QAction(QIcon(u":/icons/delete.png"), tr['REMOVE_FROM_DISK'], menu)
         remFromDiskAction.setShortcut(QKeySequence(Qt.SHIFT + Qt.Key_Delete))
         separator = QAction(menu)
         separator.setSeparator(True)
 
         menu.addActions([playNowAction, separator])
-        removeMenu = menu.addMenu(u"Remove")
+        removeMenu = menu.addMenu(tr['REMOVE'])
         removeMenu.addActions([remFromPlaylistAction, remFromDiskAction])
         choice = menu.exec_(self.playlistTable.viewport().mapToGlobal(pos))
 
@@ -791,7 +776,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 # self.mainTreeBrowser.currentRootFolder = newMediaFolder
             else:
                 logger.error(u"Media path from folderCombo could not be found in fileSystemModel!")
-                self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Media folder '%s' could not be found!" % newMediaFolder, u"")
+                self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['ERROR_MEDIALIB_FOLDER_NOT_FOUND'] % newMediaFolder, u"")
                 self.folderCombo.removeItem(self.folderCombo.currentIndex())
 
     @pyqtSlot()
@@ -883,7 +868,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             layout = msgBox.layout()
             layout.addItem(horizontalSpacer, layout.rowCount(), 0, 1, layout.columnCount())
             msgBox.setIcon(QMessageBox.Critical)
-            msgBox.setWindowTitle(u"Critical error")
+            msgBox.setWindowTitle(tr['CRITICAL_ERROR'])
             msgBox.setText(text)
             msgBox.setInformativeText(details)
             msgBox.exec_()
@@ -963,7 +948,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.playPauseBtn.setIcon(icon)
         self.seekerSlider.setEnabled(True)
         self.mediaPlayPauseAction.setIcon(icon)
-        self.mediaPlayPauseAction.setText(u"Pause")
+        self.mediaPlayPauseAction.setText(tr['PAUSE'])
 
     @pyqtSlot()
     def paused(self):
@@ -972,7 +957,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
         self.mediaPlayPauseAction.setIcon(icon)
-        self.mediaPlayPauseAction.setText(u"Play")
+        self.mediaPlayPauseAction.setText(tr['PLAY'])
 
     @pyqtSlot()
     def stopped(self):
@@ -988,7 +973,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         icon.addPixmap(QPixmap(u":/icons/media-play.png"), QIcon.Normal, QIcon.Off)
         self.playPauseBtn.setIcon(icon)
         self.mediaPlayPauseAction.setIcon(icon)
-        self.mediaPlayPauseAction.setText(u"Play")
+        self.mediaPlayPauseAction.setText(tr['PLAY'])
 
     @pyqtSlot(int)
     def syncPlayTime(self, value):
@@ -1099,7 +1084,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         self.mediaPlayer.initMediaAdding(append=append)
         self.scanFilesSignal.emit(targetPath)                 # asynchronously recursively search for media files
-        self.displayProgress(u"Adding...")
+        self.displayProgress(tr['PROGRESS_ADDING'])
 
     @pyqtSlot(bool)
     def toggleShuffle(self, checked):
@@ -1148,7 +1133,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.volumeSlider.setValue(0)
             self.volumeSlider.blockSignals(False)
 
-            self.mediaMuteAction.setText(u"Unmute")
+            self.mediaMuteAction.setText(tr['UNMUTE'])
             self.mediaMuteAction.setIcon(QIcon(QPixmap(u":/icons/volume-max.png")))
         else:
             logger.debug(u"Mute button checked, UN-MUTING audio...")
@@ -1162,7 +1147,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.volumeSlider.blockSignals(False)
                 self.volumeChanged(self.oldVolumeValue)
 
-            self.mediaMuteAction.setText(u"Mute")
+            self.mediaMuteAction.setText(tr['MUTE'])
             self.mediaMuteAction.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
 
     @pyqtSlot()
@@ -1171,7 +1156,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             build_info_file = os.path.join(tools.APP_ROOT_DIR, u"build.info")
             if not os.path.isfile(build_info_file):
                 logger.error("Unable to locate build.info file!")
-                self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Unable to locate build.info file!", u"")
+                self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['ERROR_BUILDINFO_MISSING'], u"")
                 return {}
 
             with open(build_info_file, 'r') as f:
@@ -1254,7 +1239,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         aboutDialog = QDialog(self)
         aboutDialog.setWindowFlags(aboutDialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        aboutDialog.setWindowTitle(u"About Woofer player")
+        aboutDialog.setWindowTitle(tr['ABOUT_WOOFER'])
 
         topLayout = QVBoxLayout()
         topLayout.setMargin(15)
@@ -1284,12 +1269,12 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.downloadAnimation = QMovie(u":/icons/loading.gif", parent=self)
 
         self.downloadStatusLabel.setMinimumWidth(24)
-        self.downloadStatusLabel.setToolTip(u"Downloading update: 0 B / " + tools.misc.bytes_to_str(total_size))
+        self.downloadStatusLabel.setToolTip(tr['PROGRESS_DOWNLOADING_UPDATE'] + u": 0 B / " + tools.misc.bytes_to_str(total_size))
         self.downloadStatusLabel.setMovie(self.downloadAnimation)
         self.statusbar.addPermanentWidget(self.downloadStatusLabel)
         self.downloadAnimation.start()
 
-        self.errorSignal.emit(tools.ErrorMessages.INFO, u"Downloading update package ...", u"")
+        self.errorSignal.emit(tools.ErrorMessages.INFO, tr['INFO_DOWNLOADING_UPDATE'], u"")
 
     @pyqtSlot(int, int)
     def updateDownloaderStatus(self, already_down, total_size):
@@ -1297,7 +1282,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Called from scheduler/updater whenever one percent of the file is downloaded.
         Method will display progress in 'downloadStatusLabel'.
         """
-        self.downloadStatusLabel.setToolTip(u"Downloading update: " + tools.misc.bytes_to_str(already_down) + u" / " + tools.misc.bytes_to_str(total_size))
+        self.downloadStatusLabel.setToolTip(tr['PROGRESS_DOWNLOADING_UPDATE'] + u": " + tools.misc.bytes_to_str(already_down) + u" / " + tools.misc.bytes_to_str(total_size))
 
     @pyqtSlot(int, unicode)
     def endDownloadingUpdate(self, status, filepath):
@@ -1306,7 +1291,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         logger.debug(u"Updater finished, updating GUI download status")
         if status == components.network.Downloader.COMPLETED:
-            self.downloadStatusLabel.setToolTip(u"Update downloading finished")
+            self.downloadStatusLabel.setToolTip(tr['PROGRESS_DOWNLOADING_FINISHED'])
             self.downloadAnimation.stop()
             self.statusbar.removeWidget(self.downloadStatusLabel)
         else:
@@ -1322,13 +1307,13 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         logger.debug(u"Displaying info about available application update")
 
-        self.availableUpdateLabel = QLabel(u"New version is available!", self)
-        self.availableUpdateLabel.setToolTip(u"Version: %s\nTotal size: %s" %
+        self.availableUpdateLabel = QLabel(tr['NEW_VERSION_AVAILABLE'], self)
+        self.availableUpdateLabel.setToolTip(tr['UPDATER_TOOLTIP'] %
                                              (version, tools.bytes_to_str(total_size)))
         self.downloadUpdateBtn = QPushButton(self)
         self.downloadUpdateBtn.setIcon(QIcon(QPixmap(u":/icons/download.png")))
         self.downloadUpdateBtn.setFlat(True)
-        self.downloadUpdateBtn.setToolTip(u"Download and install package")
+        self.downloadUpdateBtn.setToolTip(tr['DOWNLOAD_AND_INSTALL'])
 
         # when user hits download button, downloader thread will start downloading update package
         self.downloadUpdateBtn.clicked.connect(self.updater.downloadUpdatePackage)
@@ -1350,12 +1335,12 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.updateAppBtn = QPushButton(self)
         self.updateAppBtn.setIcon(QIcon(QPixmap(u":/icons/update.png")))
         self.updateAppBtn.setFlat(True)
-        self.updateAppBtn.setText(u"Update and restart")
+        self.updateAppBtn.setText(tr['UPDATE_AND_RESTART'])
         self.updateAppBtn.setLayoutDirection(Qt.RightToLeft)
         self.updateAppBtn.clicked.connect(self.updateAndRestart)
         self.statusbar.addPermanentWidget(self.updateAppBtn)
 
-        self.errorSignal.emit(tools.ErrorMessages.INFO, u"Update package downloaded, ready for update!", u"")
+        self.errorSignal.emit(tools.ErrorMessages.INFO, tr['INFO_DOWNLOADING_FINISHED'], u"")
 
     @pyqtSlot()
     def updateAndRestart(self):
