@@ -31,6 +31,7 @@ tr = None
 def init(lang_code=None):
     global tr
     tr = Translator(lang_code)
+    return tr
 
 
 class Translator:
@@ -85,7 +86,7 @@ class Translator:
 
         logger.debug("Translator initialised to '%s' language" % language)
 
-    def get(self, key):
+    def __getitem__(self, key):
         """
         Returns translated string by given key.
         """
