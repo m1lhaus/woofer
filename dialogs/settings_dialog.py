@@ -25,6 +25,7 @@ from PyQt4.QtCore import *
 import tools
 
 from forms.setting_form import Ui_settingsDialog
+from components.translator import tr
 
 logger = logging.getLogger(__name__)
 

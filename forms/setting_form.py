@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uic\settings.ui'
 #
-# Created: Tue May 19 23:56:41 2015
+# Created: Sun Nov 15 19:34:03 2015
 #      by: PyQt4 UI code generator 4.11.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_settingsDialog(object):
     def setupUi(self, settingsDialog):
         settingsDialog.setObjectName(_fromUtf8("settingsDialog"))
-        settingsDialog.resize(404, 218)
+        settingsDialog.resize(351, 251)
         settingsDialog.setModal(True)
         self.verticalLayout_2 = QtGui.QVBoxLayout(settingsDialog)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
@@ -98,6 +98,19 @@ class Ui_settingsDialog(object):
         self.downUpdatesChBox.setChecked(True)
         self.downUpdatesChBox.setObjectName(_fromUtf8("downUpdatesChBox"))
         self.verticalLayout.addWidget(self.downUpdatesChBox)
+        self.horizontalLayout_2 = QtGui.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
+        self.languageLbl = QtGui.QLabel(self.frame)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.languageLbl.setFont(font)
+        self.languageLbl.setObjectName(_fromUtf8("languageLbl"))
+        self.horizontalLayout_2.addWidget(self.languageLbl)
+        self.languageCombo = QtGui.QComboBox(self.frame)
+        self.languageCombo.setObjectName(_fromUtf8("languageCombo"))
+        self.horizontalLayout_2.addWidget(self.languageCombo)
+        self.verticalLayout.addLayout(self.horizontalLayout_2)
         self.verticalLayout_2.addWidget(self.frame)
         self.buttonBox = QtGui.QDialogButtonBox(settingsDialog)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
@@ -123,4 +136,5 @@ class Ui_settingsDialog(object):
         self.channelCombo.setItemText(0, _translate("settingsDialog", "Stable", None))
         self.channelCombo.setItemText(1, _translate("settingsDialog", "Pre-releases", None))
         self.downUpdatesChBox.setText(_translate("settingsDialog", "Automatically download and install new updates", None))
+        self.languageLbl.setText(_translate("settingsDialog", "Language:", None))
 
