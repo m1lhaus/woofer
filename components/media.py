@@ -76,7 +76,7 @@ class MediaPlayer(QObject):
                                                         # vlc translates the path to its form
         self.shuffled_playlist = []                     # items are represented by its index in _media_list
         self.shuffled_playlist_current_index = 0        # points which media in shuffled_playlist is being played
-        self.shuffled_playlist_last_index = 0           # points which media in shuffled_playlist was previously played
+        self.shuffled_playlist_old_index = 0            # points which media in shuffled_playlist was previously played
 
         self.is_playing = False
         self.is_paused = False
@@ -256,7 +256,7 @@ class MediaPlayer(QObject):
 
         self.shuffled_playlist = []
         self.shuffled_playlist_current_index = 0
-        self.shuffled_playlist_last_index = 0
+        self.shuffled_playlist_old_index = 0
 
     def getMrl(self):
         """
@@ -303,7 +303,7 @@ class MediaPlayer(QObject):
         @param item_playlist_id: id (index) of item in idPlaylist
         @type item_playlist_id: int
         """
-        self.shuffled_playlist_last_index = self.shuffled_playlist_current_index
+        self.shuffled_playlist_old_index = self.shuffled_playlist_current_index
 
         # play given media (index) - find item in playlist
         if item_playlist_id is not None:
@@ -346,7 +346,7 @@ class MediaPlayer(QObject):
         @param repeat: if set, current media is played again
         @type repeat: bool
         """
-        self.shuffled_playlist_last_index = self.shuffled_playlist_current_index
+        self.shuffled_playlist_old_index = self.shuffled_playlist_current_index
 
         if playlist_index is not None:
             logger.debug(u"Setting next media to play by playlist_id: %s" % playlist_index)
@@ -388,7 +388,7 @@ class MediaPlayer(QObject):
         """
         logger.debug(u"Previous media method called")
 
-        self.shuffled_playlist_last_index = self.shuffled_playlist_current_index
+        self.shuffled_playlist_old_index = self.shuffled_playlist_current_index
 
         if self._media_player.is_playing():
             self._media_player.stop()
@@ -529,6 +529,7 @@ class MediaPlayer(QObject):
             random.shuffle(self.shuffled_playlist)
             self.shuffled_playlist.remove(current_id)
             self.shuffled_playlist.insert(0, current_id)
+            self.shuffled_playlist_current_index = 0
         else:
             self.shuffled_playlist = sorted(self.shuffled_playlist)
             self.shuffled_playlist_current_index = current_id         # id_playlist is range-type (sorted) array
@@ -615,7 +616,9 @@ class MediaPlayer(QObject):
         so to prevent cross-thread collision, variables (flags) are manipulated only from MediaPlayer thread
         """
         current_index = self.shuffled_playlist[self.shuffled_playlist_current_index]
-        last_index = self.shuffled_playlist[self.shuffled_playlist_last_index]
+        last_index = self.shuffled_playlist[self.shuffled_playlist_old_index]
+
+        print "mediaChanged: old_pos: %s   new_pos: %s" % (last_index, current_index)
         self.mediaChangedSignal.emit(current_index, last_index)
 
     @pyqtSlot()
