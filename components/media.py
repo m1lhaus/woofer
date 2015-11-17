@@ -617,8 +617,6 @@ class MediaPlayer(QObject):
         """
         current_index = self.shuffled_playlist[self.shuffled_playlist_current_index]
         last_index = self.shuffled_playlist[self.shuffled_playlist_old_index]
-
-        print "mediaChanged: old_pos: %s   new_pos: %s" % (last_index, current_index)
         self.mediaChangedSignal.emit(current_index, last_index)
 
     @pyqtSlot()
