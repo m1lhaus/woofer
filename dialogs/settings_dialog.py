@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-import logging
+import os
 import sys
+import logging
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -55,6 +56,18 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         current_idx = 1 if self.settings.value(u"components/scheduler/Updater/pre-release", False, bool) else 0
         self.channelCombo.setCurrentIndex(current_idx)
 
+        self.lang_files = os.listdir(os.path.join(tools.APP_ROOT_DIR, "lang"))
+        current_lang = os.path.basename(tr.langfile)
+        default_lang = os.path.basename(tr.default_langfile)
+        try:
+            current_idx = self.lang_files.index(current_lang)
+        except ValueError:
+            logger.warning("Current language %s cannot be found in lang. files", current_lang)
+            current_idx = self.lang_files.index(default_lang)
+
+        self.languageCombo.addItems(self.lang_files)
+        self.languageCombo.setCurrentIndex(current_idx)
+
         self.setupSignals()
 
     def setupSignals(self):
@@ -72,6 +85,8 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         self.checkUpdatesChBox.setChecked(True)
         self.channelCombo.setCurrentIndex(0)
         self.downUpdatesChBox.setChecked(False)
+        default_lang = os.path.basename(tr.default_langfile)
+        self.languageCombo.setCurrentIndex(self.lang_files.index(default_lang))
 
     @pyqtSlot('QPushButton')
     def buttonClicked(self, button):
@@ -97,6 +112,7 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         Called when Save button is clicked.
         """
         logger.debug(u"Settings dialog accepted, updating and saving QSettings")
+        restart_dialog = False
 
         self.settings.setValue(u"components/disk/RecursiveBrowser/follow_symlinks", self.followSymChBox.isChecked())
         self.settings.setValue(u"session/saveRestoreSession", self.saveRestoreSessionChBox.isChecked())
@@ -104,5 +120,13 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         self.settings.setValue(u"components/scheduler/Updater/auto_updates", self.downUpdatesChBox.isChecked())
         pre_rls = True if self.channelCombo.currentIndex() == 1 else False
         self.settings.setValue(u"components/scheduler/Updater/pre-release", pre_rls)
+        language = self.languageCombo.currentText()
+        old_language = self.settings.value("components/translator/Translator/language", "en_US.ini")
+        if language != old_language:
+            self.settings.setValue(u"components/translator/Translator/language", language)
+            restart_dialog = True
+
+        if restart_dialog:
+            QMessageBox.information(self, u"Woofer player", tr['INFO_RESTART_WOOFER'])
 
         super(SettingsDialog, self).accept()

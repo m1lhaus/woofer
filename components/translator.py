@@ -44,18 +44,17 @@ class Translator:
     DEFAULT_LANG = "en_US"
     DEFAULT_ENCODING = "utf8"
 
-    def __init__(self, language):
+    def __init__(self, lang_filename):
         """
-        @param language: language code, i.e. en_US is default
-        @type language: string
+        @param lang_filename: language code, i.e. en_US is default
+        @type lang_filename: string
         """
-        if not language:
+        if not lang_filename:
             logger.debug("No language code given, default language used")
-            language = Translator.DEFAULT_LANG
+            lang_filename = Translator.DEFAULT_LANG
 
         self.default_langfile = os.path.join(tools.APP_ROOT_DIR, "lang", "en_US.ini")
-        self.langfile = os.path.join(tools.APP_ROOT_DIR, "lang", language+".ini")
-        self.language = language
+        self.langfile = os.path.join(tools.APP_ROOT_DIR, "lang", lang_filename)
         self.parser = ConfigParser.SafeConfigParser()
 
         # load default language
@@ -84,7 +83,7 @@ class Translator:
         if not self.parser.has_section("Main"):
             raise Exception("Wrong language file format. No 'Main' section found!")
 
-        logger.debug("Translator initialised to '%s' language" % language)
+        logger.debug("Translator initialised to '%s' language" % lang_filename)
 
     def __getitem__(self, key):
         """

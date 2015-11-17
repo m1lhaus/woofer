@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
     # init translator module
     settings = QSettings()
-    lang_code = settings.value("components/translator/Translator/language", "en_US")
+    lang_code = settings.value("components/translator/Translator/language", "en_US.ini")
     tr = components.translator.init(lang_code)
 
     # start gui application
