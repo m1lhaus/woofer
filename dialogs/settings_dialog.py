@@ -43,7 +43,11 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
 
         if not sys.platform.startswith('win') or not tools.IS_WIN32_EXE:
-            self.updaterLbl.setText(self.updaterLbl.text() + u" (disabled - Windows only)")
+            self.updaterLbl.setText(self.updaterLbl.text() + u" " + tr['SETTINGS_UPDATES_DISABLED'])
+            self.checkUpdatesChBox.setEnabled(False)
+            self.downUpdatesChBox.setEnabled(False)
+            self.channelCombo.setEnabled(False)
+            self.channelLbl.setEnabled(False)
 
         self.settings = QSettings()
 
