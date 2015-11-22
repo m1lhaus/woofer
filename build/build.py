@@ -116,6 +116,7 @@ def copy_dependencies(dst):
     shutil.copytree(VLC_PLUGINS_PATH, plugins_dst)
     shutil.copy(os.path.join(root_dir, VLC_LIBVLC_PATH), vlclibs_dst)
     shutil.copy(os.path.join(root_dir, VLC_LIBVLCCORE_PATH), vlclibs_dst)
+    shutil.copytree(os.path.join(root_dir, "lang"), os.path.join(dst, "lang"))
 
 
 def main():
