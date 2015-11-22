@@ -115,6 +115,9 @@ class Ui_settingsDialog(object):
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.RestoreDefaults|QtGui.QDialogButtonBox.Save)
         self.buttonBox.setObjectName("buttonBox")
+        self.buttonBox.button(QtGui.QDialogButtonBox.Cancel).setText(tr['BUTTON_CANCEL'])
+        self.buttonBox.button(QtGui.QDialogButtonBox.Save).setText(tr['BUTTON_SAVE'])
+        self.buttonBox.button(QtGui.QDialogButtonBox.RestoreDefaults).setText(tr['BUTTON_RESTORE_DEFAULTS'])
         self.verticalLayout_2.addWidget(self.buttonBox)
 
         settingsDialog.setWindowTitle(tr['SETTINGS_TITLE'])
@@ -126,8 +129,8 @@ class Ui_settingsDialog(object):
         self.updaterLbl.setText(tr['SETTINGS_UPDATER'])
         self.checkUpdatesChBox.setText(tr['SETTINGS_CHECK_UPDATES'])
         self.channelLbl.setText(tr['SETTINGS_UPDATER_CHANNEL'])
-        self.channelCombo.setItemText(0, "Stable")
-        self.channelCombo.setItemText(1, "Pre-releases")
+        self.channelCombo.setItemText(0, tr['SETTINGS_STABLE'])
+        self.channelCombo.setItemText(1, tr['SETTINGS_PRERELEASE'])
         self.downUpdatesChBox.setText(tr['SETTINGS_AUTO_UPDATES'])
         self.languageLbl.setText(tr['SETTINGS_LANGUAGE'])
 

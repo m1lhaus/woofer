@@ -57,6 +57,8 @@ class Ui_libraryDialog(object):
         self.buttonBox = QDialogButtonBox(libraryDialog)
         self.buttonBox.setOrientation(Qt.Horizontal)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Save)
+        self.buttonBox.button(QDialogButtonBox.Save).setText(tr['BUTTON_SAVE'])
+        self.buttonBox.button(QDialogButtonBox.Cancel).setText(tr['BUTTON_CANCEL'])
         self.gridLayout.addWidget(self.buttonBox, 2, 0, 1, 2)
 
         self.retranslateUi(libraryDialog)
