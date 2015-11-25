@@ -93,7 +93,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
 
         new_folder = QFileDialog.getExistingDirectory(directory=start_folder)
         if new_folder:
-            logger.debug(tr['SELECTED_DIRECTORY'], new_folder)
+            logger.debug(u"Selected directory: %s", new_folder)
             new_folder = os.path.normpath(new_folder)
             self.mediaFolders.append(new_folder)
             self.folderList.addItem(new_folder)
