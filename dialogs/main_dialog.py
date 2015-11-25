@@ -396,16 +396,19 @@ class MainApp(QMainWindow, main_form.MainForm):
             return
 
         logger.debug(u"Loading session...")
+        try:
+            with open(self.session_file, 'rb') as f:
+                session_data = pickle.load(f)
+        except Exception:
+            logger.exception(u"Unable to load data from session file!")
+        else:
+            volume = session_data.get('volume', 100)
+            self.volumeSlider.setValue(volume)
+            self.mediaPlayer.setVolume(volume)
 
-        # do not load playlist
-        # if not program started with input path argument (i.e. user double clicked on .mp3 file and woofer opened)
-        if not self.input_path:
-            try:
-                with open(self.session_file, 'rb') as f:
-                    session_data = pickle.load(f)
-            except Exception:
-                logger.exception(u"Unable to load data from session file!")
-            else:
+            # do not load playlist
+            # if not program started with input path argument (i.e. user double clicked on .mp3 file and woofer opened)
+            if not self.input_path:
                 self.loadPlaylist(session_data)
 
                 # load shuffle, repeat and volume
@@ -420,7 +423,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.repeatBtn.blockSignals(False)
                 self.mediaRepeatAction.setChecked(self.mediaPlayer.repeat_mode)
 
-        logger.debug(u"Session restored successfully")
+            logger.debug(u"Session restored successfully")
 
     def loadPlaylist(self, session_data):
         """
@@ -499,6 +502,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         session_data['shuffle'] = self.mediaPlayer.shuffle_mode
         session_data['repeat'] = self.mediaPlayer.repeat_mode
+        session_data['volume'] = self.volumeSlider.value()
 
         logger.debug(u"Dumping session file to disk...")
         with open(self.session_file, 'wb') as f:
