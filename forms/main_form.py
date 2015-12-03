@@ -77,8 +77,17 @@ class VolumePopup(QWidget):
         # setup Ui
         self.volumeSlider = QSlider(Qt.Vertical, self)
         self.volumeSlider.setMinimum(0)
-        self.volumeSlider.setMaximum(100)
+        self.volumeSlider.setMaximum(150)
         self.volumeSlider.setValue(self.volumeSlider.maximum())
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.volumeSlider.setSizePolicy(sizePolicy)
+        self.volumeSlider.valueChanged.connect(self.volumeChanged)
+
+        self.volumeValue = QLabel(self)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.volumeValue.setText(str(self.volumeSlider.value()))
+        self.volumeValue.setSizePolicy(sizePolicy)
+        self.volumeValue.setAlignment(Qt.AlignCenter)
 
         self.muteBtn = QPushButton(self)
         self.muteBtn.setIcon(QIcon(QPixmap(u":/icons/mute.png")))
@@ -89,6 +98,7 @@ class VolumePopup(QWidget):
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(5, 5, 5, 5)
         self.layout.addWidget(self.volumeSlider)
+        self.layout.addWidget(self.volumeValue)
         self.layout.addWidget(self.muteBtn)
         self.setLayout(self.layout)
 
@@ -107,6 +117,10 @@ class VolumePopup(QWidget):
         if event.type() == QEvent.ActivationChange:
             if not self.isActiveWindow():
                 self.close()
+
+    @pyqtSlot(int)
+    def volumeChanged(self, value):
+        self.volumeValue.setText(str(value))
 
 
 class PlaylistTable(QTableWidget):
@@ -305,14 +319,14 @@ class MainForm(object):
         # start MAIN LAYOUT
         self.centralwidget = QWidget(MainWindow)
         self.gridLayout = QGridLayout(self.centralwidget)
-        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout.setContentsMargins(3, 3, 3, 3)
         self.gridLayout.setHorizontalSpacing(0)
-        self.gridLayout.setVerticalSpacing(6)
+        self.gridLayout.setVerticalSpacing(0)
 
         # start SPLITTER
         self.splitter = QSplitter(self.centralwidget)
         self.splitter.setOrientation(Qt.Horizontal)
-        self.splitter.setHandleWidth(1)
+        self.splitter.setHandleWidth(6)
         self.layoutWidget = QWidget(self.splitter)
 
         # LEFT LAYOUT
@@ -341,18 +355,19 @@ class MainForm(object):
         self.mainLeftVLayout.addWidget(self.sourceBrowser)
         # FOLDER SELECTION
         self.filterHLayout = QHBoxLayout()
-        self.filterHLayout.setSpacing(1)
-        self.filterHLayout.setContentsMargins(3, 1, 1, 1)
+        self.filterHLayout.setSpacing(0)
+        self.filterHLayout.setContentsMargins(0, 3, 0, 3)
         self.folderLbl = QLabel(self.layoutWidget)
         self.filterHLayout.addWidget(self.folderLbl)
+        self.folderLbl.setVisible(False)
         self.folderCombo = QComboBox(self.layoutWidget)
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-        sizePolicy.setHeightForWidth(self.folderCombo.sizePolicy().hasHeightForWidth())
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        # sizePolicy.setHeightForWidth(self.folderCombo.sizePolicy().hasHeightForWidth())
         self.folderCombo.setSizePolicy(sizePolicy)
         self.filterHLayout.addWidget(self.folderCombo)
         self.libraryBtn = QPushButton(self.layoutWidget)
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        sizePolicy.setHeightForWidth(self.libraryBtn.sizePolicy().hasHeightForWidth())
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        # sizePolicy.setHeightForWidth(self.libraryBtn.sizePolicy().hasHeightForWidth())
         self.libraryBtn.setSizePolicy(sizePolicy)
         icon5 = QIcon(QPixmap(u":/icons/settings.png"))
         self.libraryBtn.setIcon(icon5)
@@ -371,19 +386,19 @@ class MainForm(object):
         # RIGHT LAYOUT
         # -----------
         self.mainRightVLayout = QVBoxLayout(self.layoutWidget1)
-        self.mainRightVLayout.setSpacing(1)
+        self.mainRightVLayout.setSpacing(0)
         self.mainRightVLayout.setContentsMargins(0, 0, 0, 0)
         # PLAYLIST
         self.playlistTable = PlaylistTable(self.layoutWidget1)
         self.mainRightVLayout.addWidget(self.playlistTable)
         # CONTROLS
         self.controlsFrame = QFrame(self.layoutWidget1)
-        self.controlsFrame.setFrameShape(QFrame.StyledPanel)
+        self.controlsFrame.setFrameShape(QFrame.NoFrame)
         self.controlsFrame.setFrameShadow(QFrame.Plain)
         self.verticalLayout = QVBoxLayout(self.controlsFrame)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.controlsHLayout = QHBoxLayout()
-        self.controlsHLayout.setContentsMargins(9, 9, 9, 9)
+        self.controlsHLayout.setContentsMargins(9, 6, 9, 3)
         self.timeLbl = QLabel(self.controlsFrame)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         sizePolicy.setHeightForWidth(self.timeLbl.sizePolicy().hasHeightForWidth())

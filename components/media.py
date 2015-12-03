@@ -413,8 +413,8 @@ class MediaPlayer(QObject):
         @rtype: bool
         @raise ValueError: if value not in range [0, 100]
         """
-        if not 0 <= value <= 100:
-            raise ValueError(u"Volume must be in range <0, 100>")
+        if not 0 <= value <= 200:
+            raise ValueError(u"Volume must be in range <0, 200>")
 
         logger.debug(u"Volume set: %s", value)
         self._media_player.audio_set_volume(int(value))
