@@ -21,11 +21,10 @@ Main application GUI module.
 """
 
 import logging
-import pickle
+import ujson
 import sys
 import os
 import errno
-import json
 import subprocess
 
 from PyQt4.QtGui import *
@@ -81,7 +80,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     def __init__(self, mode, play_path):
         super(MainApp, self).__init__()
         self.appDataPath = tools.DATA_DIR
-        self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.json')
+        self.mediaLibFile = os.path.join(self.appDataPath, u'medialib.dat')
         self.session_file = os.path.join(self.appDataPath, u'session.dat')
         self.input_path = play_path.decode(sys.getfilesystemencoding()) if play_path else None
         self.mediaPlayer = components.media.MediaPlayer()
@@ -305,7 +304,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         logger.debug(u"Opening media folder and reading data.")
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
-                mediaFolders = json.load(mediaFile)
+                mediaFolders = ujson.load(mediaFile)
         except IOError, exception:
             logger.exception(u"Error when reading medialib file.")
             self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['READ_MEDIALIB_FILE_ERROR'],
@@ -398,7 +397,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         logger.debug(u"Loading session...")
         try:
             with open(self.session_file, 'rb') as f:
-                session_data = pickle.load(f)
+                session_data = ujson.load(f)
         except Exception:
             logger.exception(u"Unable to load data from session file!")
         else:
@@ -506,7 +505,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         logger.debug(u"Dumping session file to disk...")
         with open(self.session_file, 'wb') as f:
-            pickle.dump(session_data, f)
+            ujson.dump(session_data, f)
 
     def savePlaylist(self, session_data):
         """
@@ -1164,7 +1163,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 return {}
 
             with open(build_info_file, 'r') as f:
-                build_data = json.load(f)               # dict
+                build_data = ujson.load(f)               # dict
 
             return build_data
 

@@ -28,7 +28,7 @@ import os
 import subprocess
 import platform
 import shutil
-import json
+import ujson
 from tools.misc import check_binary_type
 
 # - WINDOWS
@@ -79,7 +79,7 @@ def get_build_info():
         return None
 
     with open(build_info_file, 'r') as f:
-        build_data = json.load(f)               # dict
+        build_data = ujson.load(f)               # dict
 
     return build_data
 

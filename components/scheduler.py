@@ -23,7 +23,7 @@ Scheduler/maintenance modules.
 import logging
 import os
 import time
-import json
+import ujson
 import codecs
 import zipfile
 from datetime import datetime
@@ -208,7 +208,7 @@ class Updater(QObject):
 
         try:
             with codecs.open(filepath, 'r', encoding="utf-8") as fobject:
-                release_info = json.load(fobject)           # unicode is default encoding
+                release_info = ujson.load(fobject)           # unicode is default encoding
         except IOError:
             logger.exception(u"Unable to open downloaded release info file '%s'!", filepath)
             return
@@ -219,7 +219,7 @@ class Updater(QObject):
         # get current version
         try:
             with codecs.open(tools.BUILD_INFO_FILE, 'r', encoding="utf-8") as fobject:
-                build_info = json.load(fobject)
+                build_info = ujson.load(fobject)
         except IOError:
             logger.error(u"Unable to open build-info file at '%s'" % tools.BUILD_INFO_FILE)
             return
