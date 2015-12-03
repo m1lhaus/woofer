@@ -80,6 +80,9 @@ def check_binary_type(path):
     return bin_type
 
 
+PLATFORM = 32 if check_binary_type(sys.executable) == "IA-32 (32-bit x86)" else 64
+
+
 def unicode2bytes(string):
     """
     Converts string (basestring) to unicode and byte string (ascii str).
