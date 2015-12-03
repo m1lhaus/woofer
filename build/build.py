@@ -26,7 +26,6 @@ Optionally built dist could be zipped.
 import sys
 import os
 import subprocess
-import platform
 import shutil
 import ujson
 
