@@ -10,7 +10,7 @@
 - **Fully portable:** No installation needed. Woofer will play right from your pen drive.
 - **Auto-updater:** Built-in update checking and installing on Windows
 - ***(New) Multi-language support:*** Make your own language .ini file. You can later post it on repo or by email. Finally your translation could be integrated to Woofer player. Currently available languages are English and Czech.
-- ***(New) Gained volume:*** Ability to set volume level up to 15O%. That means up to 50% gain.
+- ***(New) Gained volume:*** Ability to set volume level up to 150%. That means up to 50% gain.
 - more will be coming ...
 
 ## Cross-platform
