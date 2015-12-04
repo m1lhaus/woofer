@@ -1234,11 +1234,12 @@ class MainApp(QMainWindow, main_form.MainForm):
         version = "%s.r%s" % (build_data.get('version'), build_data.get('commits'))
         rev = build_data.get('revision')
         build_date = build_data.get('date')
+        platform_str = u"x86" if tools.PLATFORM == 32 else u"x64"
         detailtext = u"<hr><br/>" \
                      u"<strong>Build information:</strong><br/>" \
                      u"Version: {4} | Revision: {5} | Build date: {6}<br />" \
-                     u"Python: {0} | PyQt: {1} | Qt: {2} | LibVLC version: {3}".format(
-                     pyversion, PYQT_VERSION_STR, QT_VERSION_STR, libvlc_version, version, rev, build_date)
+                     u"Python: {0} {7} | PyQt: {1} | Qt: {2} | LibVLC version: {3}".format(
+                     pyversion, PYQT_VERSION_STR, QT_VERSION_STR, libvlc_version, version, rev, build_date, platform_str)
 
         detailtextLabel = QLabel()
         detailtextLabel.setTextFormat(Qt.RichText)

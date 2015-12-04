@@ -26,15 +26,20 @@ Optionally built dist could be zipped.
 import sys
 import os
 import subprocess
-import platform
 import shutil
 import ujson
-from tools.misc import check_binary_type
+
+import tools
 
 # - WINDOWS
-VLC_LIBVLC_PATH = "C:\\Program Files (x86)\\VideoLAN\\VLC\\libvlc.dll"
-VLC_LIBVLCCORE_PATH = "C:\\Program Files (x86)\\VideoLAN\VLC\\libvlccore.dll"
-VLC_PLUGINS_PATH = "C:\\Program Files (x86)\\VideoLAN\\VLC\\plugins"
+if tools.PLATFORM == 32:
+    VLC_LIBVLC_PATH = os.path.join("..", "libvlc", "libvlc.dll")
+    VLC_LIBVLCCORE_PATH = os.path.join("..", "libvlc", "libvlccore.dll")
+    VLC_PLUGINS_PATH = os.path.join("..", "libvlc", "plugins")
+else:
+    VLC_LIBVLC_PATH = os.path.join("..", "libvlc64", "libvlc.dll")
+    VLC_LIBVLCCORE_PATH = os.path.join("..", "libvlc64", "libvlccore.dll")
+    VLC_PLUGINS_PATH = os.path.join("..", "libvlc64", "plugins")
 
 #  - LINUX
 # VLC_LIBVLC_PATH = "/usr/lib/libvlc.so.5"
@@ -48,7 +53,7 @@ PYINSTALLER_EXE_NAME = "pyinstaller"
 
 
 def which(program):
-    # apped .exe extension on Windows
+    # append .exe extension on Windows
     if os.name == 'nt' and not program.endswith('.exe'):
         program += ".exe"
 
@@ -111,8 +116,13 @@ def copy_dependencies(dst):
     shutil.copy(os.path.join(root_dir, 'build.info'), dst)
 
     # VLC dependencies
-    plugins_dst = os.path.join(dst, "libvlc", "plugins") if os.name == "nt" else os.path.join(dst, "vlc", "plugins")
-    vlclibs_dst = os.path.join(dst, "libvlc") if os.name == "nt" else dst
+    if tools.PLATFORM == 32:
+        plugins_dst = os.path.join(dst, "libvlc", "plugins") if os.name == "nt" else os.path.join(dst, "vlc", "plugins")
+        vlclibs_dst = os.path.join(dst, "libvlc") if os.name == "nt" else dst
+    else:
+        plugins_dst = os.path.join(dst, "libvlc64", "plugins") if os.name == "nt" else os.path.join(dst, "vlc", "plugins")
+        vlclibs_dst = os.path.join(dst, "libvlc64") if os.name == "nt" else dst
+
     shutil.copytree(VLC_PLUGINS_PATH, plugins_dst)
     shutil.copy(os.path.join(root_dir, VLC_LIBVLC_PATH), vlclibs_dst)
     shutil.copy(os.path.join(root_dir, VLC_LIBVLCCORE_PATH), vlclibs_dst)
@@ -137,8 +147,9 @@ def main():
         raise Exception("Building finished with error code: %s!!!" % retcode)
 
     # move built distribution to release folder
-    new_dist_path = os.path.join(build_dir, "release", "woofer_%s_%s_v%s" %
-                                 (PRJ_SPEC_FILE[:3], platform.architecture()[0], version_long))
+    new_dist_path = os.path.join(build_dir, "release", "woofer_%s_%sbit_v%s" %
+                                 (PRJ_SPEC_FILE[:3], tools.PLATFORM, version_long))
+
     if os.path.isdir(new_dist_path):
         shutil.rmtree(new_dist_path)
     shutil.move(dist_path, new_dist_path)
@@ -162,6 +173,10 @@ def main():
 
 
 if __name__ == "__main__":
+    VLC_LIBVLC_PATH = os.path.abspath(VLC_LIBVLC_PATH)
+    VLC_LIBVLCCORE_PATH = os.path.abspath(VLC_LIBVLCCORE_PATH)
+    VLC_PLUGINS_PATH = os.path.abspath(VLC_PLUGINS_PATH)
+
     if not os.path.isfile(VLC_LIBVLC_PATH):
         raise Exception("VLC libvlc library cannot be found at '%s'!" % VLC_LIBVLC_PATH)
 
@@ -171,9 +186,9 @@ if __name__ == "__main__":
     if not os.path.isdir(VLC_PLUGINS_PATH):
         raise Exception("VLC plugins folder cannot be found at '%s'!" % VLC_PLUGINS_PATH)
 
-    if os.name == 'nt' and check_binary_type(VLC_LIBVLC_PATH) != check_binary_type(sys.executable):
+    if os.name == 'nt' and tools.check_binary_type(VLC_LIBVLC_PATH) != tools.check_binary_type(sys.executable):
         raise Exception("VLC libvlc library does NOT match machine (python) type: %s vs %s" %
-                        (check_binary_type(VLC_LIBVLC_PATH), check_binary_type(sys.executable)))
+                        (tools.check_binary_type(VLC_LIBVLC_PATH), tools.check_binary_type(sys.executable)))
 
     build_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     root_dir = os.path.dirname(build_dir)

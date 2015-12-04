@@ -137,7 +137,12 @@ def find_lib():
         python_bin_type = check_binary_type(sys.executable)
         cwd = os.path.dirname(os.path.realpath(sys.argv[0]))
 
-        plugin_path = os.path.join(cwd, 'libvlc')
+        import tools
+        if tools.PLATFORM == 32:
+            plugin_path = os.path.join(cwd, 'libvlc')
+        else:
+            plugin_path = os.path.join(cwd, 'libvlc64')
+
         dll_path = os.path.join(plugin_path, 'libvlc.dll')
         if os.path.isdir(plugin_path) and os.path.isfile(dll_path):
             os.chdir(plugin_path)
@@ -176,9 +181,10 @@ def find_lib():
                     pass
                 if plugin_path is None:
                      # try some standard locations.
-                    for path_to_lib in ('Program Files\\VideoLan\\', 'VideoLan\\', 'Program Files\\',''):
+                    for path_to_lib in ('Program Files\\VideoLan\\', 'VideoLan\\', 'Program Files\\', '',
+                                        'Program Files (x86)\\VideoLan\\', 'VideoLan\\', 'Program Files (x86)\\', ''):
                         path_to_lib = 'C:\\' + path_to_lib + 'VLC\\libvlc.dll'
-                        if os.path.exists(path_to_lib):
+                        if os.path.exists(path_to_lib) and check_binary_type('libvlc.dll') == python_bin_type:
                             plugin_path = os.path.dirname(path_to_lib)
                             break
 
