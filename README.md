@@ -77,7 +77,7 @@ You also need to provide VLC x86/x64 libraries (depending on python binary versi
 
 ## Known issues
 
-- random file when adding file to playlist on Linux (caused by QDirIterator issue)
+- random file order when adding file to playlist on Linux (caused by QDirIterator issue)
 - unable to start local server after Woofer crashed (caused by opened/dangling socket)
 
 ## Future work
