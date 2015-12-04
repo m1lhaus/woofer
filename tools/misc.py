@@ -26,6 +26,7 @@ import logging
 import zipfile
 import errno
 import shutil
+import platform
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ IS_WIN32_EXE = sys.argv[0].endswith(".exe")
 IS_PYTHON_FILE = sys.argv[0].endswith((".py", ".pyc"))
 TERMINATE_DELAY = 3000                                          # thread quit() delay in ms before it will be terminated
 BUILD_INFO_FILE = os.path.join(APP_ROOT_DIR, u"build.info")
+PLATFORM = 32 if platform.architecture()[0] == '32bit' else 64
 
 
 def check_binary_type(path):
@@ -78,9 +80,6 @@ def check_binary_type(path):
                 bin_type = "Unknown"
 
     return bin_type
-
-
-PLATFORM = 32 if check_binary_type(sys.executable) == "IA-32 (32-bit x86)" else 64
 
 
 def unicode2bytes(string):
