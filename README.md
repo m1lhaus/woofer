@@ -4,14 +4,14 @@
 
 ## Main features
 
-- **Wide media support:** Woofer will play all audio what [VLC Media player](http://www.videolan.org/vlc/features.php?cat=audio "") can play.
-- **Folder based:** Your music is not ordered by album or interpret name, but only by its folder structure (on disk).
-- **Multi-platform:** Currently supports both Windows (XP and higher) and Linux (tested on Ubuntu distros).
+- **Wide media support:** Woofer will play almost every possible audio format. Check VLC [audio format support page](http://www.videolan.org/vlc/features.php?cat=audio "") for more information.
+- **Folder based playback:** Your music is not ordered by album or interpret name, but only by its folder structure (on disk).
+- **Multi-platform:** Currently supports both Windows (from XP up to Windows 10) and Linux (tested on Ubuntu distros).
 - **Fully portable:** No installation needed. Woofer will play right from your pen drive.
-- **Auto-updater:** Built-in update checking and installing on Windows
+- **Auto-updater:** Built-in update checking and installing on Windows.
 - ***(New) Multi-language support:*** Make your own language .ini file. You can later post it on repo or by email. Finally your translation could be integrated to Woofer player. Currently available languages are English and Czech.
-- ***(New) Gained volume:*** Ability to set volume level up to 150%. That means up to 50% gain.
-- more will be coming ...
+- ***(New) Gained volume:*** Ability to set volume level up to 150% without any background tweaking. That means up to 50% gain.
+- and more will be coming, stay tuned ...
 
 ## Cross-platform
 
@@ -74,6 +74,11 @@ sip.setapi('QVariant', 2)
 *On Linux, the file will be likely in `.../dist-packages/...` folder. Note that from now on whenever PyInstaller will package any PyQt4 script, it will set API v2 as default!*
 
 You also need to provide VLC x86/x64 libraries (depending on python binary version) to build standalone distribution. Woofer has been tested with VLC 2.1x libraries, but any newer version should be fine. Download and extract or install VLC Media player. You need to provide paths to `libvlc.dll`, `libvlccore.dll` and `./plugins` folder in `build.py` script (header section). For default all these files should be located in Woofer root directory in `.\libvlc` or `.\libvlc64` folder (depending on Python binary version). When you have all packages installed and VLC core files linked, you can run `.\build\build.py` script. Result will be stored in `.\build\release` directory.
+
+## Known issues
+
+- random file when adding file to playlist on Linux (caused by QDirIterator issue)
+- unable to start local server after Woofer crashed (caused by opened/dangling socket)
 
 ## Future work
 
