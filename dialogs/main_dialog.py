@@ -404,6 +404,7 @@ class MainApp(QMainWindow, main_form.MainForm):
             volume = session_data.get('volume', 100)
             self.volumeSlider.setValue(volume)
             self.mediaPlayer.setVolume(volume)
+            self.volumeChanged(self.volumeSlider.value())
 
             # do not load playlist
             # if not program started with input path argument (i.e. user double clicked on .mp3 file and woofer opened)
@@ -1111,13 +1112,20 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.volumePopup.muteBtn.setChecked(False)
 
             if volume < 20:
-                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-min.png")))
+                self.volumeBtn.setIcon(self.minVolumeIcon)
             elif volume < 40:
-                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-low.png")))
+                self.volumeBtn.setIcon(self.lowVolumeIcon)
             elif volume < 80:
-                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-medium.png")))
+                self.volumeBtn.setIcon(self.mediumVolumeIcon)
+            elif volume <= 100:
+                self.volumeBtn.setIcon(self.maxVolumeIcon)
             else:
-                self.volumeBtn.setIcon(QIcon(QPixmap(u":/icons/volume-max.png")))
+                color = QColor()
+                color.setHsv((25-(volume-100)/2), 255, 255)
+                color_mask = QPixmap(self.colorVolumePixmap.size())
+                color_mask.fill(color)
+                color_mask.setMask(self.colorVolumePixmap.createMaskFromColor(Qt.transparent))
+                self.volumeBtn.setIcon(QIcon(color_mask))
 
     @pyqtSlot(bool)
     def muteStatusChanged(self, status):

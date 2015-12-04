@@ -463,8 +463,20 @@ class MainForm(object):
         self.volumeBtn.setMinimumSize(QSize(10, 30))
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.volumeBtn.setSizePolicy(sizePolicy)
-        icon12 = QIcon(QPixmap(u":/icons/volume-max.png"))
-        self.volumeBtn.setIcon(icon12)
+
+        # volume icons
+        self.maxVolumeIcon = QIcon(QPixmap(u":/icons/volume-max.png"))
+        self.mediumVolumeIcon = QIcon(QPixmap(u":/icons/volume-medium.png"))
+        self.lowVolumeIcon = QIcon(QPixmap(u":/icons/volume-low.png"))
+        self.minVolumeIcon = QIcon(QPixmap(u":/icons/volume-min.png"))
+        color = QColor()
+        color.setHsv(0, 255, 210)
+        self.colorVolumePixmap = QPixmap(u":/icons/volume-max.png")
+        color_mask = QPixmap(self.colorVolumePixmap.size())
+        color_mask.fill(color)
+        color_mask.setMask(self.colorVolumePixmap.createMaskFromColor(Qt.transparent))
+
+        self.volumeBtn.setIcon(self.maxVolumeIcon)
         self.volumeBtn.setIconSize(QSize(16, 16))
         self.volumeBtn.setFlat(True)
         self.controlsHLayout.addWidget(self.seekerSlider)
