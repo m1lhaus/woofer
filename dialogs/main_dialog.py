@@ -368,9 +368,12 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         # restore window position
         settings = QSettings()
-        windowGeometry = settings.value(u"gui/MainApp/geometry", self.saveGeometry())
-        if windowGeometry:
+        windowGeometry = settings.value(u"gui/MainApp/geometry", None)
+        if windowGeometry is not None:
             self.restoreGeometry(windowGeometry)
+        splitterState = settings.value(u"gui/MainApp/splitter", None)
+        if splitterState is not None:
+            self.splitter.restoreState(splitterState)
 
         self.setupFileBrowser(initModel=True)       # todo: future: set dynamically (from last session)
 
@@ -490,6 +493,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         # save window position
         settings = QSettings()
         settings.setValue(u"gui/MainApp/geometry", self.saveGeometry())
+        settings.setValue(u"gui/MainApp/splitter", self.splitter.saveState())
 
     def saveSession(self):
         """
