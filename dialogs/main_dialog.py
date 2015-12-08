@@ -957,6 +957,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.seekerSlider.setEnabled(True)
         self.mediaPlayPauseAction.setIcon(icon)
         self.mediaPlayPauseAction.setText(tr['PAUSE'])
+        # reset the volume (volume level might be shared across libvlc library)
+        self.mediaPlayer.setVolume(self.volumeSlider.value())
 
     @pyqtSlot()
     def paused(self):
