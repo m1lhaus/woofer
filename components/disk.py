@@ -30,6 +30,7 @@ import send2trash
 from PyQt4.QtCore import *
 
 import tools
+from components.translator import tr
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ class RecursiveBrowser(QObject):
         self._stop = False
         if not os.path.exists(target_dir):
             logger.error(u"Path given to RecursiveDiskBrowser doesn't exist!")
-            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Path given to disk scanner doesn't exist!", u"%s not found!" % target_dir)
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['SCANNER_DIR_NOT_FOUND_ERROR'], target_dir)
             self.parseDataSignal.emit([])             # end flag for media parser
             return
 
@@ -112,7 +113,7 @@ class RecursiveBrowser(QObject):
         pass
 
     def stop(self):
-        logger.debug("Stopping disk scanning...")
+        logger.debug(u"Stopping disk scanning...")
         self._stop = True
 
 
@@ -135,28 +136,23 @@ class MoveToTrash(QObject):
         Called asynchronously (signal/slot) to remove file/folder from disk to Trash.
         @type path: unicode
         """
-        if os.path.isfile(path):
-            folder_or_file = u"file"
-        elif os.path.isdir(path):
-            folder_or_file = u"folder"
-        else:
+        if not os.path.exists(path):
             logger.error(u"Given path for removing '%s' does not exist!", path)
-            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Given path for removing does not exist!",
-                                  u"%s not found!" % path)
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['REMOVING_FILE_FOLDER_ERROR'] % os.path.basename(path),
+                                  tr['FILE_FOLDER_NOT_FOUND'])
             return
-        logger.debug(u"Removing %s '%s' from disk - sending to trash...", folder_or_file, path)
+        logger.debug(u"Removing file/folder '%s' from disk - sending to trash...", path)
 
         try:
             send2trash.send2trash(path)
         except OSError, exception:
-            logger.exception(u"Unable to send %s '%s' to trash!", folder_or_file, path)
-            self.errorSignal.emit(tools.ErrorMessages.ERROR, u"Unable move to Trash path '%s'!" % path,
-                                  u"Details: %s" % str(exception).decode(sys.getfilesystemencoding()))
+            logger.exception(u"Unable to send file/folder '%s' to trash!", path)
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['REMOVING_FILE_FOLDER_ERROR'] % os.path.basename(path),
+                                  tr['ERROR_DETAILS'] % str(exception).decode(sys.getfilesystemencoding()))
 
         else:
-            logger.debug(u"%s send to Trash successfully.", folder_or_file.capitalize())
-            self.errorSignal.emit(tools.ErrorMessages.INFO, u"%s '%s' successfully removed from disk" %
-                                 (folder_or_file.capitalize(), os.path.basename(path)), u"")
+            logger.debug(u"File/folder sent to Trash successfully.")
+            self.errorSignal.emit(tools.ErrorMessages.INFO, tr['REMOVING_FILE_FOLDER_SUCCESS'] % os.path.basename(path), u"")
 
     def stop(self):
         """
