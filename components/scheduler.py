@@ -26,6 +26,7 @@ import time
 import ujson
 import codecs
 import zipfile
+import urllib2
 from datetime import datetime
 
 from PyQt4.QtCore import *
@@ -173,9 +174,18 @@ class Updater(QObject):
         Thread worker. Called as slot from timer inside the thread after init_delay.
         Object is to retrieve JSON file from GitHub which contain information about Woofer releases.
         """
-        # if not network.Downloader.internetConnection():
-        #     logger.debug(u"Unable connect to the Google IP address, probably no internet connection")
-        #     return
+        def checkConnection(address, timeout=5):
+            try:
+                response = urllib2.urlopen(address, timeout=timeout)
+            except urllib2.URLError:
+                return False
+            else:
+                logger.debug(u"Successfully connected to %s", address)
+                return True
+
+        if not checkConnection(self._github_api_url):
+            logger.debug(u"Unable connect to the Github server, probably no internet connection")
+            return
 
         self._downloaderThread = QThread(self)
         self._downloader = network.Downloader(self._github_api_url, self.download_dir)
