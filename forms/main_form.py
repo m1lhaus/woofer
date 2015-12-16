@@ -120,7 +120,7 @@ class VolumePopup(QWidget):
 
     @pyqtSlot(int)
     def volumeChanged(self, value):
-        self.volumeValue.setText(str(value))
+        self.volumeValue.setText(str(value) + "%")
 
 
 class PlaylistTable(QTableWidget):
