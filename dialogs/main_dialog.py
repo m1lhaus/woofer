@@ -331,8 +331,8 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.folderCombo.blockSignals(True)
         self.folderCombo.clear()
 
-        self.folderCombo.addItem(self.fileBrowserModel.myComputer(Qt.DisplayRole))      # get default name
-        folders_to_display = [self.fileBrowserModel.myComputer(Qt.DisplayRole), ]         # save table of contents
+        self.folderCombo.addItem(tr['MY_COMPUTER'])  # get default name - fileBrowserModel.myComputer(Qt.DisplayRole)
+        folders_to_display = [tr['MY_COMPUTER'], ]         # save table of contents
 
         # add only valid folders from medialib to folderCombobox
         for folder in mediaFolders:
@@ -767,7 +767,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         newMediaFolder = self.folderCombo.currentText()
 
-        if newMediaFolder == self.fileBrowserModel.myComputer(Qt.DisplayRole):
+        if newMediaFolder == tr['MY_COMPUTER']:
             # display MyComputer folder (root on Linux)
             if self.myComputerPathIndex is not None:
                 logger.debug(u"Changing file_browser root to 'My Computer/root'.")
