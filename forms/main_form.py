@@ -193,7 +193,7 @@ class MainTreeBrowserTreeView(QTreeView):
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
             expandedItems = settings.value(u"gui/MainTreeBrowserTreeView/expanded/files", [])
-            rootFolder = settings.value(u"gui/MainTreeBrowserTreeView/root/files", u'/')
+            rootFolder = settings.value(u"gui/MainTreeBrowserTreeView/root/files", tr['HOME_DIR'])
             model = self.model()
 
             # find and expand restored paths from settings storage
@@ -211,12 +211,9 @@ class MainTreeBrowserTreeView(QTreeView):
                         self._expandedItems.remove(filePath)
 
             # restore media folder root index from last session
-            if rootFolder != u'/':
-                targetIndex = self.folderCombo.findText(rootFolder)
-                if targetIndex != -1:
-                    self.folderCombo.setCurrentIndex(targetIndex)
-                # else:
-                #     print "ERROR index .. delete me!!!"
+            targetIndex = self.folderCombo.findText(rootFolder)
+            if targetIndex != -1:
+                self.folderCombo.setCurrentIndex(targetIndex)
 
         # PLAYLISTS mode
         elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
@@ -235,25 +232,29 @@ class MainTreeBrowserTreeView(QTreeView):
 
         # FILES mode
         if self._mode == MainTreeBrowserTreeView.FILES:
-            currentRootFolder = self.folderCombo.currentText()
-            currentRootFolderIndex = self.folderCombo.currentIndex()
+            currentText = self.folderCombo.currentText()
+            if currentText == tr['HOME_DIR']:
+                currentRootFolder = QDir.homePath()
+            elif currentText == tr['MY_COMPUTER']:
+                currentRootFolder = QDir.rootPath()
+            else:
+                currentRootFolder = currentText
+            # currentRootFolderIndex = self.folderCombo.currentIndex()
             expandedItems = []
 
             # if some folder is set as root
-            if currentRootFolderIndex != 0:
-                # save only folder which are nested under the currentRootFolder
-                for item in self._expandedItems:
-                    # print item, currentRootFolder
-                    if item.startswith(currentRootFolder):
-                        expandedItems.append(item)
+            # if currentRootFolderIndex != 1:
+            # save only folder which are nested under the currentRootFolder
+            for item in self._expandedItems:
+                if item.startswith(currentRootFolder):
+                    expandedItems.append(item)
 
-            # if MyComputer (root) is set as current root folder
-            else:
-                expandedItems = self._expandedItems
-                currentRootFolder = u'/'                 # ... == MyComputer == root
+            # # if MyComputer (root) is set as current root folder
+            # else:
+            #     expandedItems = self._expandedItems
 
             settings.setValue(u"gui/MainTreeBrowserTreeView/expanded/files", expandedItems)
-            settings.setValue(u"gui/MainTreeBrowserTreeView/root/files", currentRootFolder)
+            settings.setValue(u"gui/MainTreeBrowserTreeView/root/files", currentText)
 
         # PLAYLISTS mode
         elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
@@ -296,7 +297,10 @@ class MainTreeBrowserTreeView(QTreeView):
     def itemCollapsed(self, index):
         fileInfo = self.model().fileInfo(index)
         filePath = fileInfo.absoluteFilePath()
-        self._expandedItems.remove(filePath)
+        try:
+            self._expandedItems.remove(filePath)
+        except Exception:
+            pass
 
         # removes also nested paths
         for i, item in enumerate(self._expandedItems):

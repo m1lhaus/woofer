@@ -153,6 +153,7 @@ if __name__ == "__main__":
     app.setOrganizationName("WooferPlayer")
     app.setOrganizationDomain("com.woofer.player")
     app.setApplicationName("Woofer")
+    # QSettings().clear()
 
     # init logging module
     try:

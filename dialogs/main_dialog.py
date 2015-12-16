@@ -86,6 +86,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.mediaPlayer = components.media.MediaPlayer()
 
         self.myComputerPathIndex = None
+        self.homeDirIndex = None
         self.oldVolumeValue = 0
         self.updateOnExit = False
         self.updateExe = None
@@ -331,8 +332,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.folderCombo.blockSignals(True)
         self.folderCombo.clear()
 
-        self.folderCombo.addItem(tr['MY_COMPUTER'])  # get default name - fileBrowserModel.myComputer(Qt.DisplayRole)
-        folders_to_display = [tr['MY_COMPUTER'], ]         # save table of contents
+        self.folderCombo.addItem(tr['HOME_DIR'])
+        self.folderCombo.addItem(tr['MY_COMPUTER'])  # fileBrowserModel.myComputer(Qt.DisplayRole)
+        folders_to_display = [tr['HOME_DIR'], tr['MY_COMPUTER'], ]         # save table of contents
 
         # add only valid folders from medialib to folderCombobox
         for folder in mediaFolders:
@@ -739,8 +741,11 @@ class MainApp(QMainWindow, main_form.MainForm):
             # remember my_computer root index for the first time
             if self.myComputerPathIndex is None:
                 self.myComputerPathIndex = self.mainTreeBrowser.rootIndex()
+            if self.homeDirIndex is None:
+                self.homeDirIndex = self.fileBrowserModel.index(QDir.homePath())
 
             self.mainTreeBrowser.restoreSettings()
+            self.folderCombo.currentIndexChanged.emit(self.folderCombo.currentIndex())  # invoke refresh manually
 
             logger.debug(u"Browser source has been selected to FILES.")
 
@@ -773,7 +778,12 @@ class MainApp(QMainWindow, main_form.MainForm):
                 logger.debug(u"Changing file_browser root to 'My Computer/root'.")
                 self.mainTreeBrowser.setRootIndex(self.myComputerPathIndex)
                 self.fileBrowserModel.setRootPath(QDir.rootPath())
-                # self.mainTreeBrowser.currentRootFolder = '/'
+        elif newMediaFolder == tr['HOME_DIR']:
+            # display home/user directory
+            if self.homeDirIndex is not None:
+                logger.debug(u"Changing file_browser root to 'home_dir'.")
+                self.mainTreeBrowser.setRootIndex(self.homeDirIndex)
+                self.fileBrowserModel.setRootPath(QDir.homePath())
         else:
             # if valid, display given folder as root
             folderIndex = self.fileBrowserModel.index(newMediaFolder)
@@ -781,7 +791,6 @@ class MainApp(QMainWindow, main_form.MainForm):
                 logger.debug(u"Changing file_browser root to '%s'.", newMediaFolder)
                 self.mainTreeBrowser.setRootIndex(folderIndex)
                 self.fileBrowserModel.setRootPath(newMediaFolder)
-                # self.mainTreeBrowser.currentRootFolder = newMediaFolder
             else:
                 logger.error(u"Media path from folderCombo could not be found in fileSystemModel!")
                 self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['ERROR_MEDIALIB_FOLDER_NOT_FOUND'] % newMediaFolder, u"")
