@@ -183,46 +183,37 @@ if __name__ == "__main__":
     # start server and detect another instance
     import components.network
     applicationServer = components.network.LocalServer("com.woofer.player")
-    if applicationServer.another_instance_running:
-        if args.input:
-            applicationServer.sendMessage(r"play %s" % args.input)      # play input file immediately
-        else:
-            applicationServer.sendMessage(r"open")                      # raise application on top
+    try:
+        if applicationServer.another_instance_running:
+            if args.input:
+                applicationServer.sendMessage(r"play %s" % args.input)      # play input file immediately
+            else:
+                applicationServer.sendMessage(r"open")                      # raise application on top
+            raise Exception(u"Another instance is running")
 
+        # init LibVLC binaries
+        import components.libvlc            # import for libvlc check
+        if not foundLibVLC():
+            displayLibVLCError(os.name)
+            raise Exception(u"LibVLC libraries not found")
+
+        # init translator module
+        settings = QSettings()
+        lang_code = settings.value("components/translator/Translator/language", "en_US.ini")
+        tr = components.translator.init(lang_code)
+
+        # start gui application
+        import dialogs.main_dialog
+        logger.debug(u"Initializing gui application and all components...")
+        mainApp = dialogs.main_dialog.MainApp(env, args.input)
+        applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
+        mainApp.show()
+        app.exec_()
+
+        logger.debug(u"MainThread loop stopped.")
+    finally:
         if not applicationServer.exit():
             logger.error(u"Local server components are not closed properly!")
 
-        logging.shutdown()              # quit application
-        sys.exit()
-
-    # init LibVLC binaries
-    import components.libvlc            # import for libvlc check
-    if not foundLibVLC():
-        displayLibVLCError(os.name)
-
-        if not applicationServer.exit():
-            logger.error(u"Local server components are not closed properly!")
-
-        logging.shutdown()              # quit application
-        sys.exit()
-
-    # init translator module
-    settings = QSettings()
-    lang_code = settings.value("components/translator/Translator/language", "en_US.ini")
-    tr = components.translator.init(lang_code)
-
-    # start gui application
-    import dialogs.main_dialog
-    logger.debug(u"Initializing gui application and all components...")
-    mainApp = dialogs.main_dialog.MainApp(env, args.input)
-    applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
-    mainApp.show()
-    app.exec_()
-
-    logger.debug(u"MainThread loop stopped.")
-
-    if not applicationServer.exit():
-        logger.error(u"Local server components are not closed properly!")
-
-    logger.debug(u"Application has been closed")
-    logging.shutdown()
+        logger.debug(u"Application has been closed")
+        logging.shutdown()
