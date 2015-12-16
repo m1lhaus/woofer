@@ -78,7 +78,7 @@ class VolumePopup(QWidget):
         self.volumeSlider = QSlider(Qt.Vertical, self)
         self.volumeSlider.setMinimum(0)
         self.volumeSlider.setMaximum(150)
-        self.volumeSlider.setValue(self.volumeSlider.maximum())
+        self.volumeSlider.setValue(100)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.volumeSlider.setSizePolicy(sizePolicy)
         self.volumeSlider.valueChanged.connect(self.volumeChanged)
