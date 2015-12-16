@@ -28,19 +28,28 @@
                     GetLatestReleaseInfo();
                 });
 
+                function stringStartsWith (string, prefix) {
+                    return string.slice(0, prefix.length) == prefix;
+                }
+
                 function GetLatestReleaseInfo() {
                     $.getJSON("https://api.github.com/repos/m1lhaus/woofer/releases").done(function (json) {
                         var release = json[0];
                         var asset = release.assets[0];
-                        var downloadURL = "https://github.com/m1lhaus/woofer/releases/download/" + release.tag_name + "/" + asset.name;
-                        var downloadCount = 0;
-                        for (var i = 0; i < release.assets.length; i++) {
-                            downloadCount += release.assets[i].download_count;
+                        if (stringStartsWith(asset.name, "woofer_win_32bit")) {
+                            var asset32 = asset;
+                            var asset64 = release.assets[1];
+                        } else {
+                            var asset64 = asset;
+                            var asset32 = release.assets[1];
                         }
-                        
-                        document.getElementById("windows").innerHTML = '<a href="' + downloadURL + '" class="binaries">Windows <strong>ZIP File</strong></a>';
+
+                        var downloadURL32 = "https://github.com/m1lhaus/woofer/releases/download/" + release.tag_name + "/" + asset32.name;
+                        var downloadURL64 = "https://github.com/m1lhaus/woofer/releases/download/" + release.tag_name + "/" + asset64.name;
+
+                        document.getElementById("windows32").innerHTML = '<a href="' + downloadURL32 + '" class="binaries">Windows 32bit <strong>ZIP File</strong></a>';
+                        document.getElementById("windows64").innerHTML = '<a href="' + downloadURL64 + '" class="binaries">Windows 64bit <strong>ZIP File</strong></a>';
                         document.getElementById("sourcezip").innerHTML = '<a href="https://github.com/m1lhaus/woofer/zipball/master">Sources<strong>ZIP File</strong></a>';
-                        document.getElementById("sourcetar").innerHTML = '<a href="https://github.com/m1lhaus/woofer/tarball/master">Sources<strong>TAR Ball</strong></a>';
 
                     });      
                 }
@@ -52,9 +61,9 @@
                     <p class="btn_title">Download:</p>
                     <div class="download">
                         <!--     To be filled by javascript       -->
-                        <div id="windows"></div>
+                        <div id="windows32"></div>
+                        <div id="windows64"></div>
                         <div id="sourcezip"></div>
-                        <div id="sourcetar"></div>
                     </div>
                 </div>
                 <!--
