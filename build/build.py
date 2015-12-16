@@ -139,7 +139,7 @@ def main():
 
     print "Building distribution..."
     print "=" * 100
-    process = subprocess.Popen([pyinstaller_exe, spec_file, '-y', '--clean'])
+    process = subprocess.Popen([pyinstaller_exe, spec_file, '-y', '--clean', '--log-level=WARN'])
     retcode = process.wait()
     print "=" * 100
 
