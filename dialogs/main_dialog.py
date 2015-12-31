@@ -468,6 +468,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                     item = QTableWidgetItem(cell_data)
                     item.setToolTip(cell_data)
                     self.playlistTable.setItem(row, column, item)
+        self.playlistTable.resizeColumnToContents(1)
 
         logger.debug(u"Restoring items from playlist in mediaPlayer object...")
         self.mediaPlayer.shuffled_playlist = session_data.get('shuffled_playlist', [])
