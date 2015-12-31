@@ -60,6 +60,11 @@ except ImportError, e:
     raise Exception(u"%s! Send2Trash package is required!" % e.message)
 
 try:
+    import scandir
+except ImportError, e:
+    raise Exception(u"%s! scandir package is required!" % e.message)
+
+try:
     import ujson
 except ImportError, e:
     raise Exception(u"%s! ujson package is required!" % e.message)
