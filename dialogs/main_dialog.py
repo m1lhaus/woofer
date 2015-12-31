@@ -458,7 +458,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 if cell_data:       # empty or None cell -> skip
                     # if given track doesn't exist, set whole row italic and gray
                     if column == column_with_path and not os.path.exists(cell_data):
-                        for i in (0, 2):        # title and duration items
+                        for i in (0, 1, 2):        # title and duration items
                             title_item = self.playlistTable.item(row, i)
                             font = title_item.font()
                             font.setItalic(True)
@@ -466,6 +466,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                             title_item.setForeground(QBrush(Qt.gray))
 
                     item = QTableWidgetItem(cell_data)
+                    item.setToolTip(cell_data)
                     self.playlistTable.setItem(row, column, item)
 
         logger.debug(u"Restoring items from playlist in mediaPlayer object...")
@@ -824,12 +825,25 @@ class MainApp(QMainWindow, main_form.MainForm):
         i = 0
         for path, duration in sources:
             titleItem = QTableWidgetItem(os.path.basename(path))
-            durationItem = QTableWidgetItem(QTime().addMSecs(duration).toString("hh:mm:ss"))
+            titleItem.setToolTip(os.path.basename(path))
+            folder = os.path.dirname(path)
+            fname = os.path.basename(folder)
+            if fname.strip().lower().startswith(("cd", "dvd")):
+                parent_fname = os.path.basename(os.path.dirname(folder))
+                fname = parent_fname + "/" + fname
+            folderNameItem = QTableWidgetItem(fname)
+            folderNameItem.setToolTip(fname)
+            ttime = QTime().addMSecs(duration).toString("hh:mm:ss")
+            durationItem = QTableWidgetItem(ttime)
+            durationItem.setToolTip(ttime)
             pathItem = QTableWidgetItem(path)
             self.playlistTable.setItem(i + lastItemIndex, 0, titleItem)
+            self.playlistTable.setItem(i + lastItemIndex, 1, folderNameItem)
             self.playlistTable.setItem(i + lastItemIndex, 2, durationItem)
             self.playlistTable.setItem(i + lastItemIndex, 3, pathItem)
             i += 1
+
+        self.playlistTable.resizeColumnToContents(1)
 
     @pyqtSlot()
     def clearPlaylist(self):
