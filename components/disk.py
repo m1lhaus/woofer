@@ -25,12 +25,14 @@ Disk components
 import os
 import sys
 import logging
-import send2trash
 
+import send2trash
+import scandir
 from PyQt4.QtCore import *
 
 import tools
 from components.translator import tr
+
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +71,7 @@ class RecursiveBrowser(QObject):
         @type target_dir: unicode
         """
         self._stop = False
+        target_dir = os.path.abspath(target_dir)
         if not os.path.exists(target_dir):
             logger.error(u"Path given to RecursiveDiskBrowser doesn't exist!")
             self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['SCANNER_DIR_NOT_FOUND_ERROR'], target_dir)
@@ -76,30 +79,23 @@ class RecursiveBrowser(QObject):
             return
 
         # if target dir is already a file
-        if target_dir[-5:].lower().endswith(self.names_filter) and os.path.isfile(target_dir):
+        if target_dir.lower().endswith(self.names_filter) and os.path.isfile(target_dir):
             logger.debug(u"Scanned target dir is a file. Sending path and finish_parser flag.")
-            self.parseDataSignal.emit([target_dir])
-            self.parseDataSignal.emit([])             # end flag for media parser
-            return
+            self.parseDataSignal.emit([target_dir, ])
+        else:
+            logger.debug(u"Starting recursive file-search and parsing.")
+            for root, dirs, files in scandir.walk(target_dir, followlinks=self.follow_sym):
+                # remove dirs starting with dot and sort the result
+                for i, ddir in reversed(list(enumerate(dirs))):
+                    if ddir[0] == ".":
+                        del dirs[i]
+                dirs.sort()
 
-        n = 0
-        result = []
-        dirIterator = QDirIterator(target_dir, self.iteratorFlags)
-
-        logger.debug(u"Dir iterator initialized, starting recursive search and parsing.")
-        while not self._stop and dirIterator.hasNext():
-            path = dirIterator.next()
-            if path[-5:].lower().endswith(self.names_filter):
-                result.append(os.path.normpath(path))
-
-                n += 1
-                if n == self.block_size:
-                    self.parseDataSignal.emit(result)
-                    n = 0
-                    result = []
-
-        if result:
-            self.parseDataSignal.emit(result)
+                # find all music files in current rootdir
+                music = [os.path.join(root, ffile) for ffile in files if ffile.lower().endswith(self.names_filter)]
+                if music:
+                    music.sort()
+                    self.parseDataSignal.emit(music)
 
         logger.debug(u"Recursive search finished, sending finish_parser flag.")
         self.parseDataSignal.emit([])
