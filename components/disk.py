@@ -56,10 +56,7 @@ class RecursiveBrowser(QObject):
         super(RecursiveBrowser, self).__init__()
         self._stop = False
 
-        self.block_size = 5                                         # send limit / parsing this block takes about 50ms
-        self.follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False, bool)
         self.names_filter = tuple([ext.replace('*', '') for ext in names_filter])           # i.e. remove * from *.mp3
-        self.iteratorFlags = QDirIterator.Subdirectories | QDirIterator.FollowSymlinks if self.follow_sym else QDirIterator.Subdirectories
 
         logger.debug(u"Recursive disk browser initialized.")
 
@@ -84,7 +81,8 @@ class RecursiveBrowser(QObject):
             self.parseDataSignal.emit([target_dir, ])
         else:
             logger.debug(u"Starting recursive file-search and parsing.")
-            for root, dirs, files in scandir.walk(target_dir, followlinks=self.follow_sym):
+            follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False, bool)
+            for root, dirs, files in scandir.walk(target_dir, followlinks=follow_sym):
                 # remove dirs starting with dot and sort the result
                 for i, ddir in reversed(list(enumerate(dirs))):
                     if ddir[0] == ".":
