@@ -75,7 +75,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     INFO_MSG_DELAY = 5000
     WARNING_MSG_DELAY = 10000
     ERROR_MSG_DELAY = 20000
-    QUEUED_SETTINGS_DELAY = 100
+    QUEUED_SETTINGS_DELAY = 40
 
     def __init__(self, mode, play_path):
         super(MainApp, self).__init__()
