@@ -32,6 +32,7 @@ Woofer is published under **GPL v3 license**.
 - [LibVLC Python wrapper](https://wiki.videolan.org/Python_bindings/)
 - [Send2Trash](https://pypi.python.org/pypi/Send2Trash)
 - [ujson](https://pypi.python.org/pypi/ujson)
+- [scandir](https://pypi.python.org/pypi/scandir)
 - [Python-XLib](http://python-xlib.sourceforge.net/) (only for Linux)
 - [PyInstaller v2](https://github.com/pyinstaller/pyinstaller/wiki) (only for build)
 - [psutil v3](https://pypi.python.org/pypi?:action=display&name=psutil) (only for build)
