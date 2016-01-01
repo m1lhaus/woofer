@@ -97,6 +97,8 @@ def woofer_finished():
         print "Woofer player is still running. CLOSE the player and try it again!"
         return False
 
+    time.sleep(2)
+
     return True
 
 
