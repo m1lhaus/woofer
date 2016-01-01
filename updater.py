@@ -32,6 +32,8 @@ import datetime
 
 import psutil
 
+from tools import full_stack, win_admin
+
 
 class CopyToLogger(object):
     """
@@ -56,14 +58,6 @@ class CopyToLogger(object):
         buf = buf.decode(sys.getfilesystemencoding())
         for line in buf.rstrip().splitlines():
             self.logger.log(self.log_level, line.rstrip())
-
-        # if buf == '\n':
-        #     self.orig_output.write(buf)
-        # else:
-        #     if isinstance(buf, str):
-        #         buf = unicode(buf, u'utf-8')
-        #     for line in buf.rstrip().splitlines():
-        #         self.logger.log(self.log_level, line.rstrip())
 
     def __getattr__(self, name):
         return self.orig_output.__getattribute__(name)              # pass all other methods to original fd
@@ -194,26 +188,41 @@ def main():
 
 
 if __name__ == "__main__":
-    os.chdir(os.path.dirname(sys.argv[0]))
+    if not win_admin.isUserAdmin():
+        print "Have no admin rights, elevating rights now..."
+        win_admin.runAsAdmin()
+        print "Admin script launched, exit 0"
 
-    parser = argparse.ArgumentParser(description="Updater component for Woofer player. Script take downloaded package "
-                                                 "and updates files in Woofer directory."
-                                                 "This script should be always used only by Woofer player!")
-    parser.add_argument("installDir", type=str,
-                        help="Where Woofer player files are stored")
-    parser.add_argument('pid', type=int,
-                        help="PID of Woofer player process")
-    parser.add_argument('-r', '--restart', action='store_true',
-                        help="ReOpen Woofer after update")
-    args = parser.parse_args()
+    else:
+        exception = False
+        try:
+            os.chdir(os.path.dirname(sys.argv[0]))
 
-    args.installDir = args.installDir.decode(sys.getfilesystemencoding())       # utf8 support
-    if not os.path.isdir(args.installDir):
-        raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
+            parser = argparse.ArgumentParser(description="Updater component for Woofer player. Script take downloaded package "
+                                                         "and updates files in Woofer directory."
+                                                         "This script should be always used only by Woofer player!")
+            parser.add_argument("installDir", type=str,
+                                help="Where Woofer player files are stored")
+            parser.add_argument('pid', type=int,
+                                help="PID of Woofer player process")
+            parser.add_argument('-r', '--restart', action='store_true',
+                                help="ReOpen Woofer after update")
+            args = parser.parse_args()
 
-    logger = setup_logging(log_dir=os.path.join(args.installDir, "log"))
+            args.installDir = args.installDir.decode(sys.getfilesystemencoding())       # utf8 support
+            if not os.path.isdir(args.installDir):
+                raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
 
-    try:
-        main()
-    finally:
-        time.sleep(3)
+            logger = setup_logging(log_dir=os.path.join(args.installDir, "log"))
+            main()
+
+        except Exception:
+            exception = True
+            print full_stack()
+            raise
+
+        finally:
+            if exception:
+                x = raw_input('Press Enter to exit.')
+            else:
+                time.sleep(3)
