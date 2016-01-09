@@ -34,6 +34,8 @@ import psutil
 
 from tools import full_stack, win_admin
 
+# ----------- helpers ----------------
+
 
 class CopyToLogger(object):
     """
@@ -63,6 +65,22 @@ class CopyToLogger(object):
         return self.orig_output.__getattribute__(name)              # pass all other methods to original fd
 
 
+def copy(src, dst):
+    if os.path.isdir(src):
+        shutil.copytree(src, os.path.join(dst, os.path.basename(src)))
+    else:
+        shutil.copy(src, dst)
+
+
+def remove(src):
+    if os.path.isdir(src):
+        shutil.rmtree(src)
+    else:
+        os.remove(src)
+
+
+# ------------------------------------
+
 def setup_logging(log_dir):
     if not os.path.isdir(log_dir):
         os.mkdir(log_dir)
@@ -87,8 +105,7 @@ def woofer_finished():
 
     print "Waiting until parent process PID: %s finishes ..." % args.pid
 
-    attempts = 9
-    time.sleep(0.5)
+    attempts = 10
     while is_running(args.pid) and attempts > 0:         # no more waiting than 5s
         time.sleep(0.5)
         attempts -= 1
@@ -97,56 +114,52 @@ def woofer_finished():
         print "Woofer player is still running. CLOSE the player and try it again!"
         return False
 
-    time.sleep(2)
-
     return True
 
 
-def backup_old_files():
-    print "Backing up old Woofer files ..."
+def backup_old_files(backup_dir):
+    print "Backing up old Woofer files to '%s'" % backup_dir
 
-    back_dir = os.path.join(args.installDir, "updater_backup")
-    if os.path.isdir(back_dir):
-        shutil.rmtree(back_dir)
-    os.mkdir(back_dir)
+    if os.path.isdir(backup_dir):
+        shutil.rmtree(backup_dir)
+    os.mkdir(backup_dir)
 
     # move all except log and data dir to backup directory
-    dir_content = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if item not in ("data", "log")]
+    dir_content = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if item not in ("data", "log", "updater_backup")]
+    print "Creating backup..."
     for item in dir_content:
-        shutil.move(item, back_dir)
+        copy(item, backup_dir)
 
-    return back_dir
+    print "Removing old files..."
+    for item in dir_content:
+        remove(item)
 
 
 def copy_new_files():
-    print "Copying new files to install directory ..."
-
+    print "Copying new files ..."
     dir_content = [os.path.abspath(item) for item in os.listdir(os.getcwd()) if not item == "data"]
     for src in dir_content:
-        if os.path.isdir(src):
-            shutil.copytree(src, os.path.join(args.installDir, os.path.basename(src)))
-        else:
-            shutil.copy(src, args.installDir)
+        copy(src, args.installDir)
 
 
 def restore_backup(backup_dir):
-    print "Restoring old files ..."
-
+    print "Restoring backup files ..."
     # remove new files
     backup_dirname = os.path.basename(backup_dir)
     content_to_remove = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if item not in ("data", "log", backup_dirname)]
     for item in content_to_remove:
-        if os.path.isfile(item):
-            os.remove(item)
-        else:
-            shutil.rmtree(item)
+        try:
+            remove(item)
+        except Exception:
+            pass
 
     # restore old files
     content_to_restore = [os.path.join(backup_dir, item) for item in os.listdir(backup_dir)]
     for item in content_to_restore:
-        shutil.move(item, args.installDir)
-
-    shutil.rmtree(backup_dir)
+        try:
+            copy(item, args.installDir)
+        except Exception:
+            pass
 
 
 def clean(backup_dir):
@@ -174,43 +187,50 @@ def main():
     if terminate:
         sys.exit(0)
 
-    backup_dir = backup_old_files()
+    backup_dir = os.path.join(args.installDir, "updater_backup")
     try:
+        backup_old_files(backup_dir)
         copy_new_files()
     except Exception:
-        logger.exception("Error occurred when copying new files to install directory!")
+        print "\n", full_stack(), "\n"
         restore_backup(backup_dir)
-        print "ERROR - Error occurred when copying new files to install directory!"
+        clean(backup_dir)
+
+        print "\n", "Error occurred when updating Woofer player. " \
+              "Update manually instead by downloading most recent version from 'http://m1lhaus.github.io/woofer/'."
+        print "\n", "-"*25, "\n"
+        raw_input('Press Enter to exit.')
     else:
         clean(backup_dir)
         if args.restart:
             init_woofer()
 
-        print "OK - Update finished successfully!"
+        print "\n", "OK - Update finished successfully!"
+        time.sleep(3)
 
 
 if __name__ == "__main__":
-    if not win_admin.isUserAdmin():
-        print "Have no admin rights, elevating rights now..."
-        win_admin.runAsAdmin()
-        print "Admin script launched, exit 0"
+    try:
+        parser = argparse.ArgumentParser(description="Updater component for Woofer player. Script take downloaded package "
+                                                     "and updates files in Woofer directory."
+                                                     "This script should be always used only by Woofer player!")
+        parser.add_argument("installDir", type=str,
+                            help="Where Woofer player files are stored")
+        parser.add_argument('pid', type=int,
+                            help="PID of Woofer player process")
+        parser.add_argument('-r', '--restart', action='store_true',
+                            help="ReOpen Woofer after update")
+        parser.add_argument('-a', '--admin', action='store_true',
+                            help="Re-run with elevated rights (admin)")
+        args = parser.parse_args()
 
-    else:
-        exception = False
-        try:
+        if args.admin:
+            if not win_admin.isUserAdmin():
+                print "Have no admin rights, elevating rights now..."
+                win_admin.runAsAdmin()
+                print "Admin script launched, exit 0"
+        else:
             os.chdir(os.path.dirname(sys.argv[0]))
-
-            parser = argparse.ArgumentParser(description="Updater component for Woofer player. Script take downloaded package "
-                                                         "and updates files in Woofer directory."
-                                                         "This script should be always used only by Woofer player!")
-            parser.add_argument("installDir", type=str,
-                                help="Where Woofer player files are stored")
-            parser.add_argument('pid', type=int,
-                                help="PID of Woofer player process")
-            parser.add_argument('-r', '--restart', action='store_true',
-                                help="ReOpen Woofer after update")
-            args = parser.parse_args()
-
             args.installDir = args.installDir.decode(sys.getfilesystemencoding())       # utf8 support
             if not os.path.isdir(args.installDir):
                 raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
@@ -218,13 +238,9 @@ if __name__ == "__main__":
             logger = setup_logging(log_dir=os.path.join(args.installDir, "log"))
             main()
 
-        except Exception:
-            exception = True
-            print full_stack()
-            raise
+    except Exception:
+        print full_stack()
+        print "\n", "-"*25, "\n"
+        raw_input('Press Enter to exit.')
+        raise
 
-        finally:
-            if exception:
-                x = raw_input('Press Enter to exit.')
-            else:
-                time.sleep(3)
