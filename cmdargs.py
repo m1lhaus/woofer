@@ -27,14 +27,12 @@ import argparse
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=u"Woofer player is free and open-source cross-platform music player.",
+    parser = argparse.ArgumentParser(description="Woofer player is free and open-source cross-platform music player.",
                                      add_help=False)
-    parser.add_argument('input', nargs='?', type=str,
-                        help='Media file path.')
-    parser.add_argument('-d', "--debug", action='store_true',
-                        help=u"debug/verbose mode")
-    parser.add_argument('-h', "--help", action='store_true',
-                        help=u"show this help message and exit")
+    parser.add_argument('input', nargs='?', type=str, help='Media file path.')
+    parser.add_argument('-d', "--debug", action='store_true',  help="debug/verbose mode")
+    parser.add_argument('-h', "--help", action='store_true', help="show this help message and exit")
+    parser.add_argument('-u', type=str, help='Direct path to updater.exe to invoke update mechanism.')
     args = parser.parse_args()
 
     parser.print_help()
