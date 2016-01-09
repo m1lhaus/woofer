@@ -1436,7 +1436,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                     command.append('-r')
 
                 logger.debug(u"Launching updater script, command: %s", " ".join(command))
-                subprocess.call(command, shell=True)
+                subprocess.call(command, shell=True, close_fds=True)
             else:
                 logger.error(u"Unable to locate Woofer updater launcher at '%s'!", self.updateExe)
 
