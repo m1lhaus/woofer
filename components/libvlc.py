@@ -151,8 +151,8 @@ def find_lib():
                 dll = ctypes.CDLL('libvlc.dll')
                 libvlc_found = True
             except WindowsError, e:
-                print >> sys.stderr, u"libvlc.py :: Unable to load packed libvlc.dll in '%s'. WindowsError [%s]: %s" % \
-                                     (plugin_path, e.errno, unicode(e.strerror, sys.getfilesystemencoding()))
+                print >> sys.stderr, "libvlc.py :: Unable to load packed libvlc.dll in '%s'. WindowsError [%s]: %s" % \
+                                     (plugin_path, e.errno, e.strerror)
             os.chdir(cwd)
 
         # try backup solution - look for VLC media player dll
@@ -196,9 +196,8 @@ def find_lib():
                         try:
                             dll = ctypes.CDLL('libvlc.dll')
                         except WindowsError, e:
-                            print >> sys.stderr, u"libvlc.py :: Unable to found libvlc.dll in '%s'. " \
-                                                 u"WindowsError [%s]: %s" % \
-                                                 (plugin_path, e.errno, unicode(e.strerror, sys.getfilesystemencoding()))
+                            print >> sys.stderr, "libvlc.py :: Unable to found libvlc.dll in '%s'. " \
+                                                 "WindowsError [%s]: %s" % (plugin_path, e.errno, e.strerror)
                     os.chdir(path_to_lib)
 
             else:
@@ -207,9 +206,8 @@ def find_lib():
                     try:
                         dll = ctypes.CDLL('libvlc.dll')
                     except WindowsError, e:
-                        print >> sys.stderr, u"libvlc.py :: Unable to found libvlc.dll in '%s'. " \
-                                             u"WindowsError [%s]: %s" % \
-                                             (plugin_path, e.errno, unicode(e.strerror, sys.getfilesystemencoding()))
+                        print >> sys.stderr, "libvlc.py :: Unable to found libvlc.dll in '%s'. " \
+                                             "WindowsError [%s]: %s" % (plugin_path, e.errno, e.strerror)
 
     else:
         raise NotImplementedError('%s: %s not supported' % (sys.argv[0], sys.platform))
