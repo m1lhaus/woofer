@@ -34,6 +34,7 @@ import psutil
 
 from tools import full_stack, win_admin
 
+
 # ----------- helpers ----------------
 
 
@@ -50,7 +51,7 @@ class CopyToLogger(object):
             sys.stderr = self
             self.orig_output = sys.__stderr__
         else:
-            raise Exception(u"Given file descriptor num: %s is not supported!" % fdnum)
+            raise Exception("Given file descriptor num: %s is not supported!" % fdnum)
 
         self.logger = logger
         self.log_level = log_level
@@ -62,7 +63,7 @@ class CopyToLogger(object):
             self.logger.log(self.log_level, line.rstrip())
 
     def __getattr__(self, name):
-        return self.orig_output.__getattribute__(name)              # pass all other methods to original fd
+        return self.orig_output.__getattribute__(name)  # pass all other methods to original fd
 
 
 def copy(src, dst):
@@ -86,10 +87,10 @@ def setup_logging(log_dir):
         os.mkdir(log_dir)
 
     date = datetime.datetime.now()
-    msg_format = u"%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
-    log_path = os.path.join(log_dir, u"updater_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
+    msg_format = "%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
+    log_path = os.path.join(log_dir, "updater_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
     logging.basicConfig(level=logging.DEBUG, format=msg_format, filename=log_path)
-    logger = logging.getLogger('')      # get root logger
+    logger = logging.getLogger('')  # get root logger
 
     # redirects all stderr output (exceptions, etc.) to logger ERROR level
     sys.stdout = CopyToLogger(0, logger, logging.DEBUG)
@@ -103,50 +104,52 @@ def woofer_finished():
     def is_running(pid):
         return pid in psutil.pids()
 
-    print "Waiting until parent process PID: %s finishes ..." % args.pid
+    print("Waiting until parent process PID: %s finishes ..." % args.pid)
 
     attempts = 10
-    while is_running(args.pid) and attempts > 0:         # no more waiting than 5s
+    while is_running(args.pid) and attempts > 0:  # no more waiting than 5s
         time.sleep(0.5)
         attempts -= 1
 
     if is_running(args.pid):
-        print "Woofer player is still running. CLOSE the player and try it again!"
+        print("Woofer player is still running. CLOSE the player and try it again!")
         return False
 
     return True
 
 
 def backup_old_files(backup_dir):
-    print "Backing up old Woofer files to '%s'" % backup_dir
+    print("Backing up old Woofer files to '%s'" % backup_dir)
 
     if os.path.isdir(backup_dir):
         shutil.rmtree(backup_dir)
     os.mkdir(backup_dir)
 
     # move all except log and data dir to backup directory
-    dir_content = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if item not in ("data", "log", "updater_backup")]
-    print "Creating backup..."
+    dir_content = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if
+                   item not in ("data", "log", "updater_backup")]
+    print("Creating backup...")
     for item in dir_content:
         copy(item, backup_dir)
 
-    print "Removing old files..."
+    print("Removing old files...")
     for item in dir_content:
         remove(item)
 
 
 def copy_new_files():
-    print "Copying new files ..."
+    print("Copying new files ...")
     dir_content = [os.path.abspath(item) for item in os.listdir(os.getcwd()) if not item == "data"]
     for src in dir_content:
         copy(src, args.installDir)
 
 
 def restore_backup(backup_dir):
-    print "Restoring backup files ..."
+    print("Restoring backup files ...")
     # remove new files
     backup_dirname = os.path.basename(backup_dir)
-    content_to_remove = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if item not in ("data", "log", backup_dirname)]
+    content_to_remove = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if
+                         item not in ("data", "log", backup_dirname)]
     for item in content_to_remove:
         try:
             remove(item)
@@ -163,17 +166,17 @@ def restore_backup(backup_dir):
 
 
 def clean(backup_dir):
-    print "Removing backup files ..."
+    print("Removing backup files ...")
     shutil.rmtree(backup_dir)
 
 
 def init_woofer():
     # find launcher
-    launcher = os.path.join(args.installDir, u"woofer.exe")
+    launcher = os.path.join(args.installDir, "woofer.exe")
     if not os.path.isfile(launcher):
         raise Exception("Unable to locate Woofer launcher at '%s'!" % args.installDir)
 
-    print "Starting Woofer player ..."
+    print("Starting Woofer player ...")
     os.startfile(launcher)
 
 
@@ -183,7 +186,7 @@ def main():
     # wait until Woofer process finishes, optionally terminate script execution
     terminate = False
     while not terminate and not woofer_finished():
-        terminate = raw_input("Try it again? (y/n): ") != 'y'
+        terminate = input("Try it again? (y/n): ") != 'y'
     if terminate:
         sys.exit(0)
 
@@ -192,28 +195,30 @@ def main():
         backup_old_files(backup_dir)
         copy_new_files()
     except Exception:
-        print "\n", full_stack(), "\n"
+        print("\n", full_stack(), "\n")
         restore_backup(backup_dir)
         clean(backup_dir)
 
-        print "\n", "Error occurred when updating Woofer player. " \
-              "Update manually instead by downloading most recent version from 'http://m1lhaus.github.io/woofer/'."
-        print "\n", "-"*25, "\n"
-        raw_input('Press Enter to exit.')
+        print("\n", "Error occurred when updating Woofer player. "
+                    "Update manually instead by downloading most recent version from "
+                    "'http://m1lhaus.github.io/woofer/'.")
+        print("\n", "-" * 25, "\n")
+        input('Press Enter to exit.')
     else:
         clean(backup_dir)
         if args.restart:
             init_woofer()
 
-        print "\n", "OK - Update finished successfully!"
+        print("\n", "OK - Update finished successfully!")
         time.sleep(3)
 
 
 if __name__ == "__main__":
     try:
-        parser = argparse.ArgumentParser(description="Updater component for Woofer player. Script take downloaded package "
-                                                     "and updates files in Woofer directory."
-                                                     "This script should be always used only by Woofer player!")
+        parser = argparse.ArgumentParser(
+            description="Updater component for Woofer player. Script take downloaded package "
+                        "and updates files in Woofer directory."
+                        "This script should be always used only by Woofer player!")
         parser.add_argument("installDir", type=str,
                             help="Where Woofer player files are stored")
         parser.add_argument('pid', type=int,
@@ -226,12 +231,12 @@ if __name__ == "__main__":
 
         if args.admin:
             if not win_admin.isUserAdmin():
-                print "Have no admin rights, elevating rights now..."
+                print("Have no admin rights, elevating rights now...")
                 win_admin.runAsAdmin()
-                print "Admin script launched, exit 0"
+                print("Admin script launched, exit 0")
         else:
             os.chdir(os.path.dirname(sys.argv[0]))
-            args.installDir = args.installDir.decode(sys.getfilesystemencoding())       # utf8 support
+            args.installDir = args.installDir.decode(sys.getfilesystemencoding())  # utf8 support
             if not os.path.isdir(args.installDir):
                 raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
 
@@ -239,8 +244,7 @@ if __name__ == "__main__":
             main()
 
     except Exception:
-        print full_stack()
-        print "\n", "-"*25, "\n"
-        raw_input('Press Enter to exit.')
+        print(full_stack())
+        print("\n", "-" * 25, "\n")
+        input('Press Enter to exit.')
         raise
-
