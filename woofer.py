@@ -38,23 +38,23 @@ try:
     from PyQt5.QtCore import *
     from PyQt5.QtWidgets import *
 except ImportError as e:
-    raise Exception("%s! PyQt5 library is required!" % e.message)
+    raise Exception("%s! PyQt5 library is required!" % e.msg)
 
 try:
     import send2trash
 except ImportError as e:
-    raise Exception("%s! Send2Trash package is required!" % e.message)
+    raise Exception("%s! Send2Trash package is required!" % e.msg)
 
 try:
     import json
 except ImportError as e:
-    raise Exception("%s! json package is required!" % e.message)
+    raise Exception("%s! json package is required!" % e.msg)
 
 if sys.platform.startswith('linux'):
     try:
         import Xlib
     except ImportError as e:
-        raise Exception("%s! Python-Xlib libraries are required on Linux platform!" % e.message)
+        raise Exception("%s! Python-Xlib libraries are required on Linux platform!" % e.msg)
 
 
 logger = logging.getLogger(__name__)
