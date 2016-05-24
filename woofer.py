@@ -31,49 +31,30 @@ import components.log
 import components.translator
 import tools
 
-if sys.version_info < (2, 7) or sys.version_info >= (3, 0):
-    raise Exception(u"Application requires Python 2.7!")
+if sys.version_info < (3, 0):
+    raise Exception("Application requires Python 3+!")
 
 try:
-    import sip
-except ImportError, e:
-    raise Exception(u"%s! Sip package (PyQt4) is required!" % e.message)
-else:
-    # set PyQt API to v2
-    sip.setapi('QDate', 2)
-    sip.setapi('QDateTime', 2)
-    sip.setapi('QString', 2)
-    sip.setapi('QTextStream', 2)
-    sip.setapi('QTime', 2)
-    sip.setapi('QUrl', 2)
-    sip.setapi('QVariant', 2)
-
-try:
-    from PyQt4.QtCore import *
-    from PyQt4.QtGui import *
-except ImportError, e:
-    raise Exception(u"%s! PyQt4 library is required!" % e.message)
+    from PyQt5.QtCore import *
+    from PyQt5.QtWidgets import *
+except ImportError as e:
+    raise Exception("%s! PyQt5 library is required!" % e.message)
 
 try:
     import send2trash
-except ImportError, e:
-    raise Exception(u"%s! Send2Trash package is required!" % e.message)
+except ImportError as e:
+    raise Exception("%s! Send2Trash package is required!" % e.message)
 
 try:
-    import scandir
-except ImportError, e:
-    raise Exception(u"%s! scandir package is required!" % e.message)
+    import json
+except ImportError as e:
+    raise Exception("%s! json package is required!" % e.message)
 
-try:
-    import ujson
-except ImportError, e:
-    raise Exception(u"%s! ujson package is required!" % e.message)
-
-if os.name == 'posix':
+if sys.platform.startswith('linux'):
     try:
         import Xlib
-    except ImportError, e:
-        raise Exception(u"%s! Python-Xlib libraries are required on Linux platform!" % e.message)
+    except ImportError as e:
+        raise Exception("%s! Python-Xlib libraries are required on Linux platform!" % e.message)
 
 
 logger = logging.getLogger(__name__)
@@ -85,8 +66,7 @@ def foundLibVLC():
     @rtype: bool
     """
     if components.libvlc.dll is not None:
-        logger.debug(u"Using libvlc.dll found at: %s",
-                     unicode(str(components.libvlc.plugin_path), sys.getfilesystemencoding()))
+        logger.debug("Using libvlc.dll found at: %s", components.libvlc.plugin_path)
         return True
     else:
         return False
@@ -98,45 +78,45 @@ def findCmdHelpFile():
     elif os.path.isfile(os.path.join(tools.APP_ROOT_DIR, 'cmdargs.py')):
         return os.path.join(tools.APP_ROOT_DIR, 'cmdargs.py')
     else:
-        raise Exception(u"Script cmdargs.py/exe was not found!")
+        raise Exception("Script cmdargs.py/exe was not found!")
 
 
 def displayLibVLCError(platform):
     if platform == 'nt':
-        logger.error(u"LibVLC dll not found, dll instance is None! Root path: %s" % tools.APP_ROOT_DIR)
+        logger.error("LibVLC dll not found, dll instance is None! Root path: %s" % tools.APP_ROOT_DIR)
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
         msgBox.setIcon(QMessageBox.Critical)
-        msgBox.setWindowTitle(u"Critical error")
-        msgBox.setText(u"Woofer player was unable to find core playback DLL libraries!")
-        msgBox.setInformativeText(u"If you are using distributed binary package, "
-                                  u"please report this issue on http://m1lhaus.github.io/woofer immediately. "
-                                  u"You can try to install "
-                                  u"<a href='http://www.videolan.org/vlc/#download'>VLC media player</a> "
-                                  u"as temporary workaround. Woofer player can use their libraries.")
+        msgBox.setWindowTitle("Critical error")
+        msgBox.setText("Woofer player was unable to find core playback DLL libraries!")
+        msgBox.setInformativeText("If you are using distributed binary package, "
+                                  "please report this issue on http://m1lhaus.github.io/woofer immediately. "
+                                  "You can try to install "
+                                  "<a href='http://www.videolan.org/vlc/#download'>VLC media player</a> "
+                                  "as temporary workaround. Woofer player can use their libraries.")
         msgBox.exec_()
     elif platform == 'posix':
-        logger.warning(u"Libvlc background not found!")
+        logger.warning("Libvlc background not found!")
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
         msgBox.setIcon(QMessageBox.Warning)
-        msgBox.setWindowTitle(u"Dependency not found")
-        msgBox.setText(u"Woofer player was unable to find core LibVLC libraries!")
-        msgBox.setInformativeText(u"Please install appropriate VLC media player 2.x from your repository "
-                                  u"or you can download last version directly from "
-                                  u"<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
+        msgBox.setWindowTitle("Dependency not found")
+        msgBox.setText("Woofer player was unable to find core LibVLC libraries!")
+        msgBox.setInformativeText("Please install appropriate VLC media player 2.x from your repository "
+                                  "or you can download last version directly from "
+                                  "<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
         msgBox.exec_()
     else:
-        raise NotImplementedError(u"Unknown platform: %s" % platform)
+        raise NotImplementedError("Unknown platform: %s" % platform)
 
 
 def displayLoggerError(e_msg):
         msgBox = QMessageBox()
         msgBox.setIcon(QMessageBox.Critical)
-        msgBox.setWindowTitle(u"Critical error")
-        msgBox.setText(u"Initialization of logger component failed. "
-                       u"The application probably doesn't have write permissions.")
-        msgBox.setInformativeText(u"Details:\n" + e_msg)
+        msgBox.setWindowTitle("Critical error")
+        msgBox.setText("Initialization of logger component failed. "
+                       "The application probably doesn't have write permissions.")
+        msgBox.setInformativeText("Details:\n" + e_msg)
         msgBox.exec_()
 
 
@@ -156,21 +136,22 @@ if __name__ == "__main__":
     app.setOrganizationName("WooferPlayer")
     app.setOrganizationDomain("com.woofer.player")
     app.setApplicationName("Woofer")
+
     # QSettings().clear()
 
     # init logging module
     try:
         components.log.setup_logging(env)
     except Exception as exception:
-        displayLoggerError(unicode(str(exception), sys.getfilesystemencoding()))
+        displayLoggerError(str(exception))
         sys.exit(-1)
 
-    logger.debug(u"Mode: '%s' Python '%s.%s.%s' PyQt: '%s' Qt: '%s'", env, sys.version_info[0], sys.version_info[1],
+    logger.debug("Mode: '%s' Python '%s.%s.%s' PyQt: '%s' Qt: '%s'", env, sys.version_info[0], sys.version_info[1],
                  sys.version_info[2], PYQT_VERSION_STR, QT_VERSION_STR)
 
     # if -h/--help console argument is given, display help content
     if args.help:
-        logger.debug(u"Help cmd arg given, opening cmd help file...")
+        logger.debug("Help cmd arg given, opening cmd help file...")
         cmd_args_file = findCmdHelpFile()
 
         # if not running built win32 dist
@@ -193,13 +174,13 @@ if __name__ == "__main__":
                 applicationServer.sendMessage(r"play %s" % args.input)      # play input file immediately
             else:
                 applicationServer.sendMessage(r"open")                      # raise application on top
-            raise Exception(u"Another instance is running")
+            raise Exception("Another instance is running")
 
         # init LibVLC binaries
         import components.libvlc            # import for libvlc check
         if not foundLibVLC():
             displayLibVLCError(os.name)
-            raise Exception(u"LibVLC libraries not found")
+            raise Exception("LibVLC libraries not found")
 
         # init translator module
         settings = QSettings()
@@ -208,7 +189,8 @@ if __name__ == "__main__":
 
         # start gui application
         import dialogs.main_dialog
-        logger.debug(u"Initializing gui application and all components...")
+
+        logger.debug("Initializing gui application and all components...")
         mainApp = dialogs.main_dialog.MainApp(env, args.input)
         applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
 
@@ -219,10 +201,10 @@ if __name__ == "__main__":
         mainApp.show()
         app.exec_()
 
-        logger.debug(u"MainThread loop stopped.")
+        logger.debug("MainThread loop stopped.")
     finally:
         if not applicationServer.exit():
-            logger.error(u"Local server components are not closed properly!")
+            logger.error("Local server components are not closed properly!")
 
-        logger.debug(u"Application has been closed")
+        logger.debug("Application has been closed")
         logging.shutdown()

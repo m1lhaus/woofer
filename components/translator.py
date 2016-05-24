@@ -19,7 +19,7 @@
 import os
 import logging
 import codecs
-import ConfigParser
+import configparser
 
 import tools
 
@@ -55,7 +55,7 @@ class Translator:
 
         self.default_langfile = os.path.join(tools.APP_ROOT_DIR, "lang", "en_US.ini")
         self.langfile = os.path.join(tools.APP_ROOT_DIR, "lang", lang_filename)
-        self.parser = ConfigParser.SafeConfigParser()
+        self.parser = configparser.ConfigParser()
 
         # load default language
         if not os.path.isfile(self.default_langfile):
@@ -91,7 +91,7 @@ class Translator:
         """
         try:
             string = self.parser.get("Main", key)
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             logger.exception("Given key '%s' not found in translation strings!", key)
             raise
 

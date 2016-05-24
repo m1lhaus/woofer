@@ -46,13 +46,13 @@ class StreamToLogger(object):
             sys.stderr = self
             self.orig_output = sys.__stderr__
         else:
-            raise Exception(u"Given file descriptor num: %s is not supported!" % fdnum)
+            raise Exception("Given file descriptor num: %s is not supported!" % fdnum)
 
         self.logger = logger
         self.log_level = log_level
 
     def write(self, buf):
-        buf = buf.decode(sys.getfilesystemencoding())
+        # buf = buf.decode(sys.getfilesystemencoding())
         for line in buf.rstrip().splitlines():
             self.logger.log(self.log_level, line.rstrip())
 
@@ -73,18 +73,18 @@ def setup_logging(mode):
         os.mkdir(tools.LOG_DIR)
 
     date = datetime.datetime.now()
-    msg_format = u"%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
+    msg_format = "%(threadName)-10s  %(name)-30s %(lineno)-.5d  %(levelname)-8s %(asctime)-20s  %(message)s"
     console_formatter = logging.Formatter(msg_format)
 
     # --- BASIC CONFIGURATION ---
     if mode == "DEBUG":
-        log_path = os.path.join(tools.LOG_DIR, u"debug_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
+        log_path = os.path.join(tools.LOG_DIR, "debug_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
         level = logging.DEBUG
     elif mode == "PRODUCTION":
         level = logging.WARNING
-        log_path = os.path.join(tools.LOG_DIR, u"production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
+        log_path = os.path.join(tools.LOG_DIR, "production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
     else:
-        raise NotImplementedError(u"Logging mode is not implemented!")
+        raise NotImplementedError("Logging mode is not implemented!")
 
     logging.basicConfig(level=level, format=msg_format, filename=log_path)
     # ---------------------------

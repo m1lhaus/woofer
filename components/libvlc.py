@@ -63,7 +63,8 @@ if sys.version_info[0] > 2:
         """Translate string or bytes to bytes.
         """
         if isinstance(s, str):
-            return bytes(s, sys.getfilesystemencoding())
+            # return bytes(s, sys.getfilesystemencoding())
+            return s.encode()
         else:
             return s
 
@@ -116,9 +117,8 @@ def find_lib():
             try:
                 dll = ctypes.CDLL('libvlc.so.5')
                 libvlc_found = True
-            except Exception, e:
-                print >> sys.stderr, u"libvlc.py :: Unable to load packed libvlc.so.5 in '%s'. Error: %s" % \
-                                     (plugin_path, unicode(str(e), sys.getfilesystemencoding()))
+            except Exception as e:
+                print("libvlc.py :: Unable to load packed libvlc.so.5 in '%s'. Error: %s" % (plugin_path, e), file=sys.stderr)
             os.chdir(cwd_back)
 
         # backup solution
@@ -150,9 +150,9 @@ def find_lib():
             try:
                 dll = ctypes.CDLL('libvlc.dll')
                 libvlc_found = True
-            except WindowsError, e:
-                print >> sys.stderr, "libvlc.py :: Unable to load packed libvlc.dll in '%s'. WindowsError [%s]: %s" % \
-                                     (plugin_path, e.errno, e.strerror)
+            except WindowsError as e:
+                print("libvlc.py :: Unable to load packed libvlc.dll in '%s'. WindowsError [%s]: %s" %
+                      (plugin_path, e.errno, e.strerror), file=sys.stderr)
             os.chdir(cwd)
 
         # try backup solution - look for VLC media player dll
@@ -195,9 +195,9 @@ def find_lib():
                     if check_binary_type('libvlc.dll') == python_bin_type:
                         try:
                             dll = ctypes.CDLL('libvlc.dll')
-                        except WindowsError, e:
-                            print >> sys.stderr, "libvlc.py :: Unable to found libvlc.dll in '%s'. " \
-                                                 "WindowsError [%s]: %s" % (plugin_path, e.errno, e.strerror)
+                        except WindowsError as e:
+                            print("libvlc.py :: Unable to found libvlc.dll in '%s'. WindowsError [%s]: %s" %
+                                  (plugin_path, e.errno, e.strerror), file=sys.stderr)
                     os.chdir(path_to_lib)
 
             else:
@@ -205,9 +205,9 @@ def find_lib():
                 if check_binary_type(path_to_lib) == python_bin_type:
                     try:
                         dll = ctypes.CDLL('libvlc.dll')
-                    except WindowsError, e:
-                        print >> sys.stderr, "libvlc.py :: Unable to found libvlc.dll in '%s'. " \
-                                             "WindowsError [%s]: %s" % (plugin_path, e.errno, e.strerror)
+                    except WindowsError as e:
+                        print("libvlc.py :: Unable to found libvlc.dll in '%s'. WindowsError [%s]: %s" %
+                              (plugin_path, e.errno, e.strerror), file=sys.stderr)
 
     else:
         raise NotImplementedError('%s: %s not supported' % (sys.argv[0], sys.platform))

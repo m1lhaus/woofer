@@ -23,7 +23,7 @@ Windows classes for catching global (system-wide) shortcuts.
 import logging
 import ctypes
 
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
 
 import tools
 
@@ -35,7 +35,7 @@ class GlobalHKListener(QObject):
     Registers global hotkeys through win32 api.
     If registering fails, WindowsKeyHook class should be used instead!
     """
-    errorSignal = pyqtSignal(int, unicode, unicode)
+    errorSignal = pyqtSignal(int, str, str)
     retrySignal = pyqtSignal()
 
     mediaPlayKeyPressed = pyqtSignal()
@@ -71,7 +71,7 @@ class GlobalHKListener(QObject):
         self.retryTimer.timeout.connect(self._retry_registration)
         self.retrySignal.connect(self.start_listening, Qt.QueuedConnection)
 
-        logger.debug(u"Windows global hotkey listener initialized.")
+        logger.debug("Windows global hotkey listener initialized.")
 
     @pyqtSlot()
     def start_listening(self):
@@ -82,16 +82,16 @@ class GlobalHKListener(QObject):
         terminates message listener.
         """
         if not self.registered and not self._registerHotkeys():
-            logger.warning(u"Unable to register all multimedia hotkeys, unregistering and retrying every %d sec",
+            logger.warning("Unable to register all multimedia hotkeys, unregistering and retrying every %d sec",
                            self.retryDelay/1000)
             self._unregisterHotkeys()
             self.retryTimer.start(self.retryDelay)
             self.errorSignal.emit(tools.ErrorMessages.WARNING,
-                                  u"Another media application already using multimedia hotkeys for playback control.",
-                                  u"")
+                                  "Another media application already using multimedia hotkeys for playback control.",
+                                  "")
         else:
             # start listening
-            logger.debug(u"Starting windows key-down hook (listener) loop.")
+            logger.debug("Starting windows key-down hook (listener) loop.")
             try:
                 msg = ctypes.wintypes.MSG()
 
@@ -114,7 +114,7 @@ class GlobalHKListener(QObject):
             finally:
                 self._unregisterHotkeys()
 
-            logger.debug(u"Main hotkey listener loop ended.")
+            logger.debug("Main hotkey listener loop ended.")
 
     def _registerHotkeys(self):
         """
@@ -123,7 +123,7 @@ class GlobalHKListener(QObject):
         @return: success
         @rtype: bool
         """
-        for hk_id, (vk, vk_name) in self.HOTKEYS.items():
+        for hk_id, (vk, vk_name) in list(self.HOTKEYS.items()):
             if not ctypes.windll.user32.RegisterHotKey(None, hk_id, 0, vk):
                 return False
         self.registered = True
@@ -134,7 +134,7 @@ class GlobalHKListener(QObject):
         """
         Call Win32 API to unregister global shortcut (hotkey) for current thread id.
         """
-        for hk_id in self.HOTKEYS.keys():
+        for hk_id in list(self.HOTKEYS.keys()):
             ctypes.windll.user32.UnregisterHotKey(None, hk_id)
 
         self.registered = False
@@ -148,7 +148,7 @@ class GlobalHKListener(QObject):
         if self._registerHotkeys():
             self.retryTimer.stop()
             self.errorSignal.emit(tools.ErrorMessages.INFO,
-                                  u"Multimedia hotkeys are now available for playback control.", u"")
+                                  "Multimedia hotkeys are now available for playback control.", "")
             self.retrySignal.emit()
         else:
             self._unregisterHotkeys()
@@ -158,5 +158,5 @@ class GlobalHKListener(QObject):
         Called when application is about to close to unregister all global hotkeys.
         Worker loop (listener) will be terminated automatically when quit message is sent.
         """
-        logger.debug(u"Stopping hotkey listener...")
+        logger.debug("Stopping hotkey listener...")
         self.stop = True

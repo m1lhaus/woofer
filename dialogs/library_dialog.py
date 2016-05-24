@@ -17,11 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
-import ujson
+import json
 import os
+from pathlib import _Accessor
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
 
 from forms.library_form import Ui_libraryDialog
 from components.translator import tr
@@ -50,14 +52,14 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         # loads folders from medialib
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
-                self.mediaFolders = ujson.load(mediaFile)
+                self.mediaFolders = json.load(mediaFile)
                 assert isinstance(self.mediaFolders, list)
         except IOError:
-            logger.exception(u"Error when reading media file data from disk")
-            QMessageBox(QMessageBox.Critical, tr['ERROR_READ_MEDIALIB_FILE'], u"").exec_()
+            logger.exception("Error when reading media file data from disk")
+            QMessageBox(QMessageBox.Critical, tr['ERROR_READ_MEDIALIB_FILE'], "").exec_()
         except Exception:
-            logger.exception(u"Error when parsing media file data from json")
-            QMessageBox(QMessageBox.Critical, tr['ERROR_PARSE_MEDIALIB_FILE'], u"").exec_()
+            logger.exception("Error when parsing media file data from json")
+            QMessageBox(QMessageBox.Critical, tr['ERROR_PARSE_MEDIALIB_FILE'], "").exec_()
 
         # fill QListWidget with folders
         for folder in self.mediaFolders:
@@ -82,10 +84,10 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         """
         When 'Add' button clicked, system folder dialog is opened and new directory is added
         """
-        logger.debug(u"Opening system file dialog for adding.")
+        logger.debug("Opening system file dialog for adding.")
 
         settings = QSettings()
-        start_folder = settings.value(u"gui/LibraryDialog/lastVisited", None)
+        start_folder = settings.value("gui/LibraryDialog/lastVisited", None)
 
         # use last visited directory or home directory if last used does not exist
         if not start_folder or not os.path.isdir(start_folder):
@@ -93,28 +95,28 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
 
         new_folder = QFileDialog.getExistingDirectory(directory=start_folder)
         if new_folder:
-            logger.debug(u"Selected directory: %s", new_folder)
+            logger.debug("Selected directory: %s", new_folder)
             new_folder = os.path.normpath(new_folder)
             self.mediaFolders.append(new_folder)
             self.folderList.addItem(new_folder)
             self.anyChanges = True
 
             # save last visited directory
-            settings.setValue(u"gui/LibraryDialog/lastVisited", os.path.dirname(new_folder))
+            settings.setValue("gui/LibraryDialog/lastVisited", os.path.dirname(new_folder))
 
-    @pyqtSlot('QListWidgetItem')
+    @pyqtSlot(QListWidgetItem)
     def editFolder(self, item):
         """
         When item (folder) is doubleclicked, system folder dialog is opened and clicked  directory is edited
         @type item: QListWidgetItem
         """
-        logger.debug(u"Opening system file dialog for editing.")
+        logger.debug("Opening system file dialog for editing.")
 
         old_folder = os.path.normpath(item.text())
         new_folder = QFileDialog.getExistingDirectory(directory=old_folder)
 
         if new_folder:
-            logger.debug(u"Selected directory: %s", new_folder)
+            logger.debug("Selected directory: %s", new_folder)
             new_folder = os.path.normpath(new_folder)
             self.mediaFolders[self.mediaFolders.index(old_folder)] = new_folder
             item.setText(new_folder)
@@ -122,7 +124,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
 
             # save last visited directory
             settings = QSettings()
-            settings.setValue(u"gui/LibraryDialog/lastVisited", os.path.dirname(new_folder))
+            settings.setValue("gui/LibraryDialog/lastVisited", os.path.dirname(new_folder))
 
     @pyqtSlot()
     def removeFolder(self):
@@ -130,6 +132,9 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         When 'Remove' button is clicked, folder record from folderList and media library is removed.
         """
         index = self.folderList.currentRow()
+        if index == -1:
+            return
+
         # remove folder_item from listWidget and from list
         self.folderList.takeItem(index)
         del self.mediaFolders[index]
@@ -141,12 +146,12 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         """
         try:
             with open(self.mediaLibFile, 'w') as mediaFile:
-                ujson.dump(self.mediaFolders, mediaFile)
+                json.dump(self.mediaFolders, mediaFile)
         except IOError:
-            logger.exception(u"Error when writing media file data to disk")
-            QMessageBox(QMessageBox.Critical, tr['ERROR_WRITE_MEADIALIB_FILE'], u"").exec_()
+            logger.exception("Error when writing media file data to disk")
+            QMessageBox(QMessageBox.Critical, tr['ERROR_WRITE_MEADIALIB_FILE'], "").exec_()
         except Exception:
-            logger.exception(u"Error when dumping mediaFolders to media file")
-            QMessageBox(QMessageBox.Critical, tr['ERROR_PARSE_MEDIALIB_FILE'], u"").exec_()
+            logger.exception("Error when dumping mediaFolders to media file")
+            QMessageBox(QMessageBox.Critical, tr['ERROR_PARSE_MEDIALIB_FILE'], "").exec_()
 
         super(LibraryDialog, self).accept()

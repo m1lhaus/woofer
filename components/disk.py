@@ -27,8 +27,7 @@ import sys
 import logging
 
 import send2trash
-import scandir
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
 
 import tools
 from components.translator import tr
@@ -46,7 +45,7 @@ class RecursiveBrowser(QObject):
     """
 
     parseDataSignal = pyqtSignal(list)
-    errorSignal = pyqtSignal(int, unicode, unicode)
+    errorSignal = pyqtSignal(int, str, str)
 
     def __init__(self, names_filter):
         """
@@ -58,9 +57,9 @@ class RecursiveBrowser(QObject):
 
         self.names_filter = tuple([ext.replace('*', '') for ext in names_filter])           # i.e. remove * from *.mp3
 
-        logger.debug(u"Recursive disk browser initialized.")
+        logger.debug("Recursive disk browser initialized.")
 
-    @pyqtSlot(unicode)
+    @pyqtSlot(str)
     def scanFiles(self, target_dir):
         """
         Thread worker! Called from main thread via signal/slot.
@@ -70,19 +69,19 @@ class RecursiveBrowser(QObject):
         self._stop = False
         target_dir = os.path.abspath(target_dir)
         if not os.path.exists(target_dir):
-            logger.error(u"Path given to RecursiveDiskBrowser doesn't exist!")
+            logger.error("Path given to RecursiveDiskBrowser doesn't exist!")
             self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['SCANNER_DIR_NOT_FOUND_ERROR'], target_dir)
             self.parseDataSignal.emit([])             # end flag for media parser
             return
 
         # if target dir is already a file
         if target_dir.lower().endswith(self.names_filter) and os.path.isfile(target_dir):
-            logger.debug(u"Scanned target dir is a file. Sending path and finish_parser flag.")
+            logger.debug("Scanned target dir is a file. Sending path and finish_parser flag.")
             self.parseDataSignal.emit([target_dir, ])
         else:
-            logger.debug(u"Starting recursive file-search and parsing.")
+            logger.debug("Starting recursive file-search and parsing.")
             follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False, bool)
-            for root, dirs, files in scandir.walk(target_dir, followlinks=follow_sym):
+            for root, dirs, files in os.walk(target_dir, followlinks=follow_sym):
                 # remove dirs starting with dot and sort the result
                 for i, ddir in reversed(list(enumerate(dirs))):
                     if ddir[0] == ".":
@@ -95,7 +94,7 @@ class RecursiveBrowser(QObject):
                     music.sort()
                     self.parseDataSignal.emit(music)
 
-        logger.debug(u"Recursive search finished, sending finish_parser flag.")
+        logger.debug("Recursive search finished, sending finish_parser flag.")
         self.parseDataSignal.emit([])
 
     @pyqtSlot()
@@ -107,7 +106,7 @@ class RecursiveBrowser(QObject):
         pass
 
     def stop(self):
-        logger.debug(u"Stopping disk scanning...")
+        logger.debug("Stopping disk scanning...")
         self._stop = True
 
 
@@ -118,12 +117,12 @@ class MoveToTrash(QObject):
     Worker method: MoveToTrash.remove()
     """
 
-    errorSignal = pyqtSignal(int, unicode, unicode)             # same as finished signal when no errors
+    errorSignal = pyqtSignal(int, str, str)             # same as finished signal when no errors
 
     def __init__(self):
         super(MoveToTrash, self).__init__()
 
-    @pyqtSlot(unicode)
+    @pyqtSlot(str)
     def remove(self, path):
         """
         Main worker method.
@@ -131,22 +130,22 @@ class MoveToTrash(QObject):
         @type path: unicode
         """
         if not os.path.exists(path):
-            logger.error(u"Given path for removing '%s' does not exist!", path)
+            logger.error("Given path for removing '%s' does not exist!", path)
             self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['REMOVING_FILE_FOLDER_ERROR'] % os.path.basename(path),
                                   tr['FILE_FOLDER_NOT_FOUND'])
             return
-        logger.debug(u"Removing file/folder '%s' from disk - sending to trash...", path)
+        logger.debug("Removing file/folder '%s' from disk - sending to trash...", path)
 
         try:
             send2trash.send2trash(path)
-        except OSError, exception:
-            logger.exception(u"Unable to send file/folder '%s' to trash!", path)
+        except OSError as exception:
+            logger.exception("Unable to send file/folder '%s' to trash!", path)
             self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['REMOVING_FILE_FOLDER_ERROR'] % os.path.basename(path),
-                                  tr['ERROR_DETAILS'] % str(exception).decode(sys.getfilesystemencoding()))
+                                  tr['ERROR_DETAILS'] % str(exception))
 
         else:
-            logger.debug(u"File/folder sent to Trash successfully.")
-            self.errorSignal.emit(tools.ErrorMessages.INFO, tr['REMOVING_FILE_FOLDER_SUCCESS'] % os.path.basename(path), u"")
+            logger.debug("File/folder sent to Trash successfully.")
+            self.errorSignal.emit(tools.ErrorMessages.INFO, tr['REMOVING_FILE_FOLDER_SUCCESS'] % os.path.basename(path), "")
 
     def stop(self):
         """

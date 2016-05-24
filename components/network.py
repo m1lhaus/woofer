@@ -17,13 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 # import ssl
 import os
 import sys
 
-from PyQt4.QtCore import *
-from PyQt4.QtNetwork import *
+from PyQt5.QtCore import *
+from PyQt5.QtNetwork import *
 
 import tools
 
@@ -74,7 +74,7 @@ class LocalServer(QObject):
         self.another_instance_running = not self.start()
         self.mode = LocalServer.CLIENT if self.another_instance_running else LocalServer.SERVER
 
-        logger.debug(u"Application local server initialized")
+        logger.debug("Application local server initialized")
 
     def start(self):
         """
@@ -82,16 +82,16 @@ class LocalServer(QObject):
         @return: False if another instance running; True if successfully created local server
         @rtype: bool
         """
-        logging.debug(u"Trying to connect to server named: %s", self.server_name)
+        logging.debug("Trying to connect to server named: %s", self.server_name)
         self.socket.connectToServer(self.server_name)
         if self.socket.waitForConnected(self.timeout):
-            logger.debug(u"Connected -> another application instance is running")
+            logger.debug("Connected -> another application instance is running")
             return False
 
-        logger.debug(u"Unable to connect -> creating server and listening")
+        logger.debug("Unable to connect -> creating server and listening")
         self.localServer.newConnection.connect(self.newLocalSocketConnection)
         if not (self.localServer.listen(self.server_name) and self.localServer.isListening()):
-            raise Exception(u"Unable to start listening local server!")
+            raise Exception("Unable to start listening local server!")
 
         return True
 
@@ -104,13 +104,13 @@ class LocalServer(QObject):
         """
         state = self.socket.state()
         if state == QLocalSocket.ConnectedState:
-            logger.debug(u"Sending message to server...")
+            logger.debug("Sending message to server...")
             self.socket.writeData(message)
             self.socket.flush()
 
             return True
 
-        logger.error(u"Local socket is not connected to server! State: %s", SocketStates.get(state))
+        logger.error("Local socket is not connected to server! State: %s", SocketStates.get(state))
         return False
 
     @pyqtSlot()
@@ -120,16 +120,16 @@ class LocalServer(QObject):
         Incoming data are received and then sent through signal/slot to MainApp gui.
         """
         pendingClient = self.localServer.nextPendingConnection()
-        logger.debug(u"Found new local connection to the server, socket state: %s", SocketStates[pendingClient.state()])
+        logger.debug("Found new local connection to the server, socket state: %s", SocketStates[pendingClient.state()])
 
         while not pendingClient.bytesAvailable():
             pendingClient.waitForReadyRead()
 
-        logger.debug(u"New message is available, reading...")
+        logger.debug("New message is available, reading...")
         message = str(pendingClient.readAll())
 
         # message must be decoded here, because PyQt somehow convert the str to unicode
-        message = message.decode(sys.getfilesystemencoding())
+        # message = message.decode(sys.getfilesystemencoding())
 
         self.messageReceivedSignal.emit(message)
 
@@ -139,7 +139,7 @@ class LocalServer(QObject):
         @return: successful
         @rtype: bool
         """
-        logger.debug(u"Disconnecting socket and closing server...")
+        logger.debug("Disconnecting socket and closing server...")
         self.localServer.close()
         self.socket.disconnectFromServer()
         if self.socket.state() != QLocalSocket.UnconnectedState:
@@ -160,13 +160,13 @@ class Downloader(QObject):
     STOPPED = 3
     ERROR = 4
 
-    errorSignal = pyqtSignal(int, unicode, unicode)
+    errorSignal = pyqtSignal(int, str, str)
 
     blockDownloadedSignal = pyqtSignal(int, int)
     downloaderStartedSignal = pyqtSignal(int)               # total size
-    downloaderFinishedSignal = pyqtSignal(int, unicode)     # file path
+    downloaderFinishedSignal = pyqtSignal(int, str)     # file path
 
-    def __init__(self, url, download_dir=u""):
+    def __init__(self, url, download_dir=""):
         """
         @param url: URL to target file (HTTPS supported)
         @type url: unicode
@@ -185,7 +185,7 @@ class Downloader(QObject):
 
         self.mutex = QMutex()
 
-        logger.debug(u"Downloader class initialized")
+        logger.debug("Downloader class initialized")
 
     @pyqtSlot()
     def startDownload(self):
@@ -199,20 +199,20 @@ class Downloader(QObject):
         if not os.path.isdir(self.download_dir):
             os.makedirs(self.download_dir)
 
-        logger.debug(u"Starting downloading file '%s' from '%s' to '%s' ..." % 
+        logger.debug("Starting downloading file '%s' from '%s' to '%s' ..." % 
                      (self.file_name, self.url, self.download_dir))
 
         dest_filename = os.path.join(self.download_dir, self.file_name)
         size_downloaded = 0
 
         try:
-            url_object = urllib2.urlopen(self.url)
+            url_object = urllib.request.urlopen(self.url)
             total_size = int(url_object.info()["Content-Length"])
             num_blocks = int(total_size / block_size)
             one_percent = int(0.01 * num_blocks)                    # how many blocks are 1% from total_size
 
             with open(dest_filename, 'wb') as fobject:
-                logger.debug(u"Starting to read data from server ...")
+                logger.debug("Starting to read data from server ...")
                 self.status = Downloader.DOWNLOADING
                 self.downloaderStartedSignal.emit(total_size)           # update GUI
 
@@ -220,7 +220,7 @@ class Downloader(QObject):
                 while True:
                     data = url_object.read(block_size)
                     if not data:
-                        logger.debug(u"Reading from server finished OK")
+                        logger.debug("Reading from server finished OK")
                         self.status = Downloader.COMPLETED
                         break
 
@@ -229,7 +229,7 @@ class Downloader(QObject):
                     size_downloaded += len(data)
 
                     if self._stop:
-                        logger.debug(u"Downloading jop has been interrupted!")
+                        logger.debug("Downloading jop has been interrupted!")
                         self.status = Downloader.STOPPED
                         break
 
@@ -240,26 +240,26 @@ class Downloader(QObject):
                     else:
                         i += 1
 
-        except urllib2.HTTPError, urllib2.URLError:
-            logger.exception(u"Error when connecting to the server and downloading the file!")
+        except urllib.error.HTTPError:
+            logger.exception("Error when connecting to the server and downloading the file!")
             self.status = Downloader.ERROR
             self.errorSignal.emit(tools.ErrorMessages.ERROR,
-                                  u"Error when connecting to the server and downloading the update!",
-                                  u"URL: '%s'" % self.url)
+                                  "Error when connecting to the server and downloading the update!",
+                                  "URL: '%s'" % self.url)
 
         except IOError:
-            logger.exception(u"Unable to write downloaded data to file '%s'!" % dest_filename)
+            logger.exception("Unable to write downloaded data to file '%s'!" % dest_filename)
             self.status = Downloader.ERROR
             self.errorSignal.emit(tools.ErrorMessages.ERROR,
-                                  u"Error when writing downloaded update file!",
-                                  u"File: '%s'" % dest_filename)
+                                  "Error when writing downloaded update file!",
+                                  "File: '%s'" % dest_filename)
 
         except Exception:
-            logger.exception(u"Unexpected error when downloading the update from server!")
+            logger.exception("Unexpected error when downloading the update from server!")
             self.status = Downloader.ERROR
             self.errorSignal.emit(tools.ErrorMessages.ERROR,
-                                  u"Unexpected error when downloading the update from server!",
-                                  u"")
+                                  "Unexpected error when downloading the update from server!",
+                                  "")
 
         self.downloaderFinishedSignal.emit(self.status, dest_filename)
 
@@ -269,7 +269,7 @@ class Downloader(QObject):
         """
         mutexLocker = QMutexLocker(self.mutex)
         try:
-            logger.debug(u"Stopping downloader ...")
+            logger.debug("Stopping downloader ...")
             self._stop = True
         finally:
             mutexLocker.unlock()
@@ -283,8 +283,8 @@ class Downloader(QObject):
         @rtype: bool
         """
         try:
-            response = urllib2.urlopen(address, timeout=timeout)
-        except urllib2.URLError:
+            response = urllib.request.urlopen(address, timeout=timeout)
+        except urllib.error.URLError:
             pass
         else:
             return True

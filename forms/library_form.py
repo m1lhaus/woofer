@@ -22,8 +22,9 @@ All GUI components from library dialog initialized here.
 
 import logging
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
 
 from components.translator import tr
 

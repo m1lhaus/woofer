@@ -20,8 +20,9 @@ import os
 import sys
 import logging
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
 
 import tools
 
@@ -43,7 +44,7 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         self.setWindowFlags(self.windowFlags() ^ Qt.WindowContextHelpButtonHint)
 
         if not sys.platform.startswith('win') or not tools.IS_WIN32_EXE:
-            self.updaterLbl.setText(self.updaterLbl.text() + u" " + tr['SETTINGS_UPDATES_DISABLED'])
+            self.updaterLbl.setText(self.updaterLbl.text() + " " + tr['SETTINGS_UPDATES_DISABLED'])
             self.checkUpdatesChBox.setEnabled(False)
             self.downUpdatesChBox.setEnabled(False)
             self.channelCombo.setEnabled(False)
@@ -51,13 +52,13 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
 
         self.settings = QSettings()
 
-        self.followSymChBox.setChecked(self.settings.value(u"components/disk/RecursiveBrowser/follow_symlinks", False, bool))
-        self.saveRestoreSessionChBox.setChecked(self.settings.value(u"session/saveRestoreSession", True, bool))
+        self.followSymChBox.setChecked(self.settings.value("components/disk/RecursiveBrowser/follow_symlinks", False, bool))
+        self.saveRestoreSessionChBox.setChecked(self.settings.value("session/saveRestoreSession", True, bool))
         self.saveRestoreSessionChBox.setEnabled(False)
         self.clearSessionBtn.setEnabled(False)
-        self.checkUpdatesChBox.setChecked(self.settings.value(u"components/scheduler/Updater/check_updates", True, bool))
-        self.downUpdatesChBox.setChecked(self.settings.value(u"components/scheduler/Updater/auto_updates", False, bool))
-        current_idx = 1 if self.settings.value(u"components/scheduler/Updater/pre-release", False, bool) else 0
+        self.checkUpdatesChBox.setChecked(self.settings.value("components/scheduler/Updater/check_updates", True, bool))
+        self.downUpdatesChBox.setChecked(self.settings.value("components/scheduler/Updater/auto_updates", False, bool))
+        current_idx = 1 if self.settings.value("components/scheduler/Updater/pre-release", False, bool) else 0
         self.channelCombo.setCurrentIndex(current_idx)
 
         self.lang_files = os.listdir(os.path.join(tools.APP_ROOT_DIR, "lang"))
@@ -83,7 +84,7 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         Reset all GUI elements to their default values.
         Dialog must be accepted to propagate default settings to QSettings.
         """
-        logger.debug(u"Resetting factory default settings to GUI")
+        logger.debug("Resetting factory default settings to GUI")
         self.followSymChBox.setChecked(False)
         self.saveRestoreSessionChBox.setChecked(True)
         self.checkUpdatesChBox.setChecked(True)
@@ -92,7 +93,7 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         default_lang = os.path.basename(tr.default_langfile)
         self.languageCombo.setCurrentIndex(self.lang_files.index(default_lang))
 
-    @pyqtSlot('QPushButton')
+    @pyqtSlot(QAbstractButton)
     def buttonClicked(self, button):
         """
         Called when some button from buttonBox is clicked.
@@ -101,7 +102,7 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         if self.buttonBox.buttonRole(button) == QDialogButtonBox.ResetRole:
             self.resetDefaults()
 
-    @pyqtSlot(bool)
+    @pyqtSlot(int)
     def disableAutoUpdates(self, update_check):
         """
         Called when user enables/disables checking for application updates.
@@ -115,22 +116,22 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
         """
         Called when Save button is clicked.
         """
-        logger.debug(u"Settings dialog accepted, updating and saving QSettings")
+        logger.debug("Settings dialog accepted, updating and saving QSettings")
         restart_dialog = False
 
-        self.settings.setValue(u"components/disk/RecursiveBrowser/follow_symlinks", self.followSymChBox.isChecked())
-        self.settings.setValue(u"session/saveRestoreSession", self.saveRestoreSessionChBox.isChecked())
-        self.settings.setValue(u"components/scheduler/Updater/check_updates", self.checkUpdatesChBox.isChecked())
-        self.settings.setValue(u"components/scheduler/Updater/auto_updates", self.downUpdatesChBox.isChecked())
+        self.settings.setValue("components/disk/RecursiveBrowser/follow_symlinks", self.followSymChBox.isChecked())
+        self.settings.setValue("session/saveRestoreSession", self.saveRestoreSessionChBox.isChecked())
+        self.settings.setValue("components/scheduler/Updater/check_updates", self.checkUpdatesChBox.isChecked())
+        self.settings.setValue("components/scheduler/Updater/auto_updates", self.downUpdatesChBox.isChecked())
         pre_rls = True if self.channelCombo.currentIndex() == 1 else False
-        self.settings.setValue(u"components/scheduler/Updater/pre-release", pre_rls)
+        self.settings.setValue("components/scheduler/Updater/pre-release", pre_rls)
         language = self.languageCombo.currentText()
         old_language = self.settings.value("components/translator/Translator/language", "en_US.ini")
         if language != old_language:
-            self.settings.setValue(u"components/translator/Translator/language", language)
+            self.settings.setValue("components/translator/Translator/language", language)
             restart_dialog = True
 
         if restart_dialog:
-            QMessageBox.information(self, u"Woofer player", tr['INFO_RESTART_WOOFER'])
+            QMessageBox.information(self, "Woofer player", tr['INFO_RESTART_WOOFER'])
 
         super(SettingsDialog, self).accept()

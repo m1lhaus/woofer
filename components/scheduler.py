@@ -23,16 +23,16 @@ Scheduler/maintenance modules.
 import logging
 import os
 import time
-import ujson
+import json
 import codecs
 import zipfile
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 from datetime import datetime
 
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
 
 import tools
-import network
+from . import network
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +57,13 @@ class LogCleaner(QObject):
         self._timer.timeout.connect(self.clean)
         self._stop = False
 
-        logger.debug(u"LogCleaner initialized")
+        logger.debug("LogCleaner initialized")
 
     def start(self):
         """
         Called directly from another thread to schedule cleaner launch.
         """
-        logger.debug(u"Scheduling log cleaner - delay %s", self.delay)
+        logger.debug("Scheduling log cleaner - delay %s", self.delay)
         self._timer.start(self.delay)
         self._stop = False
 
@@ -80,9 +80,9 @@ class LogCleaner(QObject):
         Thread worker called by class timer.
         """
         if not os.path.isdir(self.log_dir):
-            logger.error(u"Log dir under '%s' doesn't exist!", self.log_dir)
+            logger.error("Log dir under '%s' doesn't exist!", self.log_dir)
 
-        logger.debug(u"Launching scheduled log file cleaning...")
+        logger.debug("Launching scheduled log file cleaning...")
 
         now = time.time()
         one_day = 86400
@@ -95,9 +95,9 @@ class LogCleaner(QObject):
                 try:
                     tools.removeFile(fpath)
                 except OSError:
-                    logger.exception(u"Unable to remove log file: %s", fpath)
+                    logger.exception("Unable to remove log file: %s", fpath)
 
-        logger.debug(u"Scheduled log file cleaning completed.")
+        logger.debug("Scheduled log file cleaning completed.")
 
 
 class Updater(QObject):
@@ -106,14 +106,14 @@ class Updater(QObject):
     Component lives separately in its own thread!
     """
 
-    errorSignal = pyqtSignal(int, unicode, unicode)
+    errorSignal = pyqtSignal(int, str, str)
 
     updaterStartedSignal = pyqtSignal(int)                      # total size
     updateStatusSignal = pyqtSignal(int, int)                   # downloaded size, total size
-    updaterFinishedSignal = pyqtSignal(int, unicode)            # status, file path
+    updaterFinishedSignal = pyqtSignal(int, str)            # status, file path
 
-    readyForUpdateOnRestartSignal = pyqtSignal(unicode)         # path to new updater.exe
-    availableUpdatePackageSignal = pyqtSignal(unicode, int)     # version (tag) name, package size
+    readyForUpdateOnRestartSignal = pyqtSignal(str)         # path to new updater.exe
+    availableUpdatePackageSignal = pyqtSignal(str, int)     # version (tag) name, package size
     startDownloadingPackageSignal = pyqtSignal()
 
     def __init__(self):
@@ -121,8 +121,8 @@ class Updater(QObject):
         self.init_delay = 1000                              # check-for-updates delay in ms
         self.mutex = QMutex()
 
-        self._github_api_url = u"https://api.github.com/repos/m1lhaus/woofer/releases"
-        self._github_release_url = u"https://github.com/m1lhaus/woofer/releases/download/"
+        self._github_api_url = "https://api.github.com/repos/m1lhaus/woofer/releases"
+        self._github_release_url = "https://github.com/m1lhaus/woofer/releases/download/"
 
         self._package_url = None
         self._init_timer = QTimer(self)
@@ -132,8 +132,8 @@ class Updater(QObject):
         self._downloaderThread = None
 
         # %TEMP%/woofer_update
-        self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), u"woofer_updater")
-        self.extracted_pkg = os.path.join(self.download_dir, u"extracted")
+        self.download_dir = os.path.join(QDir.toNativeSeparators(QDir.tempPath()), "woofer_updater")
+        self.extracted_pkg = os.path.join(self.download_dir, "extracted")
 
     @pyqtSlot()
     def start(self):
@@ -143,16 +143,16 @@ class Updater(QObject):
         Instead should be called as slot from "scheduler thread" where it lives.
         """
         if os.path.isdir(self.download_dir):
-            logger.debug(u"Removing download dir...")
+            logger.debug("Removing download dir...")
             tools.removeFolder(self.download_dir)
 
         if not QSettings().value("components/scheduler/Updater/check_updates", True, bool):
-            logger.debug(u"Checking for updates is turned off, updater will NOT be scheduled")
+            logger.debug("Checking for updates is turned off, updater will NOT be scheduled")
             return
 
         os.makedirs(self.extracted_pkg)
 
-        logger.debug(u"Scheduling updater - delay %s", self.init_delay)
+        logger.debug("Scheduling updater - delay %s", self.init_delay)
         self._init_timer.start(self.init_delay)
 
     def stop(self):
@@ -162,7 +162,7 @@ class Updater(QObject):
         """
         mutexLocker = QMutexLocker(self.mutex)
         try:
-            logger.debug(u"Stopping updater ...")
+            logger.debug("Stopping updater ...")
             if self._downloader:
                 self._downloader.stopDownload()
         finally:
@@ -176,15 +176,15 @@ class Updater(QObject):
         """
         def checkConnection(address, timeout=5):
             try:
-                response = urllib2.urlopen(address, timeout=timeout)
-            except urllib2.URLError:
+                response = urllib.request.urlopen(address, timeout=timeout)
+            except urllib.error.URLError:
                 return False
             else:
-                logger.debug(u"Successfully connected to %s", address)
+                logger.debug("Successfully connected to %s", address)
                 return True
 
         if not checkConnection(self._github_api_url):
-            logger.debug(u"Unable connect to the Github server, probably no internet connection")
+            logger.debug("Unable connect to the Github server, probably no internet connection")
             return
 
         self._downloaderThread = QThread(self)
@@ -197,7 +197,7 @@ class Updater(QObject):
 
         self._downloaderThread.start()
 
-    @pyqtSlot(int, unicode)
+    @pyqtSlot(int, str)
     def parseReleaseInfo(self, status, filepath):
         """
         Thread worker. Called as slot from downloader which downloads JSON file from GitHub.
@@ -213,28 +213,28 @@ class Updater(QObject):
         self._downloaderThread.wait(tools.TERMINATE_DELAY)                # terminate delay
 
         if status != network.Downloader.COMPLETED:
-            logger.error(u"Release info file downloader does NOT finished properly, returned status: %s", status)
+            logger.error("Release info file downloader does NOT finished properly, returned status: %s", status)
             return
 
         try:
             with codecs.open(filepath, 'r', encoding="utf-8") as fobject:
-                release_info = ujson.load(fobject)           # unicode is default encoding
+                release_info = json.load(fobject)           # unicode is default encoding
         except IOError:
-            logger.exception(u"Unable to open downloaded release info file '%s'!", filepath)
+            logger.exception("Unable to open downloaded release info file '%s'!", filepath)
             return
         except ValueError:
-            logger.exception(u"Unable to parse release info data from GitHub JSON file!")
+            logger.exception("Unable to parse release info data from GitHub JSON file!")
             return
 
         # get current version
         try:
             with codecs.open(tools.BUILD_INFO_FILE, 'r', encoding="utf-8") as fobject:
-                build_info = ujson.load(fobject)
+                build_info = json.load(fobject)
         except IOError:
-            logger.error(u"Unable to open build-info file at '%s'" % tools.BUILD_INFO_FILE)
+            logger.error("Unable to open build-info file at '%s'" % tools.BUILD_INFO_FILE)
             return
         except ValueError:
-            logger.exception(u"Unable to parse build info data from build-info file!")
+            logger.exception("Unable to parse build info data from build-info file!")
             return
 
         current_version = "v" + build_info["version"].lower()
@@ -257,25 +257,25 @@ class Updater(QObject):
 
         # compare latest found release to this current release (is newer and has different version number ?)
         if latest_rls["tag_name"].lower() != current_version and latest_date > current_date:
-            logger.debug(u"Newer version %s published at %s found", latest_rls["tag_name"], latest_date)
+            logger.debug("Newer version %s published at %s found", latest_rls["tag_name"], latest_date)
 
             for asset in latest_rls["assets"]:
                 # find only Windows binaries
-                if asset["name"].startswith(u"woofer_win_%sbit" % tools.PLATFORM):
+                if asset["name"].startswith("woofer_win_%sbit" % tools.PLATFORM):
                     self._package_url = self._github_release_url + latest_rls["tag_name"] + "/" + asset["name"]
 
                     if settings.value("components/scheduler/Updater/auto_updates", False, bool):
-                        logger.debug(u"Automatic update process is initialized")
+                        logger.debug("Automatic update process is initialized")
                         self.downloadUpdatePackage()
                     else:
                         # notify user
                         self.startDownloadingPackageSignal.connect(self.downloadUpdatePackage)
-                        self.availableUpdatePackageSignal.emit(unicode(latest_rls["tag_name"].lower()), int(asset["size"]))
+                        self.availableUpdatePackageSignal.emit(str(latest_rls["tag_name"].lower()), int(asset["size"]))
 
                     break
 
         else:
-            logger.debug(u"No newer version found")
+            logger.debug("No newer version found")
 
     @pyqtSlot()
     def downloadUpdatePackage(self):
@@ -283,7 +283,7 @@ class Updater(QObject):
         Method to initiate and setup downloading the update package if available.
         Called as slot automatically (auto-update) or by user (update button clicked).
         """
-        logger.debug(u"Initializing update package download")
+        logger.debug("Initializing update package download")
 
         self._downloaderThread = QThread(self)
         self._downloader = network.Downloader(self._package_url, self.download_dir)
@@ -298,7 +298,7 @@ class Updater(QObject):
 
         self._downloaderThread.start()
 
-    @pyqtSlot(int, unicode)
+    @pyqtSlot(int, str)
     def testDownloadedPackage(self, status, zip_filepath):
         """
         Thread worker. Called as slot from downloader which downloads Woofer ZIP file from GitHub.
@@ -315,35 +315,35 @@ class Updater(QObject):
         self._downloaderThread.wait(tools.TERMINATE_DELAY)
 
         if status != network.Downloader.COMPLETED:
-            logger.debug(u"Update package downloading did NOT finish properly")
+            logger.debug("Update package downloading did NOT finish properly")
             return
 
         try:
             the_zip_file = zipfile.ZipFile(zip_filepath)
             ret = the_zip_file.testzip()
         except zipfile.BadZipfile:
-            logger.exception(u"Downloaded file '%s' is not valid ZIP file! File is probably corrupted!", zip_filepath)
+            logger.exception("Downloaded file '%s' is not valid ZIP file! File is probably corrupted!", zip_filepath)
             return
         except IOError:
-            logger.exception(u"Downloaded file '%s' not found!", zip_filepath)
+            logger.exception("Downloaded file '%s' not found!", zip_filepath)
             return
         except Exception:
-            logger.exception(u"Unexpected error when checking downloaded ZIP file '%s'", zip_filepath)
+            logger.exception("Unexpected error when checking downloaded ZIP file '%s'", zip_filepath)
             return
 
         if ret is not None:
-            logger.error(u"Downloaded ZIP file '%s' corrupted!", zip_filepath)
+            logger.error("Downloaded ZIP file '%s' corrupted!", zip_filepath)
             return
 
         try:
             tools.extractZIPFiles(src=zip_filepath, dst=self.extracted_pkg)
         except Exception:
-            logger.exception(u"Error when extracting downloaded update ZIP file!")
+            logger.exception("Error when extracting downloaded update ZIP file!")
             return
 
-        updater_exe = os.path.join(self.extracted_pkg, u"updater.exe")
+        updater_exe = os.path.join(self.extracted_pkg, "updater.exe")
         if not os.path.join(updater_exe):
-            logger.error(u"Unable to find 'updater.exe' script in '%s'!", self.extracted_pkg)
+            logger.error("Unable to find 'updater.exe' script in '%s'!", self.extracted_pkg)
 
-        logger.debug(u"Update package is extracted and ready to be applied")
+        logger.debug("Update package is extracted and ready to be applied")
         self.readyForUpdateOnRestartSignal.emit(updater_exe)
