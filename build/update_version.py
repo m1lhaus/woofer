@@ -18,14 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 """
-Script retrieves verison info from git and updates file build.info.
+Script retrieves version info from git and updates file build.info.
 """
 
 import sys
 import os
 import subprocess
 import re
-import ujson
+import json
 import datetime
 
 
@@ -35,7 +35,7 @@ os.chdir(root_dir)
 
 
 def get_git_version_and_hash():
-    full_version_info = subprocess.check_output(['git', 'describe', '--tags', '--long'])
+    full_version_info = subprocess.getoutput('git describe --tags --long')
     pattern = re.compile('v([^-]+)-?([^-]+)?-([0-9]+)-(.+)')
     matchObj = pattern.match(full_version_info)
     if matchObj:
@@ -61,14 +61,14 @@ def get_git_revision_short_hash():
 
 def write_version_file(data):
     with open("build.info", 'w') as f:
-        ujson.dump(data, f, indent=4)
+        json.dump(data, f, indent=4)
 
 if __name__ == "__main__":
     version, commits, revision = get_git_version_and_hash()
 
-    data = {'author': u"Milan Herbig",
-            'email': u"milanherbig(at)gmail.com",
-            'web': u"http://m1lhaus.github.io/woofer",
+    data = {'author': "Milan Herbig",
+            'email': "milanherbig(at)gmail.com",
+            'web': "http://m1lhaus.github.io/woofer",
             'version': version,
             'commits': commits,
             'revision': revision,
