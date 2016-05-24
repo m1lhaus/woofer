@@ -27,7 +27,7 @@ import sys
 import os
 import subprocess
 import shutil
-import ujson
+import json
 
 import tools
 
@@ -80,25 +80,25 @@ def get_build_info():
 
     build_info_file = os.path.join(root_dir, "build.info")
     if not os.path.isfile(build_info_file):
-        print >> sys.stderr, "Unable to locate build.info file!"
+        print("Unable to locate build.info file!", file=sys.stderr)
         return None
 
     with open(build_info_file, 'r') as f:
-        build_data = ujson.load(f)               # dict
+        build_data = json.load(f)               # dict
 
     return build_data
 
 
 def get_pyinstaller_exe():
-    print "Trying to find PyInstaller executable in system PATH..."
-    pyinstaller_exe = which(PYINSTALLER_EXE_NAME)
-    # pyinstaller_exe = r"c:\Python27\Scripts\pyinstaller.exe"
+    print("Trying to find PyInstaller executable in system PATH...")
+    # pyinstaller_exe = which(PYINSTALLER_EXE_NAME)
+    pyinstaller_exe = r"c:\Python27\Scripts\pyinstaller.exe"
     # pyinstaller_exe = r"c:\Python27x86\Scripts\pyinstaller.exe"
 
     if not pyinstaller_exe:
         raise Exception("PyInstaller executable not found in system PATH!")
     else:
-        print "PyInstaller executable found at:", pyinstaller_exe
+        print("PyInstaller executable found at:", pyinstaller_exe)
 
     return pyinstaller_exe
 
@@ -109,7 +109,7 @@ def get_project_spec_file():
     if not os.path.isfile(spec_file):
         raise Exception("Unable to locate spec file at: %s" % spec_file)
     else:
-        print "Pyinstaller spec file found at:", spec_file
+        print("Pyinstaller spec file found at:", spec_file)
 
     return spec_file
 
@@ -140,11 +140,11 @@ def main():
     version_long = "%s-rev%s-%s" % (build_data['version'], build_data['commits'], build_data['revision'])
     version_short = "%s.%s" % (build_data['version'], build_data['commits'])
 
-    print "Building distribution..."
-    print "=" * 100
+    print("Building distribution...")
+    print("=" * 100)
     process = subprocess.Popen([pyinstaller_exe, spec_file, '-y', '--clean', '--log-level=WARN'])
     retcode = process.wait()
-    print "=" * 100
+    print("=" * 100)
 
     if retcode != 0:
         raise Exception("Building finished with error code: %s!!!" % retcode)
@@ -160,17 +160,17 @@ def main():
 
     copy_dependencies(new_dist_path)
 
-    print "Distribution package successfully built to:", dist_path
+    print("Distribution package successfully built to:", dist_path)
 
     if ZIP_ENABLED:
-        decision = raw_input("Are you want to ZIP built dist folder? (y/n) ")
+        decision = input("Are you want to ZIP built dist folder? (y/n) ")
         if decision != 'y':
             return
 
         zip_folder = shutil.make_archive(dist_path, "zip", dist_path)
-        print "Dist zipped successfully to:", zip_folder
+        print("Dist zipped successfully to:", zip_folder)
 
-        print "Removing dist folder..."
+        print("Removing dist folder...")
         shutil.rmtree(dist_path)
         shutil.rmtree(os.path.join(root_dir, "dist"))
 
@@ -196,9 +196,9 @@ if __name__ == "__main__":
     build_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     root_dir = os.path.dirname(build_dir)
     os.chdir(root_dir)
-    print "Root directory set to: ", os.path.abspath(root_dir)
-    print "Working directory set to: ", os.getcwd()
+    print("Root directory set to: ", os.path.abspath(root_dir))
+    print("Working directory set to: ", os.getcwd())
 
     main()
 
-    print "Finished successfully!"
+    print("Finished successfully!")
