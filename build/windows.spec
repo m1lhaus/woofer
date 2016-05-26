@@ -17,12 +17,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-a = Analysis(['woofer.py'],
-             pathex=['build'])
+# - WINDOWS
 
-b = Analysis(['cmdargs.py'],
+# find VLC folder
+import os
+import platform
+PLATFORM = 32 if platform.architecture()[0] == '32bit' else 64
+if PLATFORM == 32:
+    VLC_PATH = os.path.abspath(os.path.join(".", "libvlc"))
+else:
+    VLC_PATH = os.path.abspath(os.path.join(".", "libvlc64"))
+assert os.path.isdir(VLC_PATH)
+assert os.path.isfile(os.path.join(VLC_PATH, "libvlc.dll"))
+
+a = Analysis(['../woofer.py'],
+             pathex=['build'],
+             binaries=[(VLC_PATH, '.')])
+
+b = Analysis(['../cmdargs.py'],
              pathex=['build'])
-c = Analysis(['updater.py'],
+c = Analysis(['../updater.py'],
              pathex=['build'])
 
 MERGE((a, "woofer", "woofer.exe"),
@@ -31,7 +45,7 @@ MERGE((a, "woofer", "woofer.exe"),
 
 # EXCLUDE:
 # shell32.dll is part of Windows
-a.binaries = [x for x in a.binaries if not x[0].startswith("shell32")]
+# a.binaries = [x for x in a.binaries if not x[0].startswith("shell32")]
 
 pyz = PYZ(a.pure)
 exe = EXE(pyz,

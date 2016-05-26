@@ -33,13 +33,9 @@ import tools
 
 # - WINDOWS
 if tools.PLATFORM == 32:
-    VLC_LIBVLC_PATH = os.path.join("..", "libvlc", "libvlc.dll")
-    VLC_LIBVLCCORE_PATH = os.path.join("..", "libvlc", "libvlccore.dll")
-    VLC_PLUGINS_PATH = os.path.join("..", "libvlc", "plugins")
+    VLC_PATH = os.path.abspath(os.path.join("..", "libvlc"))
 else:
-    VLC_LIBVLC_PATH = os.path.join("..", "libvlc64", "libvlc.dll")
-    VLC_LIBVLCCORE_PATH = os.path.join("..", "libvlc64", "libvlccore.dll")
-    VLC_PLUGINS_PATH = os.path.join("..", "libvlc64", "plugins")
+    VLC_PATH = os.path.abspath(os.path.join("..", "libvlc64"))
 
 #  - LINUX
 # VLC_LIBVLC_PATH = "/usr/lib/libvlc.so.5"
@@ -91,8 +87,8 @@ def get_build_info():
 
 def get_pyinstaller_exe():
     print("Trying to find PyInstaller executable in system PATH...")
-    # pyinstaller_exe = which(PYINSTALLER_EXE_NAME)
-    pyinstaller_exe = r"c:\Python27\Scripts\pyinstaller.exe"
+    pyinstaller_exe = which(PYINSTALLER_EXE_NAME)
+    # pyinstaller_exe = r"c:\Python27\Scripts\pyinstaller.exe"
     # pyinstaller_exe = r"c:\Python27x86\Scripts\pyinstaller.exe"
 
     if not pyinstaller_exe:
@@ -117,18 +113,6 @@ def get_project_spec_file():
 def copy_dependencies(dst):
     shutil.copy(os.path.join(root_dir, 'LICENSE.txt'), dst)
     shutil.copy(os.path.join(root_dir, 'build.info'), dst)
-
-    # VLC dependencies
-    if tools.PLATFORM == 32:
-        plugins_dst = os.path.join(dst, "libvlc", "plugins") if os.name == "nt" else os.path.join(dst, "vlc", "plugins")
-        vlclibs_dst = os.path.join(dst, "libvlc") if os.name == "nt" else dst
-    else:
-        plugins_dst = os.path.join(dst, "libvlc64", "plugins") if os.name == "nt" else os.path.join(dst, "vlc", "plugins")
-        vlclibs_dst = os.path.join(dst, "libvlc64") if os.name == "nt" else dst
-
-    shutil.copytree(VLC_PLUGINS_PATH, plugins_dst)
-    shutil.copy(os.path.join(root_dir, VLC_LIBVLC_PATH), vlclibs_dst)
-    shutil.copy(os.path.join(root_dir, VLC_LIBVLCCORE_PATH), vlclibs_dst)
     shutil.copytree(os.path.join(root_dir, "lang"), os.path.join(dst, "lang"))
 
 
@@ -176,22 +160,8 @@ def main():
 
 
 if __name__ == "__main__":
-    VLC_LIBVLC_PATH = os.path.abspath(VLC_LIBVLC_PATH)
-    VLC_LIBVLCCORE_PATH = os.path.abspath(VLC_LIBVLCCORE_PATH)
-    VLC_PLUGINS_PATH = os.path.abspath(VLC_PLUGINS_PATH)
-
-    if not os.path.isfile(VLC_LIBVLC_PATH):
-        raise Exception("VLC libvlc library cannot be found at '%s'!" % VLC_LIBVLC_PATH)
-
-    if not os.path.isfile(VLC_LIBVLCCORE_PATH):
-        raise Exception("VLC libvlccore library cannot be found at '%s'!" % VLC_LIBVLCCORE_PATH)
-
-    if not os.path.isdir(VLC_PLUGINS_PATH):
-        raise Exception("VLC plugins folder cannot be found at '%s'!" % VLC_PLUGINS_PATH)
-
-    if os.name == 'nt' and tools.check_binary_type(VLC_LIBVLC_PATH) != tools.check_binary_type(sys.executable):
-        raise Exception("VLC libvlc library does NOT match machine (python) type: %s vs %s" %
-                        (tools.check_binary_type(VLC_LIBVLC_PATH), tools.check_binary_type(sys.executable)))
+    if not os.path.isdir(VLC_PATH):
+        raise Exception("VLC folder cannot be found at '%s'!" % VLC_PATH)
 
     build_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     root_dir = os.path.dirname(build_dir)
