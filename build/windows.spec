@@ -19,7 +19,7 @@
 
 # - WINDOWS
 
-# find VLC folder
+# ---------------- find correct VLC folder ---------------------------
 import os
 import platform
 PLATFORM = 32 if platform.architecture()[0] == '32bit' else 64
@@ -29,27 +29,24 @@ else:
     VLC_PATH = os.path.abspath(os.path.join(".", "libvlc64"))
 assert os.path.isdir(VLC_PATH)
 assert os.path.isfile(os.path.join(VLC_PATH, "libvlc.dll"))
+# ---------------------------------------------------------------------
 
-a = Analysis(['../woofer.py'],
-             pathex=['build'],
-             binaries=[(VLC_PATH, '.')])
+woofer_app = Analysis(['../woofer.py'], pathex=[VLC_PATH], binaries=[(VLC_PATH, '.')])
+cmdargs_app = Analysis(['../cmdargs.py'])
+updater_app = Analysis(['../updater.py'])
 
-b = Analysis(['../cmdargs.py'],
-             pathex=['build'])
-c = Analysis(['../updater.py'],
-             pathex=['build'])
+MERGE((woofer_app, "woofer", "woofer.exe"),
+      (cmdargs_app, "cmdargs", 'cmdargs.exe'),
+      (updater_app, "updater", 'updater.exe'))
 
-MERGE((a, "woofer", "woofer.exe"),
-      (b, "cmdargs", 'cmdargs.exe'),
-      (c, "updater", 'updater.exe'))
+# ---------------- EXCLUDE: ------------------------------
+# skip Windows system binaries
+woofer_app.binaries = [x for x in woofer_app.binaries if not x[1].startswith(r"C:\Windows")]
+# ---------------------------------------------------------
 
-# EXCLUDE:
-# shell32.dll is part of Windows
-# a.binaries = [x for x in a.binaries if not x[0].startswith("shell32")]
-
-pyz = PYZ(a.pure)
+pyz = PYZ(woofer_app.pure)
 exe = EXE(pyz,
-          a.scripts,
+          woofer_app.scripts,
           exclude_binaries=True,
           name='woofer.exe',
           debug=False,
@@ -58,34 +55,34 @@ exe = EXE(pyz,
           console=False,
           icon=os.path.join("icons", "woofer.ico"))
 
-pyzB = PYZ(b.pure)
+pyzB = PYZ(cmdargs_app.pure)
 exeB = EXE(pyzB,
-          b.scripts,
-          exclude_binaries=True,
-          name='cmdargs.exe',
-          debug=False,
-          strip=None,
-          upx=False,
-          console=True,
-          icon=os.path.join("icons", "cmdargs.ico"))
+           cmdargs_app.scripts,
+           exclude_binaries=True,
+           name='cmdargs.exe',
+           debug=False,
+           strip=None,
+           upx=False,
+           console=True,
+           icon=os.path.join("icons", "cmdargs.ico"))
 
-pyzC = PYZ(c.pure)
+pyzC = PYZ(updater_app.pure)
 exeC = EXE(pyzC,
-          c.scripts,
-          exclude_binaries=True,
-          name='updater.exe',
-          debug=False,
-          strip=None,
-          upx=False,
-          console=True,
-          icon=os.path.join("icons", "cmdargs.ico"))
+           updater_app.scripts,
+           exclude_binaries=True,
+           name='updater.exe',
+           debug=False,
+           strip=None,
+           upx=False,
+           console=True,
+           icon=os.path.join("icons", "cmdargs.ico"))
 
 
 coll = COLLECT(exe, exeB, exeC,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               c.binaries,
+               woofer_app.binaries,
+               woofer_app.zipfiles,
+               woofer_app.datas,
+               updater_app.binaries,
                strip=None,
                upx=True,
                name='woofer')
