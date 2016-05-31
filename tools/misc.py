@@ -31,12 +31,20 @@ import traceback
 
 import ujson
 
+from PyQt5.QtCore import QStandardPaths
+
 logger = logging.getLogger(__name__)
 
 # constants
 APP_ROOT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
-LOG_DIR = os.path.join(APP_ROOT_DIR, 'log')
-DATA_DIR = os.path.join(APP_ROOT_DIR, 'data')
+OS_DATA_DIR = QStandardPaths.writableLocation(QStandardPaths.DataLocation)
+if OS_DATA_DIR and os.path.exists(OS_DATA_DIR):
+    OS_DATA_DIR = os.path.normpath(OS_DATA_DIR)
+    OS_DATA_DIR = os.path.join(OS_DATA_DIR, "WooferPlayer")
+else:
+    OS_DATA_DIR = APP_ROOT_DIR
+LOG_DIR = os.path.join(OS_DATA_DIR, 'log')
+DATA_DIR = os.path.join(OS_DATA_DIR, 'data')
 IS_WIN32_EXE = sys.argv[0].endswith(".exe")
 IS_PYTHON_FILE = sys.argv[0].endswith((".py", ".pyc"))
 TERMINATE_DELAY = 3000                                          # thread quit() delay in ms before it will be terminated
