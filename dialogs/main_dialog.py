@@ -1192,17 +1192,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot()
     def openAboutDialog(self):
-        def load_build_info():
-            build_info_file = os.path.join(tools.APP_ROOT_DIR, "build.info")
-            if not os.path.isfile(build_info_file):
-                logger.error("Unable to locate build.info file!")
-                self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['ERROR_BUILDINFO_MISSING'], "")
-                return {}
 
-            with open(build_info_file, 'r') as f:
-                build_data = ujson.load(f)               # dict
-
-            return build_data
 
         def find_licence_file():
             if os.path.isfile('LICENSE.txt'):
@@ -1218,7 +1208,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         logger.debug("Open 'About' dialog called")
         path_to_licence = find_licence_file()
-        build_data = load_build_info()
+        build_data = tools.load_build_info()
 
         author = build_data.get('author')
         email = build_data.get('email')

@@ -140,6 +140,7 @@ def find_lib():
             try:
                 dll = ctypes.CDLL('libvlc.dll')
                 libvlc_found = True
+                plugin_path = os.path.dirname(sys.executable)
             except WindowsError as e:
                 print("libvlc.py :: Unable to load packed libvlc.dll in root. WindowsError [%s]: %s" %
                       (e.errno, e.strerror), file=sys.stderr)

@@ -29,6 +29,8 @@ import shutil
 import platform
 import traceback
 
+import ujson
+
 logger = logging.getLogger(__name__)
 
 # constants
@@ -166,6 +168,18 @@ def full_stack():
     if exc is not None:
         stackstr += '  ' + traceback.format_exc().lstrip(trc)
     return stackstr
+
+
+def load_build_info():
+            build_info_file = os.path.join(APP_ROOT_DIR, "build.info")
+            if not os.path.isfile(build_info_file):
+                logger.error("Unable to locate build.info file!")
+                return {}
+
+            with open(build_info_file, 'r') as f:
+                build_data = ujson.load(f)               # dict
+
+            return build_data
 
 
 class ErrorMessages(object):

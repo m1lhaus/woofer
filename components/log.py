@@ -81,7 +81,7 @@ def setup_logging(mode):
         log_path = os.path.join(tools.LOG_DIR, "debug_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
         level = logging.DEBUG
     elif mode == "PRODUCTION":
-        level = logging.WARNING
+        level = logging.INFO
         log_path = os.path.join(tools.LOG_DIR, "production_woofer_%s.log" % date.strftime("%Y-%m-%d_%H-%M-%S"))
     else:
         raise NotImplementedError("Logging mode is not implemented!")

@@ -65,7 +65,7 @@ def foundLibVLC():
     @rtype: bool
     """
     if components.libvlc.dll is not None:
-        logger.debug("Using libvlc.dll found at: %s", components.libvlc.plugin_path)
+        logger.info("Using libvlc.dll found at: %s", components.libvlc.plugin_path)
         return True
     else:
         return False
@@ -126,7 +126,7 @@ def displayLibVLCError(platform):
                                   % check_binary_type(sys.executable))
         msgBox.exec_()
     elif platform == 'posix':
-        logger.warning("Libvlc background not found!")
+        logger.warning("LibVLC background not found!")
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
         msgBox.setIcon(QMessageBox.Warning)
@@ -176,7 +176,12 @@ if __name__ == "__main__":
         displayLoggerError(str(exception))
         sys.exit(-1)
 
-    logger.debug("Mode: '%s' Python '%s.%s.%s' PyQt: '%s' Qt: '%s'", env, sys.version_info[0], sys.version_info[1],
+    logger.info("Binary located at: " + sys.executable)
+    build_info = tools.load_build_info()
+    logger.info("Build info - version: %s | revision: %s | build date: %s" % (build_info.get("version", None),
+                                                                             build_info.get("revision", None),
+                                                                             build_info.get("date", None)))
+    logger.info("Mode: '%s' Python '%s.%s.%s' PyQt: '%s' Qt: '%s'", env, sys.version_info[0], sys.version_info[1],
                  sys.version_info[2], PYQT_VERSION_STR, QT_VERSION_STR)
 
     # if -h/--help console argument is given, display help content
