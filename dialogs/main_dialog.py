@@ -21,7 +21,7 @@ Main application GUI module.
 """
 
 import logging
-import json
+import ujson
 import sys
 import os
 import errno
@@ -304,7 +304,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         logger.debug("Opening media folder and reading data.")
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
-                mediaFolders = json.load(mediaFile)
+                mediaFolders = ujson.load(mediaFile)
         except IOError as exception:
             logger.exception("Error when reading medialib file.")
             self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['READ_MEDIALIB_FILE_ERROR'], str(exception))
@@ -399,7 +399,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         logger.debug("Loading session...")
         try:
             with open(self.session_file, 'r') as f:
-                session_data = json.load(f)
+                session_data = ujson.load(f)
         except Exception:
             logger.exception("Unable to load data from session file!")
         else:
@@ -513,7 +513,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         logger.debug("Dumping session file to disk...")
         with open(self.session_file, 'w') as f:
-            json.dump(session_data, f)
+            ujson.dump(session_data, f)
 
     def savePlaylist(self, session_data):
         """
@@ -1200,7 +1200,7 @@ class MainApp(QMainWindow, main_form.MainForm):
                 return {}
 
             with open(build_info_file, 'r') as f:
-                build_data = json.load(f)               # dict
+                build_data = ujson.load(f)               # dict
 
             return build_data
 

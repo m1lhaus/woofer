@@ -46,7 +46,7 @@ except ImportError as e:
     raise Exception("%s! Send2Trash package is required!" % e.msg)
 
 try:
-    import json
+    import ujson
 except ImportError as e:
     raise Exception("%s! json package is required!" % e.msg)
 

@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import logging
-import json
+import ujson
 import os
 from pathlib import _Accessor
 
@@ -52,7 +52,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         # loads folders from medialib
         try:
             with open(self.mediaLibFile, 'r') as mediaFile:
-                self.mediaFolders = json.load(mediaFile)
+                self.mediaFolders = ujson.load(mediaFile)
                 assert isinstance(self.mediaFolders, list)
         except IOError:
             logger.exception("Error when reading media file data from disk")
@@ -146,7 +146,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
         """
         try:
             with open(self.mediaLibFile, 'w') as mediaFile:
-                json.dump(self.mediaFolders, mediaFile)
+                ujson.dump(self.mediaFolders, mediaFile)
         except IOError:
             logger.exception("Error when writing media file data to disk")
             QMessageBox(QMessageBox.Critical, tr['ERROR_WRITE_MEADIALIB_FILE'], "").exec_()

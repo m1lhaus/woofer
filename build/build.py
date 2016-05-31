@@ -27,7 +27,7 @@ import sys
 import os
 import subprocess
 import shutil
-import json
+import ujson
 
 import tools
 
@@ -80,7 +80,7 @@ def get_build_info():
         return None
 
     with open(build_info_file, 'r') as f:
-        build_data = json.load(f)               # dict
+        build_data = ujson.load(f)               # dict
 
     return build_data
 
