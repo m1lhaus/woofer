@@ -88,8 +88,8 @@ def get_build_info():
 def get_pyinstaller_exe():
     print("Trying to find PyInstaller executable in system PATH...")
     pyinstaller_exe = which(PYINSTALLER_EXE_NAME)
-    # pyinstaller_exe = r"c:\Python27\Scripts\pyinstaller.exe"
-    # pyinstaller_exe = r"c:\Python27x86\Scripts\pyinstaller.exe"
+    # pyinstaller_exe = r"C:\Python35\Scripts\pyinstaller.exe"
+    # pyinstaller_exe = r"C:\Python35-32\Scripts\pyinstaller.exe"
 
     if not pyinstaller_exe:
         raise Exception("PyInstaller executable not found in system PATH!")
