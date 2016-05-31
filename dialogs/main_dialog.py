@@ -81,9 +81,8 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     def __init__(self, mode, play_path):
         super(MainApp, self).__init__()
-        self.appDataPath = tools.DATA_DIR
-        self.mediaLibFile = os.path.join(self.appDataPath, 'medialib.dat')
-        self.session_file = os.path.join(self.appDataPath, 'session.dat')
+        self.mediaLibFile = os.path.join(tools.DATA_DIR, 'medialib.dat')
+        self.session_file = os.path.join(tools.DATA_DIR, 'session.dat')
         self.input_path = play_path.decode(sys.getfilesystemencoding()) if play_path else None
         self.mediaPlayer = components.media.MediaPlayer()
 
@@ -267,10 +266,10 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         # check data folder
         try:
-            os.makedirs(self.appDataPath)
+            os.makedirs(tools.DATA_DIR)
         except OSError as exception:
             if exception.errno != errno.EEXIST:
-                logger.exception("Unable to create data folder on path: %s", self.appDataPath)
+                logger.exception("Unable to create data folder on path: %s", tools.DATA_DIR)
                 self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['ERROR_CREATE_DATA_FOLDER'], str(exception))
         else:
             logger.debug("Data folder didn't exist and has been created.")
