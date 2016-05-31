@@ -102,6 +102,7 @@ class LocalServer(QObject):
         @return: successful
         @rtype: bool
         """
+        message = message.encode()
         state = self.socket.state()
         if state == QLocalSocket.ConnectedState:
             logger.debug("Sending message to server...")
@@ -126,12 +127,18 @@ class LocalServer(QObject):
             pendingClient.waitForReadyRead()
 
         logger.debug("New message is available, reading...")
-        message = str(pendingClient.readAll())
+        message = pendingClient.readAll().data()
+        try:
+            message = message.decode()
+        except Exception:
+            logger.exception("Decoding of received message failed!")
+        else:
+            # print(message, type(message))
 
-        # message must be decoded here, because PyQt somehow convert the str to unicode
-        # message = message.decode(sys.getfilesystemencoding())
+            # message must be decoded here, because PyQt somehow convert the str to unicode
+            # message = message.decode(sys.getfilesystemencoding())
 
-        self.messageReceivedSignal.emit(message)
+            self.messageReceivedSignal.emit(message)
 
     def exit(self):
         """
