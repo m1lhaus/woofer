@@ -62,10 +62,12 @@ assert os.path.isfile(os.path.join(VLC_PATH, "libvlc.dll"))
 woofer_app = Analysis(['../woofer.py'], pathex=[VLC_PATH], binaries=[(VLC_PATH, '.')])
 cmdargs_app = Analysis(['../cmdargs.py'])
 updater_app = Analysis(['../updater.py'])
+reset_app = Analysis(['../reset_settings.py'])
 
 MERGE((woofer_app, "woofer", "woofer.exe"),
       (cmdargs_app, "cmdargs", 'cmdargs.exe'),
-      (updater_app, "updater", 'updater.exe'))
+      (updater_app, "updater", 'updater.exe'),
+      (reset_app, "reset_settings", 'reset_settings.exe'))
 
 # ---------------- EXCLUDE: ------------------------------
 # skip Windows system binaries
@@ -116,8 +118,19 @@ exeC = EXE(pyzC,
            console=True,
            icon=os.path.join("icons", "cmdargs.ico"))
 
+pyzD = PYZ(reset_app.pure)
+exeD = EXE(pyzD,
+           reset_app.scripts,
+           exclude_binaries=True,
+           name='reset_settings.exe',
+           debug=False,
+           strip=None,
+           upx=False,
+           console=True,
+           icon=os.path.join("icons", "cmdargs.ico"))
 
-coll = COLLECT(exe, exeB, exeC,
+
+coll = COLLECT(exe, exeB, exeC, exeD,
                woofer_app.binaries,
                woofer_app.zipfiles,
                woofer_app.datas,
