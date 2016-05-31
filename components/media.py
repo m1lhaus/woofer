@@ -205,7 +205,7 @@ class MediaPlayer(QObject):
 
         # remove media from _media_list
         self._media_list.lock()
-        remove_error = self._media_list.remove_index(remove_index) == -1
+        remove_error = (self._media_list.remove_index(remove_index) == -1)
         self._media_list.unlock()
         del self.media_list[remove_index]
 
@@ -217,10 +217,6 @@ class MediaPlayer(QObject):
                                   "Unable remove item from Woofer media list. "
                                   "Item is not in the list or the list is read only!",
                                   "playlist len: %s, removed index: %s" % (len(self.shuffled_playlist), remove_index))
-
-        self._media_list.lock()
-        new_playlist_len = self._media_list.count()
-        self._media_list.unlock()
 
         # decrease all references with higher index
         for i in range(len(self.shuffled_playlist)):
@@ -235,6 +231,10 @@ class MediaPlayer(QObject):
         # change song if removed == played, but stop if there is no next song
         if must_change_song:
             logger.debug("Currently playing media has been removed from playlist, selecting next one.")
+            if not self.shuffled_playlist:
+                logger.debug("There is no other media left!")
+                return
+
             self.play(item_playlist_id=self.shuffled_playlist[self.shuffled_playlist_current_index])
             if not restore_playing:
                 self.stop()
@@ -303,6 +303,10 @@ class MediaPlayer(QObject):
         @param item_playlist_id: id (index) of item in idPlaylist
         @type item_playlist_id: int
         """
+        if not self.shuffled_playlist:
+            logger.debug("Play called, but there is no items to play!")
+            return
+
         self.shuffled_playlist_old_index = self.shuffled_playlist_current_index
 
         # play given media (index) - find item in playlist
