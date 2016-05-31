@@ -56,7 +56,6 @@ if sys.platform.startswith('linux'):
     except ImportError as e:
         raise Exception("%s! Python-Xlib libraries are required on Linux platform!" % e.msg)
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -73,7 +72,7 @@ def foundLibVLC():
 
 
 def findCmdHelpFile():
-    if os.path.isfile(os.path.join(tools.APP_ROOT_DIR, 'cmdargs.exe')):      # built exe dist
+    if os.path.isfile(os.path.join(tools.APP_ROOT_DIR, 'cmdargs.exe')):  # built exe dist
         return os.path.join(tools.APP_ROOT_DIR, 'cmdargs.exe')
     elif os.path.isfile(os.path.join(tools.APP_ROOT_DIR, 'cmdargs.py')):
         return os.path.join(tools.APP_ROOT_DIR, 'cmdargs.py')
@@ -83,7 +82,37 @@ def findCmdHelpFile():
 
 def displayLibVLCError(platform):
     if platform == 'nt':
+        def check_binary_type(path):
+            import struct
+            bin_type = None
+            IMAGE_FILE_MACHINE_I386 = 332
+            IMAGE_FILE_MACHINE_IA64 = 512
+            IMAGE_FILE_MACHINE_AMD64 = 34404
+
+            with open(path, "rb") as f:
+                s = f.read(2)
+                if s != b"MZ":
+                    print("check_binary_type - Not an EXE file!")
+
+                else:
+                    f.seek(60)
+                    s = f.read(4)
+                    header_offset = struct.unpack("<L", s)[0]
+                    f.seek(header_offset + 4)
+                    s = f.read(2)
+                    machine = struct.unpack("<H", s)[0]
+
+                    if machine == IMAGE_FILE_MACHINE_I386:
+                        return 32
+                    elif machine == IMAGE_FILE_MACHINE_IA64:
+                        return 64
+                    elif machine == IMAGE_FILE_MACHINE_AMD64:
+                        return 64
+                    else:
+                        raise Exception("Unknown binary type!")
+
         logger.error("LibVLC dll not found, dll instance is None! Root path: %s" % tools.APP_ROOT_DIR)
+
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
         msgBox.setIcon(QMessageBox.Critical)
@@ -92,8 +121,9 @@ def displayLibVLCError(platform):
         msgBox.setInformativeText("If you are using distributed binary package, "
                                   "please report this issue on http://m1lhaus.github.io/woofer immediately. "
                                   "You can try to install "
-                                  "<a href='http://www.videolan.org/vlc/#download'>VLC media player</a> "
-                                  "as temporary workaround. Woofer player can use their libraries.")
+                                  "<a href='http://www.videolan.org/vlc/#download'>VLC media player %d-bit</a> "
+                                  "as temporary workaround. Woofer player can use their libraries."
+                                  % check_binary_type(sys.executable))
         msgBox.exec_()
     elif platform == 'posix':
         logger.warning("Libvlc background not found!")
@@ -111,20 +141,20 @@ def displayLibVLCError(platform):
 
 
 def displayLoggerError(e_msg):
-        msgBox = QMessageBox()
-        msgBox.setIcon(QMessageBox.Critical)
-        msgBox.setWindowTitle("Critical error")
-        msgBox.setText("Initialization of logger component failed. "
-                       "The application probably doesn't have write permissions.")
-        msgBox.setInformativeText("Details:\n" + e_msg)
-        msgBox.exec_()
+    msgBox = QMessageBox()
+    msgBox.setIcon(QMessageBox.Critical)
+    msgBox.setWindowTitle("Critical error")
+    msgBox.setText("Initialization of logger component failed. "
+                   "The application probably doesn't have write permissions.")
+    msgBox.setInformativeText("Details:\n" + e_msg)
+    msgBox.exec_()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Woofer player is free and open-source cross-platform music player.",
                                      add_help=False)
     parser.add_argument('input', nargs='?', type=str, help='Media file path.')
-    parser.add_argument('-d', "--debug", action='store_true',  help="debug/verbose mode")
+    parser.add_argument('-d', "--debug", action='store_true', help="debug/verbose mode")
     parser.add_argument('-h', "--help", action='store_true', help="show this help message and exit")
     parser.add_argument('-u', type=str, help='Direct path to updater.exe to invoke update mechanism.')
     args = parser.parse_args()
@@ -160,48 +190,51 @@ if __name__ == "__main__":
 
         # win32gui apps has no stdout/stderr, so cmd help has to be opened in new window
         else:
-            os.startfile(cmd_args_file)         # opens console application window with help
+            os.startfile(cmd_args_file)  # opens console application window with help
 
-        logging.shutdown()                      # quit application
+        logging.shutdown()  # quit application
         sys.exit()
 
     # start server and detect another instance
     import components.network
     applicationServer = components.network.LocalServer("com.woofer.player")
     try:
-        if applicationServer.another_instance_running:
-            if args.input:
-                applicationServer.sendMessage(r"play %s" % args.input)      # play input file immediately
+        if not applicationServer.another_instance_running:
+            # init LibVLC binaries
+            import components.libvlc  # import for libvlc check
+
+            if foundLibVLC():
+                # init translator module
+                settings = QSettings()
+                lang_code = settings.value("components/translator/Translator/language", "en_US.ini")
+                tr = components.translator.init(lang_code)
+
+                # start gui application
+                import dialogs.main_dialog
+
+                logger.debug("Initializing gui application and all components...")
+                mainApp = dialogs.main_dialog.MainApp(env, args.input)
+                applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
+
+                # prepare for launching updater.exe given by args.u
+                if args.u:
+                    mainApp.prepareForAppUpdate(args.u)
+
+                mainApp.show()
+                app.exec_()
+
+                logger.debug("MainThread loop stopped.")
             else:
-                applicationServer.sendMessage(r"open")                      # raise application on top
-            raise Exception("Another instance is running")
+                logger.error("LibVLC libraries not found")
+                displayLibVLCError(os.name)
+        else:
+            if args.input:
+                applicationServer.sendMessage(r"play %s" % args.input)  # play input file immediately
+            else:
+                applicationServer.sendMessage(r"open")  # raise application on top
+            logger.debug("Another instance has been notified, closing app now...")
 
-        # init LibVLC binaries
-        import components.libvlc            # import for libvlc check
-        if not foundLibVLC():
-            displayLibVLCError(os.name)
-            raise Exception("LibVLC libraries not found")
-
-        # init translator module
-        settings = QSettings()
-        lang_code = settings.value("components/translator/Translator/language", "en_US.ini")
-        tr = components.translator.init(lang_code)
-
-        # start gui application
-        import dialogs.main_dialog
-
-        logger.debug("Initializing gui application and all components...")
-        mainApp = dialogs.main_dialog.MainApp(env, args.input)
-        applicationServer.messageReceivedSignal.connect(mainApp.messageFromAnotherInstance)
-
-        # prepare for launching updater.exe given by args.u
-        if args.u:
-            mainApp.prepareForAppUpdate(args.u)
-
-        mainApp.show()
-        app.exec_()
-
-        logger.debug("MainThread loop stopped.")
+    # if anything goes wrong, don't forget to close the socket
     finally:
         if not applicationServer.exit():
             logger.error("Local server components are not closed properly!")
