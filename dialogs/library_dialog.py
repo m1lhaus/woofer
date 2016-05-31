@@ -91,7 +91,7 @@ class LibraryDialog(QDialog, Ui_libraryDialog):
 
         # use last visited directory or home directory if last used does not exist
         if not start_folder or not os.path.isdir(start_folder):
-            start_folder = QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
+            start_folder = QDir.homePath()
 
         new_folder = QFileDialog.getExistingDirectory(directory=start_folder)
         if new_folder:
