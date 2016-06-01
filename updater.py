@@ -58,7 +58,6 @@ class CopyToLogger(object):
 
     def write(self, buf):
         self.orig_output.write(buf)
-        buf = buf.decode(sys.getfilesystemencoding())
         for line in buf.rstrip().splitlines():
             self.logger.log(self.log_level, line.rstrip())
 
@@ -133,7 +132,7 @@ def backup_old_files(backup_dir):
 
     # move all except log and data dir to backup directory
     dir_content = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if
-                   item not in ("data", "log", "updater_backup")]
+                   item != "updater_backup"]
     print("Creating backup...")
     for item in dir_content:
         copy(item, backup_dir)
@@ -145,7 +144,7 @@ def backup_old_files(backup_dir):
 
 def copy_new_files():
     print("Copying new files ...")
-    dir_content = [os.path.abspath(item) for item in os.listdir(os.getcwd()) if not item == "data"]
+    dir_content = [os.path.abspath(item) for item in os.listdir(os.getcwd())]
     for src in dir_content:
         copy(src, args.installDir)
 
@@ -155,7 +154,7 @@ def restore_backup(backup_dir):
     # remove new files
     backup_dirname = os.path.basename(backup_dir)
     content_to_remove = [os.path.join(args.installDir, item) for item in os.listdir(args.installDir) if
-                         item not in ("data", "log", backup_dirname)]
+                         item != backup_dirname]
     for item in content_to_remove:
         try:
             remove(item)
@@ -219,6 +218,20 @@ def main():
         time.sleep(3)
 
 
+def has_write_permission(path):
+    tmp_file = os.path.join(path, "dummy_test_file")
+    try:
+        with open(tmp_file, 'w') as f:
+            pass
+    except Exception:
+        logger.exception("Error testing write permission!")
+        print("Update.exe has NO write permission to:", path)
+        return False
+    os.remove(tmp_file)
+    print("Update.exe has write permission to:", path)
+    return True
+
+
 if __name__ == "__main__":
     try:
         parser = argparse.ArgumentParser(
@@ -235,18 +248,22 @@ if __name__ == "__main__":
                             help="Re-run with elevated rights (admin)")
         args = parser.parse_args()
 
-        if args.admin:
+        log_dir = os.path.join(os.getenv('APPDATA'), "WooferPlayer", "log")
+        logger = setup_logging(log_dir=log_dir)
+        logger.debug("Binary located at: " + sys.executable)
+        logger.debug("sys.argv: %s", sys.argv)
+
+        if args.admin or not has_write_permission(args.installDir):
             if not win_admin.isUserAdmin():
                 print("Have no admin rights, elevating rights now...")
-                win_admin.runAsAdmin()
+                argv = [arg for arg in sys.argv if arg not in ("-a", "--admin")]    # remove admin flag
+                win_admin.runAsAdmin(argv)
                 print("Admin script launched, exit 0")
         else:
-            os.chdir(os.path.dirname(sys.argv[0]))
-            # args.installDir = args.installDir.decode(sys.getfilesystemencoding())  # utf8 support
+            logger.debug("Changing working dir to: %s", os.path.dirname(os.path.abspath(sys.argv[0])))
+            os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
             if not os.path.isdir(args.installDir):
                 raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
-
-            logger = setup_logging(log_dir=os.path.join(args.installDir, "log"))
             main()
 
     except Exception:
