@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 # directories and files
 APP_ROOT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
-OS_DATA_DIR = QStandardPaths.writableLocation(QStandardPaths.DataLocation)
+OS_DATA_DIR = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
 if OS_DATA_DIR and os.path.exists(OS_DATA_DIR):
     OS_DATA_DIR = os.path.normpath(OS_DATA_DIR)
     OS_DATA_DIR = os.path.join(OS_DATA_DIR, "WooferPlayer")
