@@ -35,7 +35,7 @@ from PyQt5.QtCore import QStandardPaths
 
 logger = logging.getLogger(__name__)
 
-# constants
+# directories and files
 APP_ROOT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 OS_DATA_DIR = QStandardPaths.writableLocation(QStandardPaths.DataLocation)
 if OS_DATA_DIR and os.path.exists(OS_DATA_DIR):
@@ -45,18 +45,20 @@ else:
     OS_DATA_DIR = APP_ROOT_DIR
 LOG_DIR = os.path.join(OS_DATA_DIR, 'log')
 DATA_DIR = os.path.join(OS_DATA_DIR, 'data')
+
+BUILD_INFO_FILE = os.path.join(APP_ROOT_DIR, "build.info")
+
+# misc
 IS_WIN32_EXE = sys.argv[0].endswith(".exe")
 IS_PYTHON_FILE = sys.argv[0].endswith((".py", ".pyc"))
-TERMINATE_DELAY = 3000                                          # thread quit() delay in ms before it will be terminated
-BUILD_INFO_FILE = os.path.join(APP_ROOT_DIR, "build.info")
 PLATFORM = 32 if platform.architecture()[0] == '32bit' else 64
 
 
-def check_binary_type(path):
+def checkBinaryType(path):
     """
     Method reads PE header and get binary type (x32 vs x64)
-    @param path:
-    @return:
+    @param path: path to file
+    @return: binary type str
     """
     if not os.path.isfile(path):
         raise Exception("Given path '%s' not found!" % path)
@@ -93,39 +95,13 @@ def check_binary_type(path):
     return bin_type
 
 
-# def unicode2bytes(string):
-#     """
-#     Converts string (basestring) to unicode and byte string (ascii str).
-#     @type string: str or unicode
-#     @rtype: (unicode, str)
-#     """
-#     assert isinstance(string, str)
-#
-#     if isinstance(string, str):
-#         byte_str = string.encode("utf8")
-#         unicode_str = string
-#     else:
-#         byte_str = string
-#         unicode_str = str(string, "utf-8")
-#
-#     return unicode_str, byte_str
-#
-#
-# def bytes_to_str(size):
-#     """
-#     Converts file size in bytes to human readable form. (i.e. '895 KB')
-#     @type size: int
-#     @rtype: unicode
-#     """
-#     size_name = (" B", " KB", " MB", " GB")
-#     p = 1
-#     while (size / 1024**p) > 1 and p <= 3:
-#         p += 1
-#
-#     return str(round(size / 1024.0**(p-1), 2)) + size_name[p-1]
-
-
 def extractZIPFiles(src, dst):
+    """
+    Extracts all files from ZIP archive to given directory.
+    @param src: source ZIP file
+    @param dst: where to extract files
+    """
+
     def get_members(zip_object):
         parts = []
         for name in zip_object.namelist():
@@ -147,6 +123,10 @@ def extractZIPFiles(src, dst):
 
 
 def removeFile(filepath):
+    """
+    Remove file permanently.
+    @param filepath: string path
+    """
     logger.debug("Removing file '%s'...", filepath)
     try:
         os.remove(filepath)
@@ -158,6 +138,10 @@ def removeFile(filepath):
 
 
 def removeFolder(folderpath):
+    """
+    Remove file permanently.
+    @param folderpath: string path
+    """
     logger.debug("Removing folder '%s'...", folderpath)
     try:
         shutil.rmtree(folderpath)
@@ -165,7 +149,11 @@ def removeFolder(folderpath):
         logger.exception("Error when removing directory '%s'!", folderpath)
 
 
-def full_stack():
+def getFullTraceback():
+    """
+    Method grabs last available traceback error and makes conversion to string.
+    @return: full traceback error string
+    """
     exc = sys.exc_info()[0]
     stack = traceback.extract_stack()[:-1]      # last one would be full_stack()
     if exc is not None:                         # i.e. if an exception is present
@@ -178,16 +166,16 @@ def full_stack():
     return stackstr
 
 
-def load_build_info():
-            build_info_file = os.path.join(APP_ROOT_DIR, "build.info")
-            if not os.path.isfile(build_info_file):
-                logger.error("Unable to locate build.info file!")
-                return {}
+def loadBuildInfo():
+    build_info_file = os.path.join(APP_ROOT_DIR, "build.info")
+    if not os.path.isfile(build_info_file):
+        logger.error("Unable to locate build.info file!")
+        return {}
 
-            with open(build_info_file, 'r') as f:
-                build_data = ujson.load(f)               # dict
+    with open(build_info_file, 'r') as f:
+        build_data = ujson.load(f)               # dict
 
-            return build_data
+    return build_data
 
 
 class ErrorMessages(object):
@@ -198,62 +186,3 @@ class ErrorMessages(object):
     ERROR = 1
     CRITICAL = 2
     INFO = 3
-
-
-class PlaybackSources(object):
-    """
-    Playback sources enums.
-    """
-    FILES = 0
-    PLAYLISTS = 1
-    RADIO = 2
-
-
-# class RedirectDescriptor(object):
-#
-#     def __init__(self):
-#         self.original_stderr_descriptor = None
-#
-#     def redirect_C_stderr_null(self):
-#         """
-#         Redirects all stderr ouput to new descriptor. So original stderr ouput will be thrown away.
-#         Only new sys.stderr output since this method call will be printed out.
-#
-#         ##program init##
-#             1 -> something points to the stderr
-#             2 -> other library points to the stderr
-#             * redirect_C_stderr_null() called
-#             3 -> next thing points to the stderr
-#             4 -> error log points to the stderr
-#             * redirect_C_stderr_back() called
-#
-#         ##later program goes like this ###
-#             called * redirect_C_stderr_null() *
-#             1 prints something ---> will be ignored (old stderr points nowhere)
-#             2 prints something ---> will be ignored (old stderr points nowhere)
-#             3 prints something ---> will be printed on stderr pipe
-#             4 prints something ---> will be printed on stderr pipe
-#             called * redirect_C_stderr_back() *
-#             1 prints something ---> will be printed on stderr pipe
-#             2 prints something ---> will be printed on stderr pipe
-#             3 prints something ---> will be ignored (old stderr points nowhere)
-#             4 prints something ---> will be ignored (old stderr points nowhere)
-#         """
-#         sys.stderr.flush()                                  # flush all data
-#         stderr_duplicate = os.dup(sys.stderr.fileno())      # creates copy of stderr
-#         self.original_stderr_descriptor = stderr_duplicate  # save descriptor number
-#         devnull = os.open(os.devnull, os.O_WRONLY)          # creates 'black hole'
-#         os.dup2(devnull, sys.stderr.fileno())               # redirects orig. low-level stderr descriptor to 'back hole'
-#         os.close(devnull)                                   # close the 'black hole', so no data will sent there anymore
-#         sys.stderr = os.fdopen(stderr_duplicate, 'w')       # python needs some stderr, so open new one
-#
-#     def redirect_C_stderr_back(self):
-#         """
-#         Redirects backed up stderr to original pipe.
-#         @raise AssertionError: Descriptor is not redirected.
-#         """
-#         assert self.original_stderr_descriptor is not None
-#         sys.stderr.flush()                               #
-#         os.dup2(self.original_stderr_descriptor, 2)         # recover original orig. low-level stderr descriptor
-#         sys.stderr = os.fdopen(2, 'w')                      # reopen; backed up descriptor is closed automatically
-

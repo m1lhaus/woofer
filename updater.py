@@ -32,7 +32,7 @@ import datetime
 
 import psutil
 
-from tools import full_stack, win_admin
+from tools import getFullTraceback, win_admin
 
 
 # ----------- helpers ----------------
@@ -67,6 +67,9 @@ class CopyToLogger(object):
 
 
 def copy(src, dst):
+    """
+    Copy file or dir from source to dst
+    """
     if os.path.isdir(src):
         shutil.copytree(src, os.path.join(dst, os.path.basename(src)))
     else:
@@ -74,6 +77,9 @@ def copy(src, dst):
 
 
 def remove(src):
+    """
+    Remove file or folder
+    """
     if os.path.isdir(src):
         shutil.rmtree(src)
     else:
@@ -195,7 +201,7 @@ def main():
         backup_old_files(backup_dir)
         copy_new_files()
     except Exception:
-        print("\n", full_stack(), "\n")
+        print("\n", getFullTraceback(), "\n")
         restore_backup(backup_dir)
         clean(backup_dir)
 
@@ -236,7 +242,7 @@ if __name__ == "__main__":
                 print("Admin script launched, exit 0")
         else:
             os.chdir(os.path.dirname(sys.argv[0]))
-            args.installDir = args.installDir.decode(sys.getfilesystemencoding())  # utf8 support
+            # args.installDir = args.installDir.decode(sys.getfilesystemencoding())  # utf8 support
             if not os.path.isdir(args.installDir):
                 raise Exception("Install dir '%s' does NOT exist!" % args.installDir)
 
@@ -244,7 +250,7 @@ if __name__ == "__main__":
             main()
 
     except Exception:
-        print(full_stack())
+        print(getFullTraceback())
         print("\n", "-" * 25, "\n")
         input('Press Enter to exit.')
         raise

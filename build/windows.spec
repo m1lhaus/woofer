@@ -21,7 +21,6 @@
 
 def check_binary_type(path):
     import struct
-    bin_type = None
     IMAGE_FILE_MACHINE_I386 = 332
     IMAGE_FILE_MACHINE_IA64 = 512
     IMAGE_FILE_MACHINE_AMD64 = 34404
@@ -41,12 +40,10 @@ def check_binary_type(path):
 
             if machine == IMAGE_FILE_MACHINE_I386:
                 return 32
-            elif machine == IMAGE_FILE_MACHINE_IA64:
-                return 64
-            elif machine == IMAGE_FILE_MACHINE_AMD64:
+            elif machine == machine == IMAGE_FILE_MACHINE_AMD64 or machine == IMAGE_FILE_MACHINE_IA64:
                 return 64
             else:
-                raise Exception("Unknown binary type!")
+                raise Exception("Unknown binary type: %s!" % machine)
 
 # ---------------- find correct VLC folder ---------------------------
 import os
@@ -68,22 +65,6 @@ MERGE((woofer_app, "woofer", "woofer.exe"),
       (cmdargs_app, "cmdargs", 'cmdargs.exe'),
       (updater_app, "updater", 'updater.exe'),
       (reset_app, "reset_settings", 'reset_settings.exe'))
-
-# ---------------- EXCLUDE: ------------------------------
-# skip Windows system binaries
-# woofer_app.binaries = [x for x in woofer_app.binaries if not x[1].startswith(r"C:\Windows")]
-# ---------------------------------------------------------
-
-# # print binaries
-# paths = sorted([lib[1] for lib in woofer_app.binaries])
-# paths2 = sorted([lib[1] for lib in cmdargs_app.binaries])
-# paths3 = sorted([lib[1] for lib in updater_app.binaries])
-# print("\n".join(paths))
-# print("----------------")
-# print("\n".join(paths2))
-# print("----------------")
-# print("\n".join(paths3))
-
 
 pyz = PYZ(woofer_app.pure)
 exe = EXE(pyz,

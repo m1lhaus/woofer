@@ -45,7 +45,7 @@ import ctypes
 from _ctypes import byref
 from ctypes.util import find_library
 
-from tools.misc import check_binary_type
+from tools import checkBinaryType
 
 # Used by EventManager in override.py
 from inspect import getargspec
@@ -147,7 +147,7 @@ def find_lib():
         else:
             # running live
             # load libvlc.dll shipped with woofer
-            python_bin_type = check_binary_type(sys.executable)
+            python_bin_type = checkBinaryType(sys.executable)
             cwd = os.path.dirname(os.path.realpath(sys.argv[0]))
 
             import platform
@@ -160,7 +160,7 @@ def find_lib():
             dll_path = os.path.join(plugin_path, 'libvlc.dll')
             if os.path.isdir(plugin_path) and os.path.isfile(dll_path):
                 os.chdir(plugin_path)
-                assert check_binary_type(dll_path) == python_bin_type
+                assert checkBinaryType(dll_path) == python_bin_type
                 try:
                     dll = ctypes.CDLL('libvlc.dll')
                     libvlc_found = True
@@ -198,7 +198,7 @@ def find_lib():
                         for path_to_lib in ('Program Files\\VideoLan\\', 'VideoLan\\', 'Program Files\\', '',
                                             'Program Files (x86)\\VideoLan\\', 'VideoLan\\', 'Program Files (x86)\\', ''):
                             path_to_lib = 'C:\\' + path_to_lib + 'VLC\\libvlc.dll'
-                            if os.path.exists(path_to_lib) and check_binary_type('libvlc.dll') == python_bin_type:
+                            if os.path.exists(path_to_lib) and checkBinaryType('libvlc.dll') == python_bin_type:
                                 plugin_path = os.path.dirname(path_to_lib)
                                 break
 
@@ -206,7 +206,7 @@ def find_lib():
                     if plugin_path is not None:  # try loading
                         path_to_lib = os.path.dirname(os.path.realpath(sys.argv[0]))
                         os.chdir(plugin_path)
-                        if check_binary_type('libvlc.dll') == python_bin_type:
+                        if checkBinaryType('libvlc.dll') == python_bin_type:
                             try:
                                 dll = ctypes.CDLL('libvlc.dll')
                             except WindowsError as e:
@@ -216,7 +216,7 @@ def find_lib():
 
                 else:
                     plugin_path = os.path.dirname(path_to_lib)
-                    if check_binary_type(path_to_lib) == python_bin_type:
+                    if checkBinaryType(path_to_lib) == python_bin_type:
                         try:
                             dll = ctypes.CDLL('libvlc.dll')
                         except WindowsError as e:

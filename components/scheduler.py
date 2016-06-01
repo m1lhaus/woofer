@@ -20,13 +20,15 @@
 Scheduler/maintenance modules.
 """
 
+import codecs
 import logging
 import os
 import time
 import ujson
-import codecs
+import urllib.error
+import urllib.parse
+import urllib.request
 import zipfile
-import urllib.request, urllib.error, urllib.parse
 from datetime import datetime
 
 from PyQt5.QtCore import *
@@ -115,6 +117,8 @@ class Updater(QObject):
     readyForUpdateOnRestartSignal = pyqtSignal(str)         # path to new updater.exe
     availableUpdatePackageSignal = pyqtSignal(str, int)     # version (tag) name, package size
     startDownloadingPackageSignal = pyqtSignal()
+
+    TERMINATE_DELAY = 3000
 
     def __init__(self):
         super(Updater, self).__init__()
@@ -210,7 +214,7 @@ class Updater(QObject):
         """
         # close previous downloader, all should be released from memory
         self._downloaderThread.quit()
-        self._downloaderThread.wait(tools.TERMINATE_DELAY)                # terminate delay
+        self._downloaderThread.wait(self.TERMINATE_DELAY)                # terminate delay
 
         if status != network.Downloader.COMPLETED:
             logger.error("Release info file downloader does NOT finished properly, returned status: %s", status)
@@ -312,7 +316,7 @@ class Updater(QObject):
         """
         # close previous downloader, all should be released from memory
         self._downloaderThread.quit()
-        self._downloaderThread.wait(tools.TERMINATE_DELAY)
+        self._downloaderThread.wait(self.TERMINATE_DELAY)
 
         if status != network.Downloader.COMPLETED:
             logger.debug("Update package downloading did NOT finish properly")

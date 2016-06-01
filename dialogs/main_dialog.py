@@ -78,6 +78,11 @@ class MainApp(QMainWindow, main_form.MainForm):
     WARNING_MSG_DELAY = 10000
     ERROR_MSG_DELAY = 20000
     QUEUED_SETTINGS_DELAY = 40
+    TERMINATE_DELAY = 3000
+    
+    FILES_SOURCE = 0
+    PLAYLISTS_SOURCE = 1
+    RADIO_SOURCE = 2
 
     def __init__(self, mode, play_path):
         super(MainApp, self).__init__()
@@ -384,7 +389,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         but almost unnoticeable.
         """
         self.loadSession()
-        self.changeSource(tools.PlaybackSources.FILES)
+        self.changeSource(self.FILES_SOURCE)
 
     def loadSession(self):
         """
@@ -568,8 +573,6 @@ class MainApp(QMainWindow, main_form.MainForm):
                 self.playPath(path, append=False)
             else:
                 logger.error("From another instance received path which do not exist!")
-            # path = unicode(path, sys.getfilesystemencoding())
-            # logger.error("Recieved: %s", path)
 
         elif message.startswith("open"):
             logger.debug("Setting application window on top")
@@ -580,11 +583,11 @@ class MainApp(QMainWindow, main_form.MainForm):
 
     @pyqtSlot(QModelIndex)
     def sourceItemsBrowserActivated(self, index):
-        if self.sourceType == tools.PlaybackSources.FILES:
+        if self.sourceType == self.FILES_SOURCE:
             self.fileBrowserActivated(index)
-        if self.sourceType == tools.PlaybackSources.PLAYLISTS:
+        if self.sourceType == self.PLAYLISTS_SOURCE:
             pass
-        if self.sourceType == tools.PlaybackSources.RADIO:
+        if self.sourceType == self.RADIO_SOURCE:
             pass
 
     def fileBrowserActivated(self, modelIndex):
@@ -613,13 +616,13 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         logger.debug("Browser context menu called. Choosing appropriate context menu...")
 
-        if self.sourceType == tools.PlaybackSources.FILES:
+        if self.sourceType == self.FILES_SOURCE:
             self.fileBrowserContextMenu(pos)
 
-        if self.sourceType == tools.PlaybackSources.PLAYLISTS:
+        if self.sourceType == self.PLAYLISTS_SOURCE:
             logger.debug("Opening playlist browser context menu.")
 
-        if self.sourceType == tools.PlaybackSources.RADIO:
+        if self.sourceType == self.RADIO_SOURCE:
             logger.debug("Opening radio browser context menu.")
 
     def fileBrowserContextMenu(self, pos):
@@ -729,9 +732,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         if oldTreeMode is not None and oldTreeMode != source_id:
             self.mainTreeBrowser.saveSettings()
 
-        if source_id == tools.PlaybackSources.FILES:
-            self.sourceType = tools.PlaybackSources.FILES
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
+        if source_id == self.FILES_SOURCE:
+            self.sourceType = self.FILES_SOURCE
+            self.mainTreeBrowser.setMode(self.FILES_SOURCE)
             self.mainTreeBrowser.setModel(self.fileBrowserModel)
 
             # hide unwanted columns
@@ -749,15 +752,15 @@ class MainApp(QMainWindow, main_form.MainForm):
 
             logger.debug("Browser source has been selected to FILES.")
 
-        elif source_id == tools.PlaybackSources.PLAYLISTS:
-            self.sourceType = tools.PlaybackSources.PLAYLISTS
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
+        elif source_id == self.PLAYLISTS_SOURCE:
+            self.sourceType = self.PLAYLISTS_SOURCE
+            self.mainTreeBrowser.setMode(self.FILES_SOURCE)
             logger.debug("Browser source has been selected to PLAYLISTS.")
             logger.warning("PLAYLISTS NOT IMPLEMENTED!")
 
-        elif source_id == tools.PlaybackSources.RADIO:
-            self.sourceType = tools.PlaybackSources.RADIO
-            self.mainTreeBrowser.setMode(tools.PlaybackSources.FILES)
+        elif source_id == self.RADIO_SOURCE:
+            self.sourceType = self.RADIO_SOURCE
+            self.mainTreeBrowser.setMode(self.FILES_SOURCE)
             logger.debug("Browser source has been selected to RADIOS.")
             logger.warning("RADIOS NOT IMPLEMENTED!")
 
@@ -1207,7 +1210,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         logger.debug("Open 'About' dialog called")
         path_to_licence = find_licence_file()
-        build_data = tools.load_build_info()
+        build_data = tools.loadBuildInfo()
 
         author = build_data.get('author')
         email = build_data.get('email')
@@ -1404,12 +1407,12 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.hkHookThread.quit()
         self.updaterThread.quit()
 
-        self.scannerThread.wait(tools.TERMINATE_DELAY)
-        self.parserThread.wait(tools.TERMINATE_DELAY)
-        self.logCleanerThread.wait(tools.TERMINATE_DELAY)
-        self.fileRemoverThread.wait(tools.TERMINATE_DELAY)
-        self.hkHookThread.wait(tools.TERMINATE_DELAY)
-        self.updaterThread.wait(tools.TERMINATE_DELAY)
+        self.scannerThread.wait(self.TERMINATE_DELAY)
+        self.parserThread.wait(self.TERMINATE_DELAY)
+        self.logCleanerThread.wait(self.TERMINATE_DELAY)
+        self.fileRemoverThread.wait(self.TERMINATE_DELAY)
+        self.hkHookThread.wait(self.TERMINATE_DELAY)
+        self.updaterThread.wait(self.TERMINATE_DELAY)
 
         if self.hkHookThread.isRunning():
             logger.error("hkHookThread still running after timeout! Thread will be terminated.")
