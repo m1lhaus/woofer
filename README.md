@@ -27,18 +27,15 @@ Woofer is published under **GPL v3 license**.
 
 **Used packages (Requirements):**
 
-- [Python 2.7](https://www.python.org/downloads/)
-- [PyQt4](http://www.riverbankcomputing.co.uk/software/pyqt/download) (4.11.4 is unstable!)
+- [Python 3.5](https://www.python.org/downloads/)
+- [PyQt5](http://www.riverbankcomputing.co.uk/software/pyqt/download)
 - [LibVLC Python wrapper](https://wiki.videolan.org/Python_bindings/)
 - [Send2Trash](https://pypi.python.org/pypi/Send2Trash)
 - [ujson](https://pypi.python.org/pypi/ujson)
-- [scandir](https://pypi.python.org/pypi/scandir)
 - [Python-XLib](http://python-xlib.sourceforge.net/) (only for Linux)
-- [PyInstaller v2](https://github.com/pyinstaller/pyinstaller/wiki) (only for build)
+- [PyInstaller v3](https://github.com/pyinstaller/pyinstaller/wiki) (only for build)
 - [psutil v3](https://pypi.python.org/pypi?:action=display&name=psutil) (only for build)
 
-
-Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quite easy. For now I will stick with Python 2.7 <s>because there is no reliable bug-free alternative to PyInstaller for Python 3</s> (PyInstaller v3 now fully supports Python 3).
 
 ## Download
 
@@ -56,25 +53,7 @@ Finally run `woofer.py` or `woofer.py --debug` in debug mode.
 
 ### How to make standalone binary distribution (Windows/Linux)
 
-To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller v2 package and add binary to PATH. Before you run build script, you need to edit PyInstaller runtime hook for PyQt4, because PyInstaller doesn't consider setting PyQt (Sip) API to v2. So edit file at `%Python-dir%\Lib\site-packages\PyInstaller\loader\rthooks\pyi_rth_qt4plugins.py` and add these lines on top of the file:
-
-```python
-...
-import sip
-# set PyQt API to v2
-sip.setapi('QDate', 2)
-sip.setapi('QDateTime', 2)
-sip.setapi('QString', 2)
-sip.setapi('QTextStream', 2)
-sip.setapi('QTime', 2)
-sip.setapi('QUrl', 2)
-sip.setapi('QVariant', 2)
-...   
-```
-
-*On Linux, the file will be likely in `.../dist-packages/...` folder. Note that from now on whenever PyInstaller will package any PyQt4 script, it will set API v2 as default!*
-
-You also need to provide VLC x86/x64 libraries (depending on python binary version) to build standalone distribution. Woofer has been tested with VLC 2.1x libraries, but any newer version should be fine. Download and extract or install VLC Media player. You need to provide paths to `libvlc.dll`, `libvlccore.dll` and `./plugins` folder in `build.py` script (header section). For default all these files should be located in Woofer root directory in `.\libvlc` or `.\libvlc64` folder (depending on Python binary version). When you have all packages installed and VLC core files linked, you can run `.\build\build.py` script. Result will be stored in `.\build\release` directory.
+To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller v3 package and add binary to PATH. You also need to provide VLC x86/x64 libraries (depending on python binary version) to build standalone distribution. Woofer has been tested with VLC 2.1x libraries, but any newer version should be fine. Download and extract or install VLC Media player. You need to provide paths to `libvlc.dll`, `libvlccore.dll` and `./plugins` folder in `build.py` script (header section). For default all these files should be located in Woofer root directory in `.\libvlc` or `.\libvlc64` folder (depending on Python binary version). When you have all packages installed and VLC core files linked, you can run `.\build\build.py` script. Result will be stored in `.\build\release` directory.
 
 ## Known issues
 
