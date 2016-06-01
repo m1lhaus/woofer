@@ -87,12 +87,12 @@ def test():
     rc = 0
     if not isUserAdmin():
         print("You're not an admin.", os.getpid(), "params: ", sys.argv)
-        #rc = runAsAdmin(["c:\\Windows\\notepad.exe"])
-        rc = runAsAdmin()
+        rc = runAsAdmin(["c:\\Windows\\notepad.exe"])
+        # rc = runAsAdmin()
     else:
         print("You are an admin!", os.getpid(), "params: ", sys.argv)
         rc = 0
-    x = input('Press Enter to exit.')
+    # x = input('Press Enter to exit.')
     return rc
 
 
