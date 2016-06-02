@@ -22,6 +22,7 @@ All GUI components from main dialog initialized here.
 
 from . import icons_rc
 import logging
+import os
 
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -379,9 +380,10 @@ class MainForm(object):
         self.libraryBtn.setIconSize(QSize(16, 16))
         self.filterHLayout.addWidget(self.libraryBtn)
         self.mainLeftVLayout.addLayout(self.filterHLayout)
-        self.folderCombo.setStyleSheet("margin-top: 1px;"
-                                       "margin-bottom: 1px;"
-                                       "padding-left: 4px;")
+        if os.name == "nt":         # windows fix
+            self.folderCombo.setStyleSheet("margin-top: 1px;"
+                                           "margin-bottom: 1px;"
+                                           "padding-left: 4px;")
         # SOURCE ITEM BROWSER
         self.mainTreeBrowser = MainTreeBrowserTreeView(self.layoutWidget, self.folderCombo)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
