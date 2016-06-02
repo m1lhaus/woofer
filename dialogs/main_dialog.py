@@ -1016,7 +1016,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         @param value: time in milliseconds
         @type value: int
         """
-        self.timeLbl.setText(QTime().addMSecs(value).toString("hh:mm:ss"))
+        self.timeLbl.setText(QTime(0, 0, 0, 0).addMSecs(value).toString("hh:mm:ss"))
 
     @pyqtSlot(float)
     def syncSeeker(self, value):
