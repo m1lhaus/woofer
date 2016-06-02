@@ -29,6 +29,8 @@ import random
 from PyQt5.QtCore import *
 
 from components import libvlc
+from components.translator import tr
+
 import tools
 
 
@@ -213,10 +215,7 @@ class MediaPlayer(QObject):
             logger.error("Unable to remove item from _media_list. "
                          "Item is not in the list or _media_list is read only! "
                          "Playlist len: %s, index: %s" % (len(self.shuffled_playlist), remove_index))
-            self.errorSignal.emit(tools.ErrorMessages.CRITICAL,
-                                  "Unable remove item from Woofer media list. "
-                                  "Item is not in the list or the list is read only!",
-                                  "playlist len: %s, removed index: %s" % (len(self.shuffled_playlist), remove_index))
+            self.errorSignal.emit(tools.ErrorMessages.CRITICAL, tr['PLAYLIST_REMOVE_ERROR'], "")
 
         # decrease all references with higher index
         for i in range(len(self.shuffled_playlist)):
@@ -324,8 +323,7 @@ class MediaPlayer(QObject):
 
         if self._media_player.play() == -1:
             current_media_path = self.media_list[self.shuffled_playlist[self.shuffled_playlist_current_index]]
-            self.errorSignal.emit(tools.ErrorMessages.ERROR, "Error occurred when trying to play media file",
-                                  "Media: %s" % current_media_path)
+            self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['MEDIA_PLAY_ERROR'], "Media: %s" % current_media_path)
 
     @pyqtSlot()
     def pause(self):
@@ -635,8 +633,7 @@ class MediaPlayer(QObject):
     def _errorSlot(self):
         logger.warning("Media encountered error")
         current_media_path = self.media_list[self.shuffled_playlist[self.shuffled_playlist_current_index]]
-        self.errorSignal.emit(tools.ErrorMessages.ERROR, "Error occurred when trying to play media file",
-                              "Playing %s failed!" % current_media_path)
+        self.errorSignal.emit(tools.ErrorMessages.ERROR, tr['MEDIA_PLAY_ERROR'], "Media: %s" % current_media_path)
 
     # WARNING: CALLBACKS CALLED DIRECTLY FROM ANOTHER THREAD (VLC THREAD) !!!!
 
