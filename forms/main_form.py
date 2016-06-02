@@ -361,7 +361,7 @@ class MainForm(object):
         # FOLDER SELECTION
         self.filterHLayout = QHBoxLayout()
         self.filterHLayout.setSpacing(0)
-        self.filterHLayout.setContentsMargins(0, 3, 0, 3)
+        self.filterHLayout.setContentsMargins(0, 2, 0, 2)
         self.folderLbl = QLabel(self.layoutWidget)
         self.filterHLayout.addWidget(self.folderLbl)
         self.folderLbl.setVisible(False)
@@ -371,7 +371,7 @@ class MainForm(object):
         self.folderCombo.setSizePolicy(sizePolicy)
         self.filterHLayout.addWidget(self.folderCombo)
         self.libraryBtn = QPushButton(self.layoutWidget)
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         # sizePolicy.setHeightForWidth(self.libraryBtn.sizePolicy().hasHeightForWidth())
         self.libraryBtn.setSizePolicy(sizePolicy)
         icon5 = QIcon(QPixmap(":/icons/settings.png"))
@@ -379,6 +379,9 @@ class MainForm(object):
         self.libraryBtn.setIconSize(QSize(16, 16))
         self.filterHLayout.addWidget(self.libraryBtn)
         self.mainLeftVLayout.addLayout(self.filterHLayout)
+        self.folderCombo.setStyleSheet("margin-top: 1px;"
+                                       "margin-bottom: 1px;"
+                                       "padding-left: 4px;")
         # SOURCE ITEM BROWSER
         self.mainTreeBrowser = MainTreeBrowserTreeView(self.layoutWidget, self.folderCombo)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
