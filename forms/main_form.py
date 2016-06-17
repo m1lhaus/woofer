@@ -165,13 +165,8 @@ class PlaylistTable(QTableWidget):
 
 class MainTreeBrowserTreeView(QTreeView):
 
-    FILES = 0
-    PLAYLISTS = 1
-    RADIOS = 2
-
     def __init__(self, parent, folderCombo):
         """
-
         :type parent:
         :type folderCombo: QComboBox
         :return:
@@ -179,7 +174,6 @@ class MainTreeBrowserTreeView(QTreeView):
         super(MainTreeBrowserTreeView, self).__init__(parent)
         self._expandedItems = []
 
-        self._mode = None
         self.folderCombo = folderCombo
 
         self.expanded.connect(self.itemExpanded)
@@ -189,104 +183,55 @@ class MainTreeBrowserTreeView(QTreeView):
         """
         Restores previously expanded items in mainTreeBrowser for each mode (FILES, PLAYLISTS, RADIOS)
         """
-        logger.debug("Restoring mainTreeBrowser state for mode enum %s ...", self._mode)
+        logger.debug("Restoring mainTreeBrowser state ...")
         settings = QSettings()
+        expandedItems = settings.value("gui/MainTreeBrowserTreeView/expanded/files", [])
+        rootFolder = settings.value("gui/MainTreeBrowserTreeView/root/files", tr['HOME_DIR'])
+        model = self.model()
 
-        # FILES mode
-        if self._mode == MainTreeBrowserTreeView.FILES:
-            expandedItems = settings.value("gui/MainTreeBrowserTreeView/expanded/files", [])
-            rootFolder = settings.value("gui/MainTreeBrowserTreeView/root/files", tr['HOME_DIR'])
-            model = self.model()
+        # find and expand restored paths from settings storage
+        if expandedItems:
+            self._expandedItems = expandedItems
 
-            # find and expand restored paths from settings storage
-            if expandedItems:
-                self._expandedItems = expandedItems
+            # for each path try find its index in fileSystemModel
+            for filePath in self._expandedItems:
+                index = model.index(filePath)
 
-                # for each path try find its index in fileSystemModel
-                for filePath in self._expandedItems:
-                    index = model.index(filePath)
+                # expand item in tree, else remove record from list if not found on disk
+                if index is not None:
+                    self.expand(index)
+                else:
+                    self._expandedItems.remove(filePath)
 
-                    # expand item in tree, else remove record from list if not found on disk
-                    if index is not None:
-                        self.expand(index)
-                    else:
-                        self._expandedItems.remove(filePath)
-
-            # restore media folder root index from last session
-            targetIndex = self.folderCombo.findText(rootFolder)
-            if targetIndex != -1:
-                self.folderCombo.setCurrentIndex(targetIndex)
-
-        # PLAYLISTS mode
-        elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
-            pass
-
-        # RADIOS mode
-        elif self._mode == MainTreeBrowserTreeView.RADIOS:
-            pass
+        # restore media folder root index from last session
+        targetIndex = self.folderCombo.findText(rootFolder)
+        if targetIndex != -1:
+            self.folderCombo.setCurrentIndex(targetIndex)
+        pass
 
     def saveSettings(self):
         """
         Saves list of expanded items to settings platform depending on current mode.
         """
-        logger.debug("Saving mainTreeBrowser state for mode enum %s ...", self._mode)
+        logger.debug("Saving mainTreeBrowser state ...")
         settings = QSettings()
+        currentText = self.folderCombo.currentText()
+        if currentText == tr['HOME_DIR']:
+            currentRootFolder = QDir.homePath()
+        elif currentText == tr['MY_COMPUTER']:
+            currentRootFolder = QDir.rootPath()
+        else:
+            currentRootFolder = currentText
+        # currentRootFolderIndex = self.folderCombo.currentIndex()
+        expandedItems = []
 
-        # FILES mode
-        if self._mode == MainTreeBrowserTreeView.FILES:
-            currentText = self.folderCombo.currentText()
-            if currentText == tr['HOME_DIR']:
-                currentRootFolder = QDir.homePath()
-            elif currentText == tr['MY_COMPUTER']:
-                currentRootFolder = QDir.rootPath()
-            else:
-                currentRootFolder = currentText
-            # currentRootFolderIndex = self.folderCombo.currentIndex()
-            expandedItems = []
+        # save only folder which are nested under the currentRootFolder
+        for item in self._expandedItems:
+            if item.startswith(currentRootFolder):
+                expandedItems.append(item)
 
-            # if some folder is set as root
-            # if currentRootFolderIndex != 1:
-            # save only folder which are nested under the currentRootFolder
-            for item in self._expandedItems:
-                if item.startswith(currentRootFolder):
-                    expandedItems.append(item)
-
-            # # if MyComputer (root) is set as current root folder
-            # else:
-            #     expandedItems = self._expandedItems
-
-            settings.setValue("gui/MainTreeBrowserTreeView/expanded/files", expandedItems)
-            settings.setValue("gui/MainTreeBrowserTreeView/root/files", currentText)
-
-        # PLAYLISTS mode
-        elif self._mode == MainTreeBrowserTreeView.PLAYLISTS:
-            pass
-
-        # RADIOS mode
-        elif self._mode == MainTreeBrowserTreeView.RADIOS:
-            pass
-
-    def setMode(self, mode):
-        """
-        Change mode to:
-            FILES = 0
-            PLAYLISTS = 1
-            RADIOS = 2
-        @type mode: int
-        """
-        if mode not in list(range(0, 4)):
-            raise ValueError("Given mode %s is not implemented!" % mode)
-        self._mode = mode
-
-    def getMode(self):
-        """
-        Returns current mode number:
-            FILES = 0
-            PLAYLISTS = 1
-            RADIOS = 2
-        @rtype: int
-        """
-        return self._mode
+        settings.setValue("gui/MainTreeBrowserTreeView/expanded/files", expandedItems)
+        settings.setValue("gui/MainTreeBrowserTreeView/root/files", currentText)
 
     @pyqtSlot(QModelIndex)
     def itemExpanded(self, index):
@@ -340,25 +285,6 @@ class MainForm(object):
         self.mainLeftVLayout = QVBoxLayout(self.layoutWidget)
         self.mainLeftVLayout.setSpacing(0)
         self.mainLeftVLayout.setContentsMargins(0, 0, 0, 0)
-        # SOURCE BROWSER
-        self.sourceBrowser = QTreeWidget(self.layoutWidget)
-        self.sourceBrowser.setMaximumHeight(110)
-        self.sourceBrowser.setAnimated(True)
-        self.sourceBrowser.setColumnCount(2)
-        self.sourceBrowser.setColumnHidden(1, True)     # there is hidden id value in second column
-        item_0 = QTreeWidgetItem(self.sourceBrowser)
-        icon1 = QIcon(QPixmap(":/icons/music-cd.png"))
-        item_0.setIcon(0, icon1)
-        item_1 = QTreeWidgetItem(item_0)
-        icon2 = QIcon(QPixmap(":/icons/folder.png"))
-        item_1.setIcon(0, icon2)
-        item_1 = QTreeWidgetItem(item_0)
-        icon3 = QIcon(QPixmap(":/icons/playlist.png"))
-        item_1.setIcon(0, icon3)
-        item_0 = QTreeWidgetItem(self.sourceBrowser)
-        icon4 = QIcon(QPixmap(":/icons/radio.png"))
-        item_0.setIcon(0, icon4)
-        self.mainLeftVLayout.addWidget(self.sourceBrowser)
         # FOLDER SELECTION
         self.filterHLayout = QHBoxLayout()
         self.filterHLayout.setSpacing(0)
@@ -588,26 +514,9 @@ class MainForm(object):
         self.stBarMsgText.hide()
 
         self.retranslateUi(MainWindow)
-        self.sourceBrowser.expandAll()
         self.timeLbl.setFixedSize(self.timeLbl.minimumSizeHint())       # prevent 1px oscillation
 
-        # disable Playlist and Radios - not implemented yet
-        self.sourceBrowser.topLevelItem(0).child(1).setDisabled(True)
-        self.sourceBrowser.topLevelItem(1).setDisabled(True)
-
     def retranslateUi(self, MainWindow):
-        self.sourceBrowser.headerItem().setText(0, tr['PLAYBACK_SOURCE'])
-        self.sourceBrowser.headerItem().setText(1, "ID")
-        __sortingEnabled = self.sourceBrowser.isSortingEnabled()
-        self.sourceBrowser.setSortingEnabled(False)
-        self.sourceBrowser.topLevelItem(0).setText(0, tr['SOURCE_MUSIC'])
-        self.sourceBrowser.topLevelItem(0).child(0).setText(0, tr['SOURCE_FOLDERS'])
-        self.sourceBrowser.topLevelItem(0).child(0).setText(1, "0")
-        self.sourceBrowser.topLevelItem(0).child(1).setText(0, tr['SOURCE_PLAYLISTS'])
-        self.sourceBrowser.topLevelItem(0).child(1).setText(1, "1")
-        self.sourceBrowser.topLevelItem(1).setText(0, tr['SOURCE_RADIOS'])
-        self.sourceBrowser.topLevelItem(1).setText(1, "2")
-        self.sourceBrowser.setSortingEnabled(__sortingEnabled)
         self.folderLbl.setText(tr['SOURCE_FOLDER_TITLE'])
         self.libraryBtn.setToolTip(tr['MEDIA_LIBRARY_TOOLTIP'])
         self.playlistTable.horizontalHeaderItem(0).setText(tr['PLAYLIST_TITLE'])

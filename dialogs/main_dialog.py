@@ -130,14 +130,14 @@ class MainApp(QMainWindow, main_form.MainForm):
         Connects GUI components with desired slots.
         Only for GUI components!
         """
-        self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
+        # self.sourceBrowser.itemSelectionChanged.connect(self.changeSource)
         self.folderCombo.currentIndexChanged.connect(self.changeFileBrowserRoot)
         self.libraryBtn.clicked.connect(self.openLibraryDialog)
-        self.mainTreeBrowser.customContextMenuRequested.connect(self.sourceItemsBrowserContextMenu)
+        self.mainTreeBrowser.customContextMenuRequested.connect(self.fileBrowserContextMenu)
         self.playlistTable.customContextMenuRequested.connect(self.playlistContextMenu)
         self.playlistTable.cellDoubleClicked.connect(self.playlistPlayNow)
         self.progressCancelBtn.clicked.connect(self.cancelAdding)
-        self.mainTreeBrowser.activated.connect(self.sourceItemsBrowserActivated)
+        self.mainTreeBrowser.activated.connect(self.fileBrowserActivated)
 
         self.errorSignal.connect(self.displayErrorMsg)
 
@@ -354,14 +354,6 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.folderCombo.blockSignals(False)
             self.folderCombo.currentIndexChanged.emit(0)
 
-    def setupPlaylistBrowser(self):
-        # TODO future: implement
-        pass
-
-    def setupRadioBrowser(self):
-        # TODO future: implement
-        pass
-
     def loadSettings(self):
         """
         Method called on start to load and set stuff.
@@ -378,7 +370,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         if splitterState is not None:
             self.splitter.restoreState(splitterState)
 
-        self.setupFileBrowser(initModel=True)       # todo: future: set dynamically (from last session)
+        self.setupFileBrowser(initModel=True)
 
     @pyqtSlot()
     def loadSettingsQueued(self):
@@ -389,7 +381,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         but almost unnoticeable.
         """
         self.loadSession()
-        self.changeSource(self.FILES_SOURCE)
+        self.initFileBrowser()
 
     def loadSession(self):
         """
@@ -582,14 +574,6 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.raise_()
 
     @pyqtSlot(QModelIndex)
-    def sourceItemsBrowserActivated(self, index):
-        if self.sourceType == self.FILES_SOURCE:
-            self.fileBrowserActivated(index)
-        if self.sourceType == self.PLAYLISTS_SOURCE:
-            pass
-        if self.sourceType == self.RADIO_SOURCE:
-            pass
-
     def fileBrowserActivated(self, modelIndex):
         """
         When media file browser is selected and user doubleclicks or hit enter in treeview,
@@ -607,24 +591,6 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.displayProgress(tr['PROGRESS_ADDING'])
 
     @pyqtSlot(QPoint)
-    def sourceItemsBrowserContextMenu(self, pos):
-        """
-        SourceItemsBrowser treeView context menu method.
-        Method creates context menu depending on source type (files, playlist, radios).
-        @type pos: QPointF
-        """
-
-        logger.debug("Browser context menu called. Choosing appropriate context menu...")
-
-        if self.sourceType == self.FILES_SOURCE:
-            self.fileBrowserContextMenu(pos)
-
-        if self.sourceType == self.PLAYLISTS_SOURCE:
-            logger.debug("Opening playlist browser context menu.")
-
-        if self.sourceType == self.RADIO_SOURCE:
-            logger.debug("Opening radio browser context menu.")
-
     def fileBrowserContextMenu(self, pos):
         """
         Context menu for file browser treeView.
@@ -712,57 +678,24 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.playlistRemFromDisk(selected_rows)
 
     @pyqtSlot()
-    def changeSource(self, source_id=None):
+    def initFileBrowser(self):
         """
-        When item in sourceBrowser is clicked, source is changed.
-        Source could be changed manually by providing source_id.
-        @param source_id: enum Source
-        @type source_id: int
+        Loads QT File browser to mainTreeBrowser widget.
         """
-        # get only valid source id from sourceBrowser
-        if source_id is None:
-            table_item = self.sourceBrowser.currentItem()
-            try:
-                source_id = int(table_item.text(1))         # parent item has no id
-            except ValueError:
-                return
+        self.mainTreeBrowser.setModel(self.fileBrowserModel)
 
-        # save TreeBrowser settings if switched to another mode
-        oldTreeMode = self.mainTreeBrowser.getMode()
-        if oldTreeMode is not None and oldTreeMode != source_id:
-            self.mainTreeBrowser.saveSettings()
+        # hide unwanted columns
+        for i in range(1, self.fileBrowserModel.columnCount()):
+            self.mainTreeBrowser.setColumnHidden(i, True)
 
-        if source_id == self.FILES_SOURCE:
-            self.sourceType = self.FILES_SOURCE
-            self.mainTreeBrowser.setMode(self.FILES_SOURCE)
-            self.mainTreeBrowser.setModel(self.fileBrowserModel)
+        # remember my_computer root index for the first time
+        if self.myComputerPathIndex is None:
+            self.myComputerPathIndex = self.mainTreeBrowser.rootIndex()
+        if self.homeDirIndex is None:
+            self.homeDirIndex = self.fileBrowserModel.index(QDir.homePath())
 
-            # hide unwanted columns
-            for i in range(1, self.fileBrowserModel.columnCount()):
-                self.mainTreeBrowser.setColumnHidden(i, True)
-
-            # remember my_computer root index for the first time
-            if self.myComputerPathIndex is None:
-                self.myComputerPathIndex = self.mainTreeBrowser.rootIndex()
-            if self.homeDirIndex is None:
-                self.homeDirIndex = self.fileBrowserModel.index(QDir.homePath())
-
-            self.mainTreeBrowser.restoreSettings()
-            self.folderCombo.currentIndexChanged.emit(self.folderCombo.currentIndex())  # invoke refresh manually
-
-            logger.debug("Browser source has been selected to FILES.")
-
-        elif source_id == self.PLAYLISTS_SOURCE:
-            self.sourceType = self.PLAYLISTS_SOURCE
-            self.mainTreeBrowser.setMode(self.FILES_SOURCE)
-            logger.debug("Browser source has been selected to PLAYLISTS.")
-            logger.warning("PLAYLISTS NOT IMPLEMENTED!")
-
-        elif source_id == self.RADIO_SOURCE:
-            self.sourceType = self.RADIO_SOURCE
-            self.mainTreeBrowser.setMode(self.FILES_SOURCE)
-            logger.debug("Browser source has been selected to RADIOS.")
-            logger.warning("RADIOS NOT IMPLEMENTED!")
+        self.mainTreeBrowser.restoreSettings()
+        self.folderCombo.currentIndexChanged.emit(self.folderCombo.currentIndex())  # invoke refresh manually
 
     @pyqtSlot(int)
     def changeFileBrowserRoot(self, index):
