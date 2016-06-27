@@ -38,8 +38,7 @@ if os.path.isdir(tools.DATA_DIR):
     shutil.rmtree(tools.DATA_DIR)
 
 print("Removing user preferences (QSettings)")
-qsettings = QSettings("WooferPlayer", "Woofer")
-qsettings.clear()
+QSettings("WooferPlayer", "Woofer").clear()
 
 print("=" * 50)
 print("All done")
