@@ -151,7 +151,7 @@ class PlaylistTable(QTableWidget):
         hheader.setSectionResizeMode(0, QHeaderView.Interactive)
         hheader.setSectionResizeMode(1, QHeaderView.Stretch)
         hheader.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        hheader.setDefaultSectionSize(400)
+        hheader.setDefaultSectionSize(300)
         self.setColumnHidden(self.columnCount() - 1, True)
         self.setColumnWidth(1, 100)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -263,7 +263,7 @@ class MainForm(object):
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(973, 497)
+        MainWindow.resize(800, 400)
         icon = QIcon()
         icon.addPixmap(QPixmap(":/icons/app_icon.png"), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
