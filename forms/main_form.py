@@ -144,14 +144,15 @@ class PlaylistTable(QTableWidget):
         self.setHorizontalHeaderItem(1, QTableWidgetItem())
         self.setHorizontalHeaderItem(2, QTableWidgetItem())
         self.setHorizontalHeaderItem(3, QTableWidgetItem())
-        self.horizontalHeader().setDefaultSectionSize(200)
-        self.verticalHeader().setDefaultSectionSize(19)
+        vheader = self.verticalHeader()
+        vheader.setDefaultSectionSize(vheader.defaultSectionSize())
+        vheader.setSectionResizeMode(QHeaderView.Fixed)
+        hheader = self.horizontalHeader()
+        hheader.setSectionResizeMode(0, QHeaderView.Interactive)
+        hheader.setSectionResizeMode(1, QHeaderView.Stretch)
+        hheader.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        hheader.setDefaultSectionSize(400)
         self.setColumnHidden(self.columnCount() - 1, True)
-        # self.setColumnHidden(1, True)
-        header = self.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.Interactive)
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.setColumnWidth(1, 100)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
 
@@ -310,7 +311,7 @@ class MainForm(object):
             self.folderCombo.setStyleSheet("margin-top: 1px;"
                                            "margin-bottom: 1px;"
                                            "padding-left: 4px;")
-        # SOURCE ITEM BROWSER
+        # FILE BROWSER
         self.mainTreeBrowser = MainTreeBrowserTreeView(self.layoutWidget, self.folderCombo)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHeightForWidth(self.mainTreeBrowser.sizePolicy().hasHeightForWidth())

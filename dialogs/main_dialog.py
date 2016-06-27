@@ -369,6 +369,9 @@ class MainApp(QMainWindow, main_form.MainForm):
         splitterState = settings.value("gui/MainApp/splitter", None)
         if splitterState is not None:
             self.splitter.restoreState(splitterState)
+        playlistHeaderState = settings.value("gui/MainApp/playlistHeader", None)
+        if playlistHeaderState is not None:
+            self.playlistTable.horizontalHeader().restoreState(playlistHeaderState)
 
         self.setupFileBrowser(initModel=True)
 
@@ -493,6 +496,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         settings = QSettings()
         settings.setValue("gui/MainApp/geometry", self.saveGeometry())
         settings.setValue("gui/MainApp/splitter", self.splitter.saveState())
+        settings.setValue("gui/MainApp/playlistHeader", self.playlistTable.horizontalHeader().saveState())
 
     def saveSession(self):
         """
@@ -777,8 +781,6 @@ class MainApp(QMainWindow, main_form.MainForm):
             self.playlistTable.setItem(i + lastItemIndex, 2, durationItem)
             self.playlistTable.setItem(i + lastItemIndex, 3, pathItem)
             i += 1
-
-        self.playlistTable.resizeColumnToContents(1)
 
     @pyqtSlot()
     def clearPlaylist(self):
