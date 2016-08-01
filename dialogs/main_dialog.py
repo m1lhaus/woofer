@@ -1153,7 +1153,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         woofer_url = "http://m1lhaus.github.io/woofer"
         github_url = "https://github.com/m1lhaus/woofer"
         maintext = "Woofer player is <strong>free and open-source cross-platform</strong> music player " \
-                   "that plays most multimedia files, CDs, DVDs and also various online streams. " \
+                   "that plays most multimedia files, CDs and DVDs. " \
                    "Whole written in Python and Qt provides easy, reliable, " \
                    "and high quality playback thanks to LibVLC library developed by " \
                    "<a href='{0}'>VideoLAN community</a>.<br/>" \
