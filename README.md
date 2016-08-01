@@ -55,8 +55,8 @@ Finally run `woofer.py` or `woofer.py --debug` in debug mode.
 
 To create standalone binary distribution, install all listed requirements packages. Make sure to install PyInstaller v3 package and add PyInstaller executable binary to PATH. You also need to provide VLC x86/x64 libraries (depending on python binary version) to build standalone distribution. Woofer has been tested with VLC 2.1x libraries, but any newer version should be fine. Download and extract or install VLC Media player. You need to provide paths to `libvlc.dll`, `libvlccore.dll` and `.\plugins` folder in `build.py` script (header section). For default all these files should be located in Woofer root directory in `.\libvlc` or `.\libvlc64` folder (depending on Python binary version). When you have all packages installed and VLC core files linked, you can run `.\build\build.py` script. Result will be stored in `.\build\release` directory.
 
-
 ## Future work
 
+- implement restarting
 - save/restore playback time/position for playing media
 - faster media parsing
