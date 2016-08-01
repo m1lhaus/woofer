@@ -145,7 +145,7 @@ class PlaylistTable(QTableWidget):
         self.setHorizontalHeaderItem(2, QTableWidgetItem())
         self.setHorizontalHeaderItem(3, QTableWidgetItem())
         vheader = self.verticalHeader()
-        vheader.setDefaultSectionSize(vheader.defaultSectionSize())
+        vheader.setDefaultSectionSize(vheader.minimumSectionSize())
         vheader.setSectionResizeMode(QHeaderView.Fixed)
         hheader = self.horizontalHeader()
         hheader.setSectionResizeMode(0, QHeaderView.Interactive)
