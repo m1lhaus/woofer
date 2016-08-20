@@ -231,12 +231,15 @@ class MediaPlayer(QObject):
         if must_change_song:
             logger.debug("Currently playing media has been removed from playlist, selecting next one.")
             if not self.shuffled_playlist:
-                logger.debug("There is no other media left!")
-                return
-
-            self.play(item_playlist_id=self.shuffled_playlist[self.shuffled_playlist_current_index])
-            if not restore_playing:
+                logger.debug("There is no next media left!")
+            elif self.shuffled_playlist_current_index >= len(self.shuffled_playlist):
+                self.shuffled_playlist_current_index -= 1
+                self.play(item_playlist_id=self.shuffled_playlist[self.shuffled_playlist_current_index])
                 self.stop()
+            else:
+                self.play(item_playlist_id=self.shuffled_playlist[self.shuffled_playlist_current_index])
+                if not restore_playing:
+                    self.stop()
 
         elif rem_idx_in_shuffled_playlist < self.shuffled_playlist_current_index:
             self.shuffled_playlist_current_index -= 1
