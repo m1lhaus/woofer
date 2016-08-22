@@ -246,10 +246,11 @@ class Updater(QObject):
 
         settings = QSettings()
         take_pre_rls = settings.value("components/scheduler/Updater/pre-release", False, bool)
+        logger.debug("%s update channel selected", ("Pre-release" if take_pre_rls else "Stable"))
 
         # analyze JSON from GitHub - find latest release
-        latest_rls = release_info[0]
-        latest_date = datetime.strptime(latest_rls["published_at"], '%Y-%m-%dT%H:%M:%SZ')
+        latest_rls = None
+        latest_date = datetime.fromtimestamp(0)
         for rls in release_info:
             if rls.get("prerelease", False) and not take_pre_rls:       # skip pre-release if ignored
                 continue
@@ -260,7 +261,7 @@ class Updater(QObject):
                 latest_rls = rls
 
         # compare latest found release to this current release (is newer and has different version number ?)
-        if latest_rls["tag_name"].lower() != current_version and latest_date > current_date:
+        if latest_rls and latest_rls["tag_name"].lower() != current_version and latest_date > current_date:
             logger.debug("Newer version %s published at %s found", latest_rls["tag_name"], latest_date)
 
             for asset in latest_rls["assets"]:
