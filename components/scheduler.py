@@ -146,15 +146,9 @@ class Updater(QObject):
         Method must NOT be called from MainThread directly!
         Instead should be called as slot from "scheduler thread" where it lives.
         """
-        if os.path.isdir(self.download_dir):
-            logger.debug("Removing download dir...")
-            tools.removeFolder(self.download_dir)
-
         if not QSettings().value("components/scheduler/Updater/check_updates", True, bool):
             logger.debug("Checking for updates is turned off, updater will NOT be scheduled")
             return
-
-        os.makedirs(self.extracted_pkg)
 
         logger.debug("Scheduling updater - delay %s", self.init_delay)
         self._init_timer.start(self.init_delay)
@@ -322,6 +316,13 @@ class Updater(QObject):
         if status != network.Downloader.COMPLETED:
             logger.debug("Update package downloading did NOT finish properly")
             return
+
+        if os.path.isdir(self.extracted_pkg):
+            logger.debug("Removing existing extracted directory in woofer_update dir...")
+            tools.removeFolder(self.extracted_pkg)
+
+        logger.debug("Creating extracted dir...")
+        os.makedirs(self.extracted_pkg)
 
         try:
             the_zip_file = zipfile.ZipFile(zip_filepath)
