@@ -586,6 +586,24 @@ class MainApp(QMainWindow, main_form.MainForm):
         """
         logger.debug("File (media) browser activated, now checking if activated index if file or folder...")
 
+        # stop current media adding
+        self.scanner.stop()
+        self.parser.stop()
+        n_tries = 300       # wait 3 sec
+        while self.mediaPlayer.adding_media and (n_tries > 0):
+            QCoreApplication.processEvents()        # to unfreeze gui
+            self.thread().msleep(33)            # to get responsible look&feel
+            n_tries -= 1
+
+        if self.mediaPlayer.adding_media:
+            logger.error("Media adding didn't stopped!")
+            self.displayErrorMsg(tools.ErrorMessages.ERROR,
+                                 "Can't add another media when media adding is already running", "")
+            return
+
+        self.scanner.init()     # reset _stop flags
+        self.parser.init()
+
         fileInfo = self.fileBrowserModel.fileInfo(modelIndex)
         targetPath = fileInfo.absoluteFilePath()
         logger.debug("Initializing playing of path: %s", targetPath)
@@ -793,6 +811,7 @@ class MainApp(QMainWindow, main_form.MainForm):
     @pyqtSlot()
     def cancelAdding(self):
         logger.debug("Canceling adding new files to playlist (parsing).")
+        self.scanner.stop()
         self.parser.stop()
 
     @pyqtSlot(int, str, str)

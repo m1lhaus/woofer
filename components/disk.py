@@ -82,6 +82,10 @@ class RecursiveBrowser(QObject):
             logger.debug("Starting recursive file-search and parsing.")
             follow_sym = QSettings().value("components/disk/RecursiveBrowser/follow_symlinks", False, bool)
             for root, dirs, files in os.walk(target_dir, followlinks=follow_sym):
+                if self._stop:
+                    logger.debug("Recursive search stopped!")
+                    break
+
                 # remove dirs starting with dot and sort the result
                 for i, ddir in reversed(list(enumerate(dirs))):
                     if ddir[0] == ".":
@@ -108,6 +112,9 @@ class RecursiveBrowser(QObject):
     def stop(self):
         logger.debug("Stopping disk scanning...")
         self._stop = True
+
+    def init(self):
+        self._stop = False
 
 
 class MoveToTrash(QObject):

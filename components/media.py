@@ -88,6 +88,7 @@ class MediaPlayer(QObject):
         self.shuffle_mode = False
         self.repeat_mode = False
         self.player_is_empty = True
+        self.adding_media = False
 
         self.endReachedSignal.connect(self.next_track)
         self.playingSignal.connect(self._playingSlot)
@@ -558,6 +559,7 @@ class MediaPlayer(QObject):
         logger.debug("Initializing media adding...")
         self.appending_mode = append
         self.append_media = append
+        self.adding_media = True
 
     @pyqtSlot()
     def mediaAddingFinished(self):
@@ -576,6 +578,7 @@ class MediaPlayer(QObject):
                 self.shuffled_playlist[index:] = tmp_list
             else:
                 self.setShuffle(True)       # implicit shuffle
+        self.adding_media = False
 
     def quit(self):
         self.stop()
@@ -742,3 +745,6 @@ class MediaParser(QObject):
         When _stop set, all incoming paths for parsing will be thrown away.
         """
         self._stop = True
+
+    def init(self):
+        self._stop = False
