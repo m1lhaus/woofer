@@ -32,7 +32,7 @@ import ujson
 import tools
 
 # - WINDOWS
-if tools.PLATFORM == 32:
+if tools.getPlatformArchitecture() == 32:
     VLC_PATH = os.path.abspath(os.path.join("..", "libvlc"))
 else:
     VLC_PATH = os.path.abspath(os.path.join("..", "libvlc64"))
@@ -135,7 +135,7 @@ def main():
 
     # move built distribution to release folder
     new_dist_path = os.path.join(build_dir, "release", "woofer_%s_%sbit_v%s" %
-                                 (PRJ_SPEC_FILE[:3], tools.PLATFORM, version_long))
+                                 (PRJ_SPEC_FILE[:3], tools.getPlatformArchitecture(), version_long))
 
     if os.path.isdir(new_dist_path):
         shutil.rmtree(new_dist_path)

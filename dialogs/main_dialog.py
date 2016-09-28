@@ -1186,7 +1186,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         version = "%s.r%s" % (build_data.get('version'), build_data.get('commits'))
         rev = build_data.get('revision')
         build_date = build_data.get('date')
-        platform_str = "x86" if tools.PLATFORM == 32 else "x64"
+        platform_str = "x86" if tools.getPlatformArchitecture() == 32 else "x64"
         detailtext = "<hr><br/>" \
                      "<strong>Build information:</strong><br/>" \
                      "Version: {4} | Revision: {5} | Build date: {6}<br />" \

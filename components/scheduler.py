@@ -260,7 +260,7 @@ class Updater(QObject):
 
             for asset in latest_rls["assets"]:
                 # find only Windows binaries
-                if asset["name"].startswith("woofer_win_%sbit" % tools.PLATFORM):
+                if asset["name"].startswith("woofer_win_%sbit" % tools.getPlatformArchitecture()):
                     self._package_url = self._github_release_url + latest_rls["tag_name"] + "/" + asset["name"]
 
                     if settings.value("components/scheduler/Updater/auto_updates", False, bool):

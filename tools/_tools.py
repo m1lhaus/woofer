@@ -23,13 +23,7 @@ Various tools and functions
 import os
 import sys
 import logging
-import zipfile
-import errno
-import shutil
-import platform
-import traceback
 
-import ujson
 
 from PyQt5.QtCore import QStandardPaths
 
@@ -51,56 +45,59 @@ BUILD_INFO_FILE = os.path.join(APP_ROOT_DIR, "build.info")
 # misc
 IS_WIN32_EXE = sys.argv[0].endswith(".exe")
 IS_PYTHON_FILE = sys.argv[0].endswith((".py", ".pyc"))
-PLATFORM = 32 if platform.architecture()[0] == '32bit' else 64
 
 
-def checkBinaryType(path):
+def getBinaryType(path: str) -> int:
     """
     Method reads PE header and get binary type (x32 vs x64)
     @param path: path to file
-    @return: binary type str
+    @return: binary type - 32 for x86 and 64 for x64
     """
+    import struct
+
     if not os.path.isfile(path):
         raise Exception("Given path '%s' not found!" % path)
 
-    import struct
-
-    bin_type = None
-    IMAGE_FILE_MACHINE_I386 = 332
-    IMAGE_FILE_MACHINE_IA64 = 512
-    IMAGE_FILE_MACHINE_AMD64 = 34404
-
     with open(path, "rb") as f:
-        s = f.read(2)
-        if s != b"MZ":
-            print("check_binary_type - Not an EXE file!")
-
+        if f.read(2) != b"MZ":
+            raise Exception("Given file '%s' is not an EXE file!" % path)
         else:
             f.seek(60)
-            s = f.read(4)
-            header_offset = struct.unpack("<L", s)[0]
+            header_offset = struct.unpack("<L", f.read(4))[0]
             f.seek(header_offset + 4)
-            s = f.read(2)
-            machine = struct.unpack("<H", s)[0]
+            machine = struct.unpack("<H", f.read(2))[0]
 
-            if machine == IMAGE_FILE_MACHINE_I386:
-                bin_type = "IA-32 (32-bit x86)"
-            elif machine == IMAGE_FILE_MACHINE_IA64:
-                bin_type = "IA-64 (Itanium)"
-            elif machine == IMAGE_FILE_MACHINE_AMD64:
-                bin_type = "AMD64 (64-bit x86)"
+            if machine == 332:                              # IMAGE_FILE_MACHINE_I386 = 332
+                return 32       # 32bit
+            elif (machine == 34404) or (machine == 512):    # IMAGE_FILE_MACHINE_AMD64 = 34404
+                return 64       # 64 bit                    # IMAGE_FILE_MACHINE_IA64 = 512
             else:
-                bin_type = "Unknown"
-
-    return bin_type
+                raise Exception("Unknown platform!")
 
 
-def extractZIPFiles(src, dst):
+def getPlatformArchitecture() -> int:
+    """
+    Methods returns bit-version of running Python interpreter.
+    @return: binary version - 32 for x86 and 64 for x64
+    """
+    import platform
+    
+    arch_str = platform.architecture()[0]
+    if arch_str == '32bit':
+        return 32
+    elif arch_str == '64bit':
+        return 64
+    else:
+        raise Exception("Unknown platform architecture '%s'" % arch_str)
+
+
+def extractZIPFiles(src: str, dst: str) -> None:
     """
     Extracts all files from ZIP archive to given directory.
     @param src: source ZIP file
     @param dst: where to extract files
     """
+    import zipfile
 
     def get_members(zip_object):
         parts = []
@@ -122,11 +119,13 @@ def extractZIPFiles(src, dst):
         zip_object.extractall(dst, get_members(zip_object))
 
 
-def removeFile(filepath):
+def removeFile(filepath: str) -> None:
     """
-    Remove file permanently.
+    Remove file permanently from disk.
     @param filepath: string path
     """
+    import errno
+
     logger.debug("Removing file '%s'...", filepath)
     try:
         os.remove(filepath)
@@ -137,11 +136,13 @@ def removeFile(filepath):
         logger.exception("Error when removing file '%s'", filepath)
 
 
-def removeFolder(folderpath):
+def removeFolder(folderpath: str) -> None:
     """
     Remove file permanently.
     @param folderpath: string path
     """
+    import shutil
+
     logger.debug("Removing folder '%s'...", folderpath)
     try:
         shutil.rmtree(folderpath)
@@ -149,11 +150,13 @@ def removeFolder(folderpath):
         logger.exception("Error when removing directory '%s'!", folderpath)
 
 
-def getFullTraceback():
+def getFullTraceback() -> None:
     """
     Method grabs last available traceback error and makes conversion to string.
     @return: full traceback error string
     """
+    import traceback
+
     exc = sys.exc_info()[0]
     stack = traceback.extract_stack()[:-1]      # last one would be full_stack()
     if exc is not None:                         # i.e. if an exception is present
@@ -166,7 +169,13 @@ def getFullTraceback():
     return stackstr
 
 
-def loadBuildInfo():
+def loadBuildInfo() -> dict:
+    """
+    Loads information about Woofer build
+    @return: dict with information about author, version, build date, etc.
+    """
+    import ujson
+
     build_info_file = os.path.join(APP_ROOT_DIR, "build.info")
     if not os.path.isfile(build_info_file):
         logger.error("Unable to locate build.info file!")

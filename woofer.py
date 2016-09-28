@@ -60,10 +60,6 @@ logger = logging.getLogger(__name__)
 
 
 def foundLibVLC():
-    """
-    Check if libvlc.py found valid dll.
-    @rtype: bool
-    """
     if components.libvlc.dll is not None:
         logger.info("Using libvlc.dll found at: %s", components.libvlc.plugin_path)
         return True
@@ -81,69 +77,30 @@ def findCmdHelpFile():
 
 
 def displayLibVLCError(platform):
+    logger.error("LibVLC dll not found, dll instance is None! Root path: %s" % tools.APP_ROOT_DIR)
+    msgBox = QMessageBox()
+    msgBox.setTextFormat(Qt.RichText)
+    msgBox.setIcon(QMessageBox.Critical)
+    msgBox.setWindowTitle("Critical error - dependency not found!")
+    msgBox.setText("Woofer player was unable to find core LibVLC libraries!")
     if platform == 'nt':
-        def check_binary_type(path):
-            import struct
-            bin_type = None
-            IMAGE_FILE_MACHINE_I386 = 332
-            IMAGE_FILE_MACHINE_IA64 = 512
-            IMAGE_FILE_MACHINE_AMD64 = 34404
-
-            with open(path, "rb") as f:
-                s = f.read(2)
-                if s != b"MZ":
-                    print("check_binary_type - Not an EXE file!")
-
-                else:
-                    f.seek(60)
-                    s = f.read(4)
-                    header_offset = struct.unpack("<L", s)[0]
-                    f.seek(header_offset + 4)
-                    s = f.read(2)
-                    machine = struct.unpack("<H", s)[0]
-
-                    if machine == IMAGE_FILE_MACHINE_I386:
-                        return 32
-                    elif machine == IMAGE_FILE_MACHINE_IA64:
-                        return 64
-                    elif machine == IMAGE_FILE_MACHINE_AMD64:
-                        return 64
-                    else:
-                        raise Exception("Unknown binary type!")
-
-        logger.error("LibVLC dll not found, dll instance is None! Root path: %s" % tools.APP_ROOT_DIR)
-
-        msgBox = QMessageBox()
-        msgBox.setTextFormat(Qt.RichText)
-        msgBox.setIcon(QMessageBox.Critical)
-        msgBox.setWindowTitle("Critical error")
-        msgBox.setText("Woofer player was unable to find core playback DLL libraries!")
         msgBox.setInformativeText("If you are using distributed binary package, "
                                   "please report this issue on http://m1lhaus.github.io/woofer immediately. "
                                   "You can try to install "
                                   "<a href='http://www.videolan.org/vlc/#download'>VLC media player %d-bit</a> "
                                   "as temporary workaround. Woofer player can use their libraries."
-                                  % check_binary_type(sys.executable))
-        msgBox.exec_()
-    elif platform == 'posix':
-        logger.warning("LibVLC background not found!")
-        msgBox = QMessageBox()
-        msgBox.setTextFormat(Qt.RichText)
-        msgBox.setIcon(QMessageBox.Warning)
-        msgBox.setWindowTitle("Dependency not found")
-        msgBox.setText("Woofer player was unable to find core LibVLC libraries!")
+                                  % tools.check_binary_type(sys.executable))
+    else:
         msgBox.setInformativeText("Please install appropriate VLC media player 2.x from your repository "
                                   "or you can download last version directly from "
                                   "<a href='http://www.videolan.org/vlc/#download'>VideoLAN</a>.")
-        msgBox.exec_()
-    else:
-        raise NotImplementedError("Unknown platform: %s" % platform)
+    msgBox.exec_()
 
 
 def displayLoggerError(e_msg):
     msgBox = QMessageBox()
     msgBox.setIcon(QMessageBox.Critical)
-    msgBox.setWindowTitle("Critical error")
+    msgBox.setWindowTitle("Critical error - initialization failed!")
     msgBox.setText("Initialization of logger component failed. "
                    "The application probably doesn't have write permissions.")
     msgBox.setInformativeText("Details:\n" + e_msg)
@@ -176,6 +133,7 @@ if __name__ == "__main__":
         displayLoggerError(str(exception))
         sys.exit(-1)
 
+    # log info about Woofer player
     logger.info("Binary located at: " + sys.executable)
     build_info = tools.loadBuildInfo()
     logger.info("Build info - version: %s | revision: %s | build date: %s" % (build_info.get("version", None),
