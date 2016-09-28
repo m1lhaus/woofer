@@ -45,10 +45,15 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
 
         if not sys.platform.startswith('win') or not tools.IS_WIN32_EXE:
             self.updaterLbl.setText(self.updaterLbl.text() + " " + tr['SETTINGS_UPDATES_DISABLED'])
+            self.updaterLbl.setVisible(False)
             self.checkUpdatesChBox.setEnabled(False)
+            self.checkUpdatesChBox.setVisible(False)
             self.downUpdatesChBox.setEnabled(False)
+            self.downUpdatesChBox.setVisible(False)
             self.channelCombo.setEnabled(False)
+            self.channelCombo.setVisible(False)
             self.channelLbl.setEnabled(False)
+            self.channelLbl.setVisible(False)
 
         self.settings = QSettings()
 
