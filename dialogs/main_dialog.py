@@ -1256,7 +1256,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         self.downloadAnimation = QMovie(":/icons/loading.gif", parent=self)
 
         self.downloadStatusLabel.setMinimumWidth(24)
-        self.downloadStatusLabel.setToolTip(tr['PROGRESS_DOWNLOADING_UPDATE'] + ": 0 B / " + total_size)
+        self.downloadStatusLabel.setToolTip(tr['PROGRESS_DOWNLOADING_UPDATE'] + ": 0 B / " + str(total_size))
         self.downloadStatusLabel.setMovie(self.downloadAnimation)
         self.statusbar.addPermanentWidget(self.downloadStatusLabel)
         self.downloadAnimation.start()
@@ -1269,7 +1269,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         Called from scheduler/updater whenever one percent of the file is downloaded.
         Method will display progress in 'downloadStatusLabel'.
         """
-        self.downloadStatusLabel.setToolTip(tr['PROGRESS_DOWNLOADING_UPDATE'] + ": " + already_down + " / " + total_size)
+        self.downloadStatusLabel.setToolTip(tr['PROGRESS_DOWNLOADING_UPDATE'] + ": " + str(already_down) + " / " + str(total_size))
 
     @pyqtSlot(int, str)
     def endDownloadingUpdate(self, status, filepath):
@@ -1374,8 +1374,7 @@ class MainApp(QMainWindow, main_form.MainForm):
 
         if self.updateOnExit:
             if os.path.isfile(self.updateExe):
-                command = ["start", self.updateExe.encode(sys.getfilesystemencoding()),
-                           tools.APP_ROOT_DIR.encode(sys.getfilesystemencoding()), str(os.getpid())]
+                command = ["start", self.updateExe, tools.APP_ROOT_DIR, str(os.getpid())]
                 if self.restartAfterUpdate:
                     command.append('-r')
 
