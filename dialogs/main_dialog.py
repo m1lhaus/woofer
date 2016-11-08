@@ -88,7 +88,7 @@ class MainApp(QMainWindow, main_form.MainForm):
         super(MainApp, self).__init__()
         self.mediaLibFile = os.path.join(tools.DATA_DIR, 'medialib.dat')
         self.session_file = os.path.join(tools.DATA_DIR, 'session.dat')
-        self.input_path = play_path.decode(sys.getfilesystemencoding()) if play_path else None
+        self.input_path = play_path if play_path else None
         self.mediaPlayer = components.media.MediaPlayer()
 
         self.myComputerPathIndex = None
