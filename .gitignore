@@ -1,6 +1,11 @@
 .idea/
 build/release
 build/woofer
+build/windows
+libvlc
+libvlc64
+!libvlc/readme.txt
+!libvlc64/readme.txt
 dist/
 log/
 data/
