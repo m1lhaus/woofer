@@ -59,8 +59,6 @@ class SettingsDialog(QDialog, Ui_settingsDialog):
 
         self.followSymChBox.setChecked(self.settings.value("components/disk/RecursiveBrowser/follow_symlinks", False, bool))
         self.saveRestoreSessionChBox.setChecked(self.settings.value("session/saveRestoreSession", True, bool))
-        self.saveRestoreSessionChBox.setEnabled(False)
-        self.clearSessionBtn.setEnabled(False)
         self.checkUpdatesChBox.setChecked(self.settings.value("components/scheduler/Updater/check_updates", True, bool))
         self.downUpdatesChBox.setChecked(self.settings.value("components/scheduler/Updater/auto_updates", False, bool))
         current_idx = 1 if self.settings.value("components/scheduler/Updater/pre-release", False, bool) else 0

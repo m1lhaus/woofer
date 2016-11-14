@@ -395,6 +395,10 @@ class MainApp(QMainWindow, main_form.MainForm):
             logger.debug("No session file found, skipping")
             return
 
+        if not QSettings().value("session/saveRestoreSession", True, bool):
+            logger.debug("Skipped session load, functionality disabled")
+            return
+
         logger.debug("Loading session...")
         try:
             with open(self.session_file, 'r') as f:
@@ -503,6 +507,10 @@ class MainApp(QMainWindow, main_form.MainForm):
         Save current session information
         e.g. current playlist, etc.
         """
+        if not QSettings().value("session/saveRestoreSession", True):
+            logger.debug("Skipped session save, functionality disabled")
+            return
+
         session_data = {}
 
         self.savePlaylist(session_data)
