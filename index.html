@@ -85,7 +85,7 @@
         <section>
             <h1>What is Woofer player?</h1>
 
-            <p><img align="right" height="128" src="https://raw.githubusercontent.com/m1lhaus/woofer/master/icons/app_icon.png">Woofer player is <strong>free open-source cross-platform music player</strong> that plays most multimedia files, CDs, DVDs and also various online streams <em>(future)</em>. Whole written in Python and Qt provides easy, reliable, and high quality playback thanks to <strong>LibVLC library</strong> developed by <a href="http://www.videolan.org/vlc/libvlc.html" target="_blank">VideoLAN community</a>.</p>
+            <p><img align="right" height="128" src="https://raw.githubusercontent.com/m1lhaus/woofer/master/icons/app_icon.png">Woofer player is <strong>free open-source cross-platform music player</strong> that plays most multimedia files, CDs and <DVDs class=""></DVDs> Whole written in Python and Qt provides easy, reliable, and high quality playback thanks to <strong>LibVLC library</strong> developed by <a href="http://www.videolan.org/vlc/libvlc.html" target="_blank">VideoLAN community</a>.</p>
 
             <h2><a class="anchor" href="#main-features" id="main-features"><span class="octicon octicon-link"></span></a>Main features</h2>
 
@@ -95,9 +95,8 @@
                 <li><strong>Multi-platform:</strong> Currently supports both Windows (from XP up to Windows 10) and Linux (tested on Ubuntu distros).</li>
                 <li><strong>Fully portable:</strong> No installation needed. Woofer will play right from your pen drive.</li>
                 <li><strong>Auto-updater:</strong> Built-in update checking and installing on Windows.</li>
-                <li><strong><i>(New)</i> Multi-language support:</strong> Make your own language .ini file. You can later post it on repo or by email. Finally your translation could be integrated to Woofer player. Currently available languages are <strong>English</strong> and <strong>Czech</strong>.</li>
-                <li><strong><i>(New)</i> Gained volume:</strong> Ability to set volume level up to 150% without any background tweaking. That means up to 50% gain.</li>
-                <li>more will be coming ...</li>
+                <li><strong>Multi-language support:</strong> Make your own language .ini file. You can later post it on repo or by email. Finally your translation could be integrated to Woofer player. Currently available languages are <strong>English</strong> and <strong>Czech</strong>.</li>
+                <li><strong>Gained volume:</strong> Ability to set volume level up to 150% without any background tweaking. That means up to 50% gain.</li>
             </ul>
 
             <h2><a class="anchor" href="#cross-platform" id="cross-platform"><span class="octicon octicon-link"></span></a>Cross-platform</h2>
@@ -113,21 +112,19 @@
             <p><strong>Used packages (Requirements):</strong></p>
 
             <ul>
-                <li><a href="https://www.python.org/downloads/" target="_blank">Python 2.7</a></li>
-                <li><a href="http://www.riverbankcomputing.co.uk/software/pyqt/download" target="_blank">PyQt4</a> (4.11.4 is unstable!)</li>
-                <li><a href="https://wiki.videolan.org/Python_bindings/" target="_blank">LibVLC</a> Python wrapper</li>
-                <li><a href="https://pypi.python.org/pypi/ujson" target="_blank">ujson</a></li>
-                <li><a href="https://pypi.python.org/pypi/scandir" target="_blank">scandir</a></li>
-                <li><a href="http://python-xlib.sourceforge.net/" target="_blank">Python-XLib</a> (only for Linux)</li>
-                <li><a href="https://github.com/pyinstaller/pyinstaller/wiki" target="_blank">PyInstaller v2</a> (only for build)</li>
-                <li><a href="https://pypi.python.org/pypi?:action=display&name=psutil" target="_blank">psutil v3</a> (only for build)</li>
+                <li><a href="https://www.python.org/downloads/">Python 3.5</a></li>
+                <li><a href="http://www.riverbankcomputing.co.uk/software/pyqt/download">PyQt5</a></li>
+                <li><a href="https://wiki.videolan.org/Python_bindings/">LibVLC Python wrapper</a></li>
+                <li><a href="https://pypi.python.org/pypi/Send2Trash">Send2Trash</a></li>
+                <li><a href="https://pypi.python.org/pypi/ujson">ujson</a></li>
+                <li><a href="http://python-xlib.sourceforge.net/">Python-XLib</a> (only for Linux)</li>
+                <li><a href="https://github.com/pyinstaller/pyinstaller/wiki">PyInstaller v3</a> (only for build)</li>
+                <li><a href="https://pypi.python.org/pypi?:action=display&amp;name=psutil">psutil v3</a> (only for build)</li>
             </ul>
-
-            <p>Woofer uses new PyQt4 API v2, so migration to PyQt5/Python3 is possible and quite easy. For now I will stick with Python 2.7 <s>because there is no reliable bug-free alternative to PyInstaller for Python 3</s> (PyInstaller v3 now fully supports Python 3).</p>
 
             <h2><a class="anchor" href="#download" id="download"><span class="octicon octicon-link"></span></a>Download</h2>
 
-            <p>For Windows there are available binary distributions. On Linux you can run Woofer like any other Python application by <code>woofer.py</code> or you can build your own binary distribution, which however will depend on your distribution (distribution branch). Because there are so many Linux distributions and even most popular Ubuntu-based distributions have major version differences (new compiler, etc.), no pre-build Woofer binaries will be available. However I am planning to make Ubuntu ppa.</p>
+            <p>For Windows there are available binary distributions. On Linux you can run Woofer like any other Python application by <code>woofer.py</code> or you can build your own binary distribution, which however will depend on your distribution (distribution branch). Because there are so many Linux distributions and even most popular Ubuntu-based distributions have major version differences (new compiler, etc.), no pre-build Woofer binaries will be available.</p>
 
             <h3><a class="anchor" href="#binaries" id="binaries"><span class="octicon octicon-link"></span></a>Binaries</h3>
 
@@ -143,18 +140,10 @@
 
             <p>Please refer to <a href="https://github.com/m1lhaus/woofer">Github repository page</a> for more information.</p>
 
-            <h3><a class="anchor" href="#known-issues" id="known-issues"><span class="octicon octicon-link"></span></a>Known issues</h3>
-
-            <ul>
-                <li></li>
-            </ul>
-
             <h3><a class="anchor" href="#future-work" id="future-work"><span class="octicon octicon-link"></span></a>Future work</h3>
 
             <ul>
-                <li>save/restore playback time/position for playing media</li>
-                <li>save/load playlists</li>
-                <li>media streaming (live broadcasts)</li>
+                <li>only bug fixing</li>
             </ul>
         </section>
 
